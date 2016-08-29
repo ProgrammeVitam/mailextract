@@ -2,27 +2,28 @@ VITAM TOOLS-MAILEXTRACT
 =======================
 
 Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtract) et l'ensemble de classe permttant l'implémentation de la fonction ailleurs (passage par la classe StoreExtractor)
-Il utilise la bibliothèque JavaMail pour l'extraction de boites distantes (imap,imaps...) et dans les fichiers Thunderbird. 
-Il utilise la bibliothèque java-libpst pour l'extraction de boites dans les fichiers Outlook (merci à Richard Johnson http://github.com/rjohnsondev).
-C'est un projet maven standard (archétype quickstart) avec une documentation javadoc complète (dans le répertoire /doc)
+| Il utilise la bibliothèque JavaMail pour l'extraction de boites distantes (imap,imaps...) et dans les fichiers Thunderbird.  
+| Il utilise la bibliothèque java-libpst pour l'extraction de boites dans les fichiers Outlook (merci à Richard Johnson http://github.com/rjohnsondev).  
+| C'est un projet maven standard (archétype quickstart) avec une documentation javadoc complète (dans le répertoire /doc).  
 
-Vous pouvez voir ci-dessus le manuel de l'application (et voir les fonctions accessibles par StoreExtractor)
+*Vous pouvez voir ci-dessus le manuel de l'application (et voir les fonctions accessibles par StoreExtractor)*
 
 Lancement
 ---------
 
 * Linux or windows
 
-java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
-|*Les utilitaires doivent toujours être lancés en mode UTF-8 pour assurer la cohérence des fichiers exportés et importés entre utilitaires*
+1. java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
+| *Les utilitaires doivent toujours être lancés en mode UTF-8 pour assurer la cohérence des fichiers exportés et importés entre utilitaires*  
 
 * Windows
 
-Ouvrez l'application console "cmd"
-Utilisez l'application "mailextract.exe" disponible dans le répertoire "windows" (créé avec launch4j) en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
-|
-|Exemple : c:\Users\XXX\Desktop\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\Users\XXX\Documents" -d -a -f "INBOX/Sent"
-|          permet, si le fichier mailextract est sur le bureau de l'utilisateur XXX, d'extraire les messages du répertoire INBOX/Sent de la boite imap "toto@titi.fr" et d'en mettre le résultat dans un répertoire appelé toto@titi.fr-[timestamp] dans "Mes Documents", sans prendre les répertoires vides.
+1. Ouvrez l'application console "cmd"
+2. Utilisez l'application "mailextract.exe" disponible dans le répertoire "windows" (créé avec launch4j) en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
+
+| Exemple : c:\Users\XXX\Desktop\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\Users\XXX\Documents" -d -a -f "INBOX/Sent"  
+| Il permet, si le fichier mailextract est sur le bureau de l'utilisateur XXX, d'extraire les messages du répertoire INBOX/Sent de la boite imap "toto@titi.fr" et d'en mettre le résultat dans un répertoire appelé toto@titi.fr-[timestamp] dans "Mes Documents", sans prendre les répertoires vides.  
+
 Pensez à mettre des "" autour des champs qui contiennent des caractères non-alphanumériques et qui pourraient être interprétés avant l'exécution de la commande.
 
 Manuel MailExtract
