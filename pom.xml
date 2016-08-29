@@ -1,0 +1,55 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>fr.gouv.vitam.tools</groupId>
+  <artifactId>mailextract</artifactId>
+  <version>0.5-SNAPSHOT</version>
+
+  <name>mailextract</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+    	<groupId>com.sun.mail</groupId>
+    	<artifactId>javax.mail</artifactId>
+    	<version>1.5.5</version>
+    </dependency>
+    <dependency>
+    	<groupId>org.jsoup</groupId>
+    	<artifactId>jsoup</artifactId>
+    	<version>1.9.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>net.sf.jopt-simple</groupId>
+    	<artifactId>jopt-simple</artifactId>
+    	<version>5.0.2</version>
+    </dependency>
+    <dependency>
+    	<groupId>com.pff</groupId>
+    	<artifactId>java-libpst</artifactId>
+    	<version>0.9.3-SNAPSHOT</version>
+    	<systemPath>${basedir}/libraries/java-libpst-0.9.3-SNAPSHOT.jar</systemPath>
+    	<scope>system</scope>
+    </dependency>
+  </dependencies>
+  <dependencyManagement>
+  	<dependencies>
+  		<dependency>
+  			<groupId>org.glassfish</groupId>
+  			<artifactId>javax.json</artifactId>
+  			<version>1.0.4</version>
+  		</dependency>
+  	</dependencies>
+  </dependencyManagement>
+</project>

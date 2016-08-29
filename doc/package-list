@@ -1,0 +1,5 @@
+fr.gouv.vitam.tools.mailextract.app
+fr.gouv.vitam.tools.mailextract.core
+fr.gouv.vitam.tools.mailextract.javamail
+fr.gouv.vitam.tools.mailextract.javamail.thundermbox
+fr.gouv.vitam.tools.mailextract.libpst
