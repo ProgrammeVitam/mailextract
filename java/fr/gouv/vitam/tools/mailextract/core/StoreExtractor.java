@@ -31,9 +31,13 @@ import fr.gouv.vitam.tools.mailextract.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.libpst.LPStoreExtractor;
 
 import java.io.File;
+//import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
+
+//import org.apache.tika.Tika;
+//import org.apache.tika.exception.TikaException;
 
 /**
  * Abstract factory class for operation context on a defined mailbox.
@@ -146,6 +150,9 @@ public abstract class StoreExtractor {
 
 	// private logger
 	private Logger logger;
+	
+//	// private Tika tool
+//	private Tika tika;
 
 	/**
 	 * Instantiates a new store extractor.
@@ -194,6 +201,8 @@ public abstract class StoreExtractor {
 		this.totalRawSize = 0;
 
 		this.logger = logger;
+		
+//		this.tika = new Tika();
 	}
 
 	/** KEEP_ONLY_DEEP_EMPTY_FOLDERS option constant */
@@ -207,6 +216,9 @@ public abstract class StoreExtractor {
 
 	/** NAMES_SHORTENED option constant */
 	final static public int CONST_NAMES_SHORTENED = 8;
+
+	/** JSON option constant */
+	final static public int CONST_JSON = 16;
 
 	// Write log identifying the mail box target, and options
 	private void writeTargetLog() {
@@ -242,6 +254,12 @@ public abstract class StoreExtractor {
 			optionsLog += "with shortened names";
 			first = false;
 		}
+		if (hasOptions(CONST_JSON)) {
+			if (!first)
+				optionsLog += ", ";
+			optionsLog += "with manifest metadata files JSON encoded";
+			first = false;
+		}
 		if (!first)
 			optionsLog += ", ";
 		optionsLog += "with log level " + getLogger().getLevel();
@@ -262,6 +280,15 @@ public abstract class StoreExtractor {
 	public Logger getLogger() {
 		return logger;
 	}
+
+//	/**
+//	 * Gets the tika tool context used for text extraction.
+//	 * 
+//	 * @return storeExtractor
+//	 */
+//	public Tika getTika() {
+//		return tika;
+//	}
 
 	private int uniqID = 1;
 
@@ -402,11 +429,16 @@ public abstract class StoreExtractor {
 		rootAnalysisMBFolder.extractFolderAsRoot();
 
 		ArchiveUnit rootNode = rootAnalysisMBFolder.getArchiveUnit();
-		rootNode.addArrayOneMetadata("Title",
+		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
+		rootNode.addMetadata("Title",
 				"Ensemble des messages électroniques envoyés et reçus par le titulaire du compte " + user
 						+ " sur le serveur " + server + " à la date du " + start,
 				true);
 		rootNode.addMetadata("OriginatingAgency", "-- To be defined--", true);
+		if (rootAnalysisMBFolder.dateRange.isDefined()) {
+			rootNode.addMetadata("StartDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getStart()), true);
+			rootNode.addMetadata("EndDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getEnd()), true);
+		}
 		rootNode.write();
 
 		Instant end = Instant.now();

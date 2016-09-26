@@ -67,6 +67,21 @@ public class MetaDataString extends MetaData {
 		return "\"" + encodeJSONString(value) + "\"";
 	}
 
+	/**
+	 * Write the metadata in XML format.
+	 * <p>
+	 * The String is UTF-8 encoded with \r,\n,\t escaped
+	 * and <,&,>,' and " XML encoded
+	 * 
+	 * @param depth
+	 *            Depth used for tabulation (no use for this tree Metadata
+	 *            Structure which is always a terminal tree node)
+	 * @return the string
+	 */
+	public String writeXML(int depth) {
+		return encodeXMLString(value);
+	}
+
 	// TODO préciser l'encodage des métadonnées dans le JSON
 	// escape some problematic characters in JSON
 	private static String encodeJSONString(String in) {
@@ -75,6 +90,22 @@ public class MetaDataString extends MetaData {
 		in = in.replace("\r", "\\r");
 		in = in.replace("\t", "\\t");
 		in = in.replace("\"", "\\\"");
+		return in;
+	}
+
+	// TODO préciser l'encodage des métadonnées dans le JSON
+	// escape some problematic characters in JSON
+	private static String encodeXMLString(String in) {
+		in = in.replace("\\", "\\\\");
+		in = in.replace("\n", "\\n");
+		in = in.replace("\r", "\\r");
+		in = in.replace("\t", "\\t");
+		in = in.replace("\"", "&quot;");
+		in = in.replace("'", "&apos;");
+		in = in.replace("<", "&lt;");
+		in = in.replace(">", "&gt;");
+		in = in.replace("&", "&amp;");
+
 		return in;
 	}
 }

@@ -193,6 +193,7 @@ public class MailExtract {
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("l", "access account and list folders (no drop options)");
 		parser.accepts("z", "access account and list folders and there statistics (no drop options)");
+		parser.accepts("json", "access account and list folders and there statistics (no drop options)");
 
 		return parser;
 	}
@@ -214,6 +215,7 @@ public class MailExtract {
 		try {
 			options = parser.parse(args);
 		} catch (Exception e) {
+			System.err.println("dkjqbclksbadkl");
 			System.err.println("wrong arguments to know syntax use -h or --help option");
 			System.exit(1);
 		}
@@ -255,6 +257,9 @@ public class MailExtract {
 		}
 		if (options.has("namesshortened")) {
 			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
+		}
+		if (options.has("json")) {
+			storeExtractorOptions |= StoreExtractor.CONST_JSON;
 		}
 
 		// specific option parsing for imap protocol extraction

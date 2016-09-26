@@ -50,6 +50,15 @@ public abstract class MetaData {
 	abstract protected String writeJSON(int depth);
 	
 	/**
+	 * Write the metadata in XML with pretty print format.
+	 *
+	 * @param depth
+	 *            Depth used for tabulation
+	 * @return the string
+	 */
+	abstract protected String writeXML(int depth);
+	
+	/**
 	 * Generate a depth long repetition of tabs.
 	 *<p>
 	 *Utility method for pretty print in all sub-classes

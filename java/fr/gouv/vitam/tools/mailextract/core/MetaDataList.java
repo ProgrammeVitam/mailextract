@@ -26,18 +26,29 @@
  */
 package fr.gouv.vitam.tools.mailextract.core;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 /**
- * Class for complex list MetaData object which can contain any list of couples (key, Metadata object).
+ * Class for complex list MetaData object which can contain any list of couples
+ * (key, Metadata object).
  * <p>
- * It keeps the list ordered in the order in which couples (key, MetaData objects) were added.
+ * It keeps the list ordered in the order in which couples (key, MetaData
+ * objects) were added.
  */
 
 public class MetaDataList extends MetaData {
-	private LinkedHashMap<String, MetaData> mdLinkedMap;
+	class KeyValue {
+		public KeyValue(String key, MetaData value) {
+			this.key = key;
+			this.value = value;
+		}
+
+		String key;
+		MetaData value;
+	}
+
+	private List<KeyValue> mdList;
 
 	/**
 	 * Instantiates a new MetaDataList Object.
@@ -45,14 +56,16 @@ public class MetaDataList extends MetaData {
 	 * Always created empty.
 	 */
 	public MetaDataList() {
-		mdLinkedMap = new LinkedHashMap<String, MetaData>();
+		mdList = new ArrayList<KeyValue>();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.core.MetaData#isEmpty()
 	 */
 	public boolean isEmpty() {
-		return mdLinkedMap.isEmpty();
+		return mdList.isEmpty();
 	}
 
 	/**
@@ -65,11 +78,12 @@ public class MetaDataList extends MetaData {
 	 */
 	public void addMetadata(String key, MetaData value) {
 		if ((value != null) && !value.isEmpty())
-			mdLinkedMap.put(key, value);
+			mdList.add(new KeyValue(key, value));
 	}
 
 	/**
-	 * Adds a couple (key, MetaData object) to the current MetadataList, MetaData object containing the String value.
+	 * Adds a couple (key, MetaData object) to the current MetadataList,
+	 * MetaData object containing the String value.
 	 * <p>
 	 * Utility method for common case (key, string value).
 	 *
@@ -82,61 +96,78 @@ public class MetaDataList extends MetaData {
 		addMetadata(key, new MetaDataString(value));
 	}
 
-	/**
-	 * Adds a couple (key, MetaData object) to the current MetadataList, MetaData object containing an array of all the String values in the list.
-	 * <p>
-	 * Utility method for common case (key, array of string value).
-	 *
-	 * @param key
-	 *            Key
-	 * @param valuesList
-	 *            String value list
-	 */
-	public void addMetadata(String key, List<String> valuesList) {
-		MetaDataArray mvMetaData = new MetaDataArray();
-
-		if ((valuesList != null) && (valuesList.size() != 0)) {
-			for (String s : valuesList) {
-				MetaDataString mdStringValue = new MetaDataString(s);
-				mvMetaData.addMetadata(mdStringValue);
-			}
-			addMetadata(key, mvMetaData);
-		}
-	}
-
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.core.MetaData#writeJSON(int)
 	 */
 	protected String writeJSON(int depth) {
 		String result;
-		Set<String> keySet = mdLinkedMap.keySet();
 		boolean first = true;
-		String tabs=depthTabs(depth);
+		String tabs = depthTabs(depth);
 
 		result = "{";
-		if (keySet.size() > 1)
+		if (mdList.size() > 1)
 			result += "\n" + tabs;
-		for (String s : keySet) {
+		for (KeyValue kv : mdList) {
 			if (first)
 				first = false;
 			else
 				result += ",\n" + tabs;
-			result += "\"" + s + "\" : " + mdLinkedMap.get(s).writeJSON(depth + 1);
+			result += "\"" + kv.key + "\" : " + kv.value.writeJSON(depth + 1);
 		}
-		if (keySet.size() > 1)
+		if (mdList.size() > 1)
 			result += "\n" + tabs;
 		result += "}";
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see fr.gouv.vitam.tools.mailextract.core.MetaData#writeJSON(int)
+	 */
+	protected String writeXML(int depth) {
+		String result = "";
+		boolean first = true;
+		String tabs = depthTabs(depth);
+
+		if (depth != 0)
+			result += "\n";
+		result += tabs;
+		for (KeyValue kv : mdList) {
+			if (first)
+				first = false;
+			else
+				result += "\n" + tabs;
+			result += "<" + kv.key + ">" + kv.value.writeXML(depth + 1) + "</" + kv.key + ">";
+		}
+		result += "\n";
 		return result;
 	}
 
 	/**
 	 * Write the metadata in JSON format.
 	 * <p>
-	 * The root metadata structure is always of list nature and this method is the only public one to write metadata, beginning at tabs depth 0.
+	 * The root metadata structure is always of list nature and this method is
+	 * the only public one to write metadata, beginning at tabs depth 0.
+	 * 
 	 * @return the string
 	 */
 	public String writeJSON() {
 		return writeJSON(0);
+	}
+
+	/**
+	 * Write the metadata in XML format.
+	 * <p>
+	 * The root metadata structure is always of list nature and this method is
+	 * the only public one to write metadata, beginning at tabs depth 0.
+	 * 
+	 * @return the string
+	 */
+	public String writeXML() {
+		return writeXML(0);
 	}
 
 }

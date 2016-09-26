@@ -29,6 +29,7 @@ package fr.gouv.vitam.tools.mailextract.core;
 
 import java.util.logging.Logger;
 
+
 import fr.gouv.vitam.tools.mailextract.core.StoreExtractor;
 
 /**
@@ -260,8 +261,6 @@ public abstract class MailBoxFolder {
 		extractFolderMessages();
 		// extract all subfolders in the folder to the unit directory
 		extractSubFolders(0);
-		// get specific folder metadata to the unit
-		getFolderMetadata();
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
 	}
@@ -297,8 +296,13 @@ public abstract class MailBoxFolder {
 				.hasOptions(StoreExtractor.CONST_DROP_EMPTY_FOLDERS)
 				&& !(level == 1 && storeExtractor.hasOptions(StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)))) {
 			// get specific folder metadata to the unit
-			folderArchiveUnit.addArrayOneMetadata("Title", getName(), true);
-			getFolderMetadata();
+			// compute and add to the folder ArchiveUnit the expected folder metadata
+			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
+			folderArchiveUnit.addMetadata("Title", getName(), true);
+			if (dateRange.isDefined()) {
+				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
+				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
+			}
 			folderArchiveUnit.write();
 			result = true;
 		} else
@@ -355,15 +359,6 @@ public abstract class MailBoxFolder {
 	 *             format problems...)
 	 */
 	protected abstract void doExtractSubFolders(int level) throws ExtractionException;
-
-	// compute and add to the folder ArchiveUnit the expected folder metadata
-	private void getFolderMetadata() {
-		if (dateRange.isDefined()) {
-			folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
-			folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
-		}
-		folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
-	}
 
 	/**
 	 * List all folders with or without statistics.

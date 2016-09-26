@@ -195,31 +195,40 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addArrayMetadata(String key, List<String> value, boolean mandatory) {
-		if ((value != null) && (!value.isEmpty())) {
-			mdObject.addMetadata(key, value);
+	public void addArrayMetadata(String key, List<String> valuesList, boolean mandatory) {
+		if ((valuesList != null) && (!valuesList.isEmpty())) {
+			for (String s : valuesList) {
+				mdObject.addMetadata(key, s);
+			}
 		} else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
 	/**
-	 * Adds for the key metadata an array of subkey, values, with values in
+	 * Adds for the key and subkey metadata an array of values, with values in
 	 * valuesList
 	 * <p>
 	 * This is a utility method, used first for the addresses list. For example
-	 * the due structure for Addressee metadata is:
+	 * the due structure for Addressee metadata in JSON is:
 	 * <p>
 	 * {"Addressee" :
 	 * <ul>
-	 * [
-	 * <ul>
-	 * {"Identifier" : "<toto@sample.fr>"}<br>
-	 * {"Identifier" : "<titi@sample.fr>"}
-	 * </ul>
-	 * ]
+	 * {"Identifier" : "TOTO <toto@sample.fr>"}<br>
 	 * </ul>
 	 * }
+	 * <p>
+	 * {"Addressee" :
+	 * <ul>
+	 * {"Identifier" : "TITI <titi@sample.fr>"}
+	 * </ul>
+	 * }
+	 * <p>
+	 * And in XML is:
+	 * <p>
+	 * <Addressee><Identifier>TOTO &lt;toto@sample.fr&gt;</Identifier></Addressee> 
+	 * <p>
+	 * <Addressee><Identifier>TITI &lt;titi@sample.fr&gt;</Identifier></Addressee> 
 	 * <p>
 	 * If object is null or empty, no metadata is added.
 	 * <p>
@@ -235,51 +244,49 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addSubKeyArrayListMetadata(String key, String subkey, List<String> valuesList, boolean mandatory) {
+	public void addArraySubKeyedMetadata(String key, String subkey, List<String> valuesList, boolean mandatory) {
 		if ((valuesList != null) && (valuesList.size() != 0)) {
-			MetaDataArray mvMetaData = new MetaDataArray();
 			for (String s : valuesList) {
-				MetaDataList mdList = new MetaDataList();
-				mdList.addMetadata(subkey, s);
-				mvMetaData.addMetadata(mdList);
+				MetaDataList mvMetaData = new MetaDataList();
+				mvMetaData.addMetadata(subkey,s);
+				mdObject.addMetadata(key, mvMetaData);
 			}
-			mdObject.addMetadata(key, mvMetaData);
 		} else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
-	/**
-	 * Adds a single key, object metadata, object being an array of Strings with
-	 * only one String.
-	 * <p>
-	 * This is a utility method, used first for Title. The due structure for
-	 * Title metadata is:
-	 * <p>
-	 * {"Title" : ["This is a line of title"]}
-	 * <p>
-	 * If object is null or empty, no metadata is added.
-	 * <p>
-	 * If mandatory flag is true and object is null or empty, the metadata lack
-	 * is logged
-	 *
-	 * @param key
-	 *            Metadata key
-	 * @param value
-	 *            Metadata array of String value
-	 * @param mandatory
-	 *            Mandatory flag
-	 */
-	public void addArrayOneMetadata(String key, String value, boolean mandatory) {
-		if ((value != null) && (!value.isEmpty())) {
-			MetaDataArray mvMetaData = new MetaDataArray();
-			MetaDataString mdStringValue = new MetaDataString(value);
-			mvMetaData.addMetadata(mdStringValue);
-			mdObject.addMetadata(key, mvMetaData);
-		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
-					+ rootPath + "'");
-	}
+//	/**
+//	 * Adds a single key, object metadata, object being an array of Strings with
+//	 * only one String.
+//	 * <p>
+//	 * This is a utility method, used first for Title. The due structure for
+//	 * Title metadata is:
+//	 * <p>
+//	 * {"Title" : ["This is a line of title"]}
+//	 * <p>
+//	 * If object is null or empty, no metadata is added.
+//	 * <p>
+//	 * If mandatory flag is true and object is null or empty, the metadata lack
+//	 * is logged
+//	 *
+//	 * @param key
+//	 *            Metadata key
+//	 * @param value
+//	 *            Metadata array of String value
+//	 * @param mandatory
+//	 *            Mandatory flag
+//	 */
+//	public void addArrayOneMetadata(String key, String value, boolean mandatory) {
+//		if ((value != null) && (!value.isEmpty())) {
+//			MetaDataArray mvMetaData = new MetaDataArray();
+//			MetaDataString mdStringValue = new MetaDataString(value);
+//			mvMetaData.addMetadata(mdStringValue);
+//			mdObject.addMetadata(key, mvMetaData);
+//		} else if (mandatory)
+//			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+//					+ rootPath + "'");
+//	}
 
 	/**
 	 * Adds an object with content from a String.
@@ -366,7 +373,10 @@ public class ArchiveUnit {
 		createDirectory(dirPath);
 
 		// write unit metadata file
-		writeFile(dirPath, "manifest.json", mdObject.writeJSON().getBytes());
+		if (storeExtractor.hasOptions(StoreExtractor.CONST_JSON))
+			writeFile(dirPath, "manifest.json", mdObject.writeJSON().getBytes());
+		else 
+			writeFile(dirPath, "manifest.xml", mdObject.writeXML().getBytes());
 
 		// write objects files
 		if (!objects.isEmpty()) {
