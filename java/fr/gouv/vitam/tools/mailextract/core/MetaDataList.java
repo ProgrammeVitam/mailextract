@@ -29,6 +29,7 @@ package fr.gouv.vitam.tools.mailextract.core;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: Auto-generated Javadoc
 /**
  * Class for complex list MetaData object which can contain any list of couples
  * (key, Metadata object).
@@ -38,16 +39,31 @@ import java.util.List;
  */
 
 public class MetaDataList extends MetaData {
+	
+	/**
+	 * The Class KeyValue.
+	 */
 	class KeyValue {
+		
+		/**
+		 * Instantiates a new key value.
+		 *
+		 * @param key the key
+		 * @param value the value
+		 */
 		public KeyValue(String key, MetaData value) {
 			this.key = key;
 			this.value = value;
 		}
 
+		/** The key. */
 		String key;
+		
+		/** The value. */
 		MetaData value;
 	}
 
+	/** The md list. */
 	private List<KeyValue> mdList;
 
 	/**
@@ -69,12 +85,10 @@ public class MetaDataList extends MetaData {
 	}
 
 	/**
-	 * Adds a couple (key, MetaData object) to the current MetadataList
+	 * Adds a couple (key, MetaData object) to the current MetadataList.
 	 *
-	 * @param key
-	 *            Key
-	 * @param value
-	 *            MetaData object value
+	 * @param key            Key
+	 * @param value            MetaData object value
 	 */
 	public void addMetadata(String key, MetaData value) {
 		if ((value != null) && !value.isEmpty())
@@ -170,4 +184,15 @@ public class MetaDataList extends MetaData {
 		return writeXML(0);
 	}
 
+	/**
+	 * Filter the metadata structure to be generator_seda compliant
+	 * 
+	 * @return the filtered metadata structure
+	 */
+	// TODO
+	public MetaDataList generatorSedaFilter() {
+		return this;
+	}
+	
+	
 }

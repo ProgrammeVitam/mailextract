@@ -297,8 +297,8 @@ public abstract class MailBoxFolder {
 				&& !(level == 1 && storeExtractor.hasOptions(StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)))) {
 			// get specific folder metadata to the unit
 			// compute and add to the folder ArchiveUnit the expected folder metadata
-			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
-			folderArchiveUnit.addMetadata("Title", getName(), true);
+			folderArchiveUnit.addMetadata("DescriptionLevel", "RECORD_GRP", true);
+			folderArchiveUnit.addArrayOneMetadataFr("Title", getName(), true);
 			if (dateRange.isDefined()) {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);

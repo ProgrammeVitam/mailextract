@@ -212,23 +212,22 @@ public class ArchiveUnit {
 	 * This is a utility method, used first for the addresses list. For example
 	 * the due structure for Addressee metadata in JSON is:
 	 * <p>
-	 * {"Addressee" :
+	 * {"Addressee" : [
 	 * <ul>
-	 * {"Identifier" : "TOTO <toto@sample.fr>"}<br>
+	 * {"Identifier" : "TOTO <toto@sample.fr>"},<br>
 	 * </ul>
-	 * }
-	 * <p>
-	 * {"Addressee" :
 	 * <ul>
 	 * {"Identifier" : "TITI <titi@sample.fr>"}
 	 * </ul>
-	 * }
+	 * ] }
 	 * <p>
 	 * And in XML is:
 	 * <p>
-	 * <Addressee><Identifier>TOTO &lt;toto@sample.fr&gt;</Identifier></Addressee> 
+	 * <Addressee><Identifier>TOTO
+	 * &lt;toto@sample.fr&gt;</Identifier></Addressee>
 	 * <p>
-	 * <Addressee><Identifier>TITI &lt;titi@sample.fr&gt;</Identifier></Addressee> 
+	 * <Addressee><Identifier>TITI
+	 * &lt;titi@sample.fr&gt;</Identifier></Addressee>
 	 * <p>
 	 * If object is null or empty, no metadata is added.
 	 * <p>
@@ -246,47 +245,66 @@ public class ArchiveUnit {
 	 */
 	public void addArraySubKeyedMetadata(String key, String subkey, List<String> valuesList, boolean mandatory) {
 		if ((valuesList != null) && (valuesList.size() != 0)) {
-			for (String s : valuesList) {
-				MetaDataList mvMetaData = new MetaDataList();
-				mvMetaData.addMetadata(subkey,s);
-				mdObject.addMetadata(key, mvMetaData);
+			if (storeExtractor.hasOptions(StoreExtractor.CONST_XML)) {
+				for (String s : valuesList) {
+					MetaDataList mvMetaData = new MetaDataList();
+					mvMetaData.addMetadata(subkey, s);
+					mdObject.addMetadata(key, mvMetaData);
+				}
+			} else {
+				MetaDataArray mda = new MetaDataArray();
+				for (String s : valuesList) {
+					MetaDataList mvMetaData = new MetaDataList();
+					mvMetaData.addMetadata(subkey, s);
+					mda.addMetadata(mvMetaData);
+				}
+				mdObject.addMetadata(key, mda);
 			}
 		} else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
-//	/**
-//	 * Adds a single key, object metadata, object being an array of Strings with
-//	 * only one String.
-//	 * <p>
-//	 * This is a utility method, used first for Title. The due structure for
-//	 * Title metadata is:
-//	 * <p>
-//	 * {"Title" : ["This is a line of title"]}
-//	 * <p>
-//	 * If object is null or empty, no metadata is added.
-//	 * <p>
-//	 * If mandatory flag is true and object is null or empty, the metadata lack
-//	 * is logged
-//	 *
-//	 * @param key
-//	 *            Metadata key
-//	 * @param value
-//	 *            Metadata array of String value
-//	 * @param mandatory
-//	 *            Mandatory flag
-//	 */
-//	public void addArrayOneMetadata(String key, String value, boolean mandatory) {
-//		if ((value != null) && (!value.isEmpty())) {
-//			MetaDataArray mvMetaData = new MetaDataArray();
-//			MetaDataString mdStringValue = new MetaDataString(value);
-//			mvMetaData.addMetadata(mdStringValue);
-//			mdObject.addMetadata(key, mvMetaData);
-//		} else if (mandatory)
-//			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
-//					+ rootPath + "'");
-//	}
+	/**
+	 * Adds a single key, object metadata, object being an array of Strings with
+	 * only one String.
+	 * <p>
+	 * This is a utility method, used first for Title. The due structure for
+	 * Title metadata is:
+	 * <p>
+	 * {"Title" : ["This is a line of title"]}
+	 * <p>
+	 * If object is null or empty, no metadata is added.
+	 * <p>
+	 * If mandatory flag is true and object is null or empty, the metadata lack
+	 * is logged
+	 *
+	 * @param key
+	 *            Metadata key
+	 * @param value
+	 *            Metadata array of String value
+	 * @param mandatory
+	 *            Mandatory flag
+	 */
+	public void addArrayOneMetadataFr(String key, String value, boolean mandatory) {
+		if ((value != null) && (!value.isEmpty())) {
+			if (storeExtractor.hasOptions(StoreExtractor.CONST_XML)) {
+				MetaDataArray mvMetaData = new MetaDataArray();
+				MetaDataString mdStringValue = new MetaDataString(value);
+				mvMetaData.addMetadata(mdStringValue);
+				mdObject.addMetadata(key, mvMetaData);
+			} else {
+				MetaDataArray mvMetaData = new MetaDataArray();
+				MetaDataList mdl = new MetaDataList();
+				mdl.addMetadata("Value",value);
+				mdl.addMetadata("Lang","fr");
+				mvMetaData.addMetadata(mdl);
+				mdObject.addMetadata(key, mvMetaData);				
+			}
+		} else if (mandatory)
+			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+					+ rootPath + "'");
+	}
 
 	/**
 	 * Adds an object with content from a String.
@@ -372,16 +390,28 @@ public class ArchiveUnit {
 		// write unit directory
 		createDirectory(dirPath);
 
+		if (storeExtractor.hasOptions(StoreExtractor.CONST_GENERATOR_SEDA)) {
+			// filter metadata to be Generator_seda compliant
+			mdObject.generatorSedaFilter();
+		}
+
+		// add content surrounding metadata
+		MetaDataList mdl=new MetaDataList();
+		
+		mdl.addMetadata("Content", mdObject);
+		mdObject=mdl;
+
 		// write unit metadata file
-		if (storeExtractor.hasOptions(StoreExtractor.CONST_JSON))
-			writeFile(dirPath, "manifest.json", mdObject.writeJSON().getBytes());
-		else 
-			writeFile(dirPath, "manifest.xml", mdObject.writeXML().getBytes());
+		if (storeExtractor.hasOptions(StoreExtractor.CONST_XML))
+			writeFile(dirPath, "ArchiveUnitMetadata.xml", mdObject.writeXML().getBytes());
+		else
+			writeFile(dirPath, "ArchiveUnitMetadata.json", mdObject.writeJSON().getBytes());
 
 		// write objects files
 		if (!objects.isEmpty()) {
+// TODO improve generator_seda
 			for (ArchiveObject o : objects) {
-				writeFile(dirPath, o.usage + "_" + Integer.toString(o.version) + "_" + o.filename, o.rawContent);
+				writeFile(dirPath, o.usage + "_" /*+ Integer.toString(o.version) + "_"*/ + o.filename, o.rawContent);
 			}
 		}
 	}
@@ -396,8 +426,8 @@ public class ArchiveUnit {
 		else
 			len = 32;
 		if (filename != null)
-			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "_");
-	
+			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
+
 		if (result.length() > len)
 			result = result.substring(result.length() - len);
 
@@ -415,12 +445,12 @@ public class ArchiveUnit {
 		} else {
 			len = 32;
 		}
-		if (filename != null) 
-			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}]", "_");
-		
+		if (filename != null)
+			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}]", "-");
+
 		if (result.length() > len)
 			result = result.substring(0, len);
-		result = type + "#" + Integer.toString(storeExtractor.getUniqID()) + "_" + result;
+		result = type + "#" + Integer.toString(storeExtractor.getUniqID()) + "-" + result;
 
 		return result;
 	}

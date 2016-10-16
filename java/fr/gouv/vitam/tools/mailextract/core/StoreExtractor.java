@@ -220,6 +220,9 @@ public abstract class StoreExtractor {
 	/** XML option constant */
 	final static public int CONST_XML = 16;
 
+	/** GENERATOR_SEDA option constant */
+	final static public int CONST_GENERATOR_SEDA = 32;
+
 	// Write log identifying the mail box target, and options
 	private void writeTargetLog() {
 		getLogger().info("Target mail box with protocol=" + protocol
@@ -254,7 +257,17 @@ public abstract class StoreExtractor {
 			optionsLog += "with shortened names";
 			first = false;
 		}
-		if (hasOptions(CONST_XML)) {
+		if (hasOptions(CONST_GENERATOR_SEDA)) {
+			if (!first)
+				optionsLog += ", ";
+			optionsLog += "in generator_seda restricted format";
+			first = false;
+			if (hasOptions(CONST_XML)) {
+				optionsLog += " (XML encoding option ignored)";
+				this.options-=CONST_XML;
+			}
+		}
+		else if (hasOptions(CONST_XML)) {
 			if (!first)
 				optionsLog += ", ";
 			optionsLog += "with manifest metadata files XML encoded";
@@ -429,12 +442,11 @@ public abstract class StoreExtractor {
 		rootAnalysisMBFolder.extractFolderAsRoot();
 
 		ArchiveUnit rootNode = rootAnalysisMBFolder.getArchiveUnit();
-		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
-		rootNode.addMetadata("Title",
+		rootNode.addMetadata("DescriptionLevel", "RECORD_GRP", true);
+		rootNode.addArrayOneMetadataFr("Title",
 				"Ensemble des messages électroniques envoyés et reçus par le titulaire du compte " + user
 						+ " sur le serveur " + server + " à la date du " + start,
 				true);
-		rootNode.addMetadata("OriginatingAgency", "-- To be defined--", true);
 		if (rootAnalysisMBFolder.dateRange.isDefined()) {
 			rootNode.addMetadata("StartDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getStart()), true);
 			rootNode.addMetadata("EndDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getEnd()), true);

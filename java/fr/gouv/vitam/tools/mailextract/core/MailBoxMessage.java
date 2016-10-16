@@ -51,7 +51,6 @@ import java.util.logging.Logger;
 //import org.apache.tika.sax.BodyContentHandler;
 //import org.xml.sax.SAXException;
 
-
 /**
  * Abstract class for a mail box message.
  * <p>
@@ -287,33 +286,38 @@ public abstract class MailBoxMessage {
 		// create message unit
 		messageNode = new ArchiveUnit(mailBoxFolder.storeExtractor, mailBoxFolder.folderArchiveUnit, "Message",
 				subject);
-		
+
 		// metadata in SEDA 2.0-ontology order
-		messageNode.addMetadata("DescriptionLevel", "Item", true);
-		messageNode.addMetadata("Title", subject, true);
-		messageNode.addArraySubKeyedMetadata("Writer", "Identifier", from, true);
-		messageNode.addArraySubKeyedMetadata("Addressee", "Identifier", recipientTo, true);
-		messageNode.addArraySubKeyedMetadata("Recipient", "Identifier", recipientCcAndBcc, false);
+		messageNode.addMetadata("DescriptionLevel", "ITEM", true);
+		messageNode.addArrayOneMetadataFr("Title", subject, true);
+
+		if (!mailBoxFolder.getStoreExtractor().hasOptions(StoreExtractor.CONST_GENERATOR_SEDA)) {
+			messageNode.addArraySubKeyedMetadata("Writer", "Identifier", from, true);
+			messageNode.addArraySubKeyedMetadata("Addressee", "Identifier", recipientTo, true);
+			messageNode.addArraySubKeyedMetadata("Recipient", "Identifier", recipientCcAndBcc, false);
+		}
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
-		// not in SEDA ontology
-		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
-		messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID, false);
-		messageNode.addArrayMetadata("OriginatingSystemId-References", references, false);
+		if (!mailBoxFolder.getStoreExtractor().hasOptions(StoreExtractor.CONST_GENERATOR_SEDA)) {
+			// not in SEDA ontology
+			messageNode.addMetadata("OriginatingSystemId", messageUID, true);
+			messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID, false);
+			messageNode.addArrayMetadata("OriginatingSystemId-References", references, false);
 
-		// not in the Vitam specs... (to be discussed)
-		messageNode.addArraySubKeyedMetadata("Sender", "Identifier", sender, false);
-		messageNode.addArraySubKeyedMetadata("ReplyTo", "Identifier", replyTo, false);
-		messageNode.addArraySubKeyedMetadata("ReturnPath", "Identifier", returnPath, false);
-		//messageNode.addArrayMetadata("MailHeader", mailHeader, false);
+			// not in the Vitam specs... (to be discussed)
+			messageNode.addArraySubKeyedMetadata("Sender", "Identifier", sender, false);
+			messageNode.addArraySubKeyedMetadata("ReplyTo", "Identifier", replyTo, false);
+			messageNode.addArraySubKeyedMetadata("ReturnPath", "Identifier", returnPath, false);
+			// messageNode.addArrayMetadata("MailHeader", mailHeader, false);
+		}
 
 		messageNode.write();
 
 		// create body subunit/object group
 		contentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, null, "Body");
-		contentNode.addMetadata("DescriptionLevel", "Item", true);
-		contentNode.addMetadata("Title", "Corps du message " + messageUID, true);
+		contentNode.addMetadata("DescriptionLevel", "ITEM", true);
+		contentNode.addArrayOneMetadataFr("Title", "Corps du message " + messageUID, true);
 		contentNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 
 		contentNode.addObject(rawContent, "object", "BinaryMaster", 1);
@@ -326,46 +330,55 @@ public abstract class MailBoxMessage {
 		if (attachments != null && !attachments.isEmpty()) {
 			for (Attachment a : attachments) {
 				attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", a.filename);
-				attachmentNode.addMetadata("DescriptionLevel", "Item", true);
-				attachmentNode.addMetadata("Title",
-						"Document \"" + a.filename + "\" joint au message " + messageUID, true);
+				attachmentNode.addMetadata("DescriptionLevel", "ITEM", true);
+				attachmentNode.addArrayOneMetadataFr("Title", "Document \"" + a.filename + "\" joint au message " + messageUID,
+						true);
 				attachmentNode.addObject(a.rawContent, a.filename, "BinaryMaster", 1);
 				// text extraction
-//				Metadata metadata = new Metadata();
-//				String mimetype;
-//				try {
-//					metadata.set(Metadata.RESOURCE_NAME_KEY, a.filename);
-//					mimetype = mailBoxFolder.getStoreExtractor().getTika().detect(TikaInputStream.get(a.rawContent), metadata);
-//					System.out.println("File " + a.filename + " is " + mimetype);
-//					BufferedOutputStream output;
-//
-//					output = new BufferedOutputStream(new FileOutputStream("/home/js/tmp/totest"));
-//					output.write(a.rawContent);
-//					output.close();
-//
-////					Tika tika = new Tika();
-//					BodyContentHandler handler = new BodyContentHandler();
-//					AutoDetectParser parser = new AutoDetectParser();
-//					metadata = new Metadata();
-//					InputStream inputStream = new BufferedInputStream(new FileInputStream("/home/js/tmp/totest"));
-//					try {
-//						parser.parse(inputStream, handler, metadata);
-//					} catch (NoSuchMethodError | SAXException e) {
-//					}
-//					String textExtract=handler.toString();
-//				       Tika tika = new Tika();
-//				       	textExtract = tika.parseToString(new File("/home/js/tmp/totest"));
-//
-////
-////					
-////					
-////					tika.setMaxStringLength(-1);
-////					String textExtract=tika.parseToString(new File("/home/js/tmp/totest"));
-//					System.out.println("File " + a.filename + " text content is " + textExtract.length()+" char long for "+a.rawContent.length+ " bytes long");
-//				
-//				} catch (IOException | TikaException e) {
-//					logWarning("mailextract.javamail: Can't extract text content from attachment " + a.filename+ "in message "+subject);
-//				}
+				// Metadata metadata = new Metadata();
+				// String mimetype;
+				// try {
+				// metadata.set(Metadata.RESOURCE_NAME_KEY, a.filename);
+				// mimetype =
+				// mailBoxFolder.getStoreExtractor().getTika().detect(TikaInputStream.get(a.rawContent),
+				// metadata);
+				// System.out.println("File " + a.filename + " is " + mimetype);
+				// BufferedOutputStream output;
+				//
+				// output = new BufferedOutputStream(new
+				// FileOutputStream("/home/js/tmp/totest"));
+				// output.write(a.rawContent);
+				// output.close();
+				//
+				//// Tika tika = new Tika();
+				// BodyContentHandler handler = new BodyContentHandler();
+				// AutoDetectParser parser = new AutoDetectParser();
+				// metadata = new Metadata();
+				// InputStream inputStream = new BufferedInputStream(new
+				// FileInputStream("/home/js/tmp/totest"));
+				// try {
+				// parser.parse(inputStream, handler, metadata);
+				// } catch (NoSuchMethodError | SAXException e) {
+				// }
+				// String textExtract=handler.toString();
+				// Tika tika = new Tika();
+				// textExtract = tika.parseToString(new
+				// File("/home/js/tmp/totest"));
+				//
+				////
+				////
+				////
+				//// tika.setMaxStringLength(-1);
+				//// String textExtract=tika.parseToString(new
+				// File("/home/js/tmp/totest"));
+				// System.out.println("File " + a.filename + " text content is "
+				// + textExtract.length()+" char long for "+a.rawContent.length+
+				// " bytes long");
+				//
+				// } catch (IOException | TikaException e) {
+				// logWarning("mailextract.javamail: Can't extract text content
+				// from attachment " + a.filename+ "in message "+subject);
+				// }
 
 				attachmentNode.write();
 			}
