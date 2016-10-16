@@ -217,8 +217,8 @@ public abstract class StoreExtractor {
 	/** NAMES_SHORTENED option constant */
 	final static public int CONST_NAMES_SHORTENED = 8;
 
-	/** JSON option constant */
-	final static public int CONST_JSON = 16;
+	/** XML option constant */
+	final static public int CONST_XML = 16;
 
 	// Write log identifying the mail box target, and options
 	private void writeTargetLog() {
@@ -254,10 +254,10 @@ public abstract class StoreExtractor {
 			optionsLog += "with shortened names";
 			first = false;
 		}
-		if (hasOptions(CONST_JSON)) {
+		if (hasOptions(CONST_XML)) {
 			if (!first)
 				optionsLog += ", ";
-			optionsLog += "with manifest metadata files JSON encoded";
+			optionsLog += "with manifest metadata files XML encoded";
 			first = false;
 		}
 		if (!first)
