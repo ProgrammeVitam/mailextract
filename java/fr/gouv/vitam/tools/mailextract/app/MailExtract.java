@@ -41,9 +41,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import fr.gouv.vitam.tools.mailextract.core.DateRange;
-import fr.gouv.vitam.tools.mailextract.core.ExtractionException;
-import fr.gouv.vitam.tools.mailextract.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.DateRange;
+import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -143,6 +143,10 @@ import joptsimple.OptionSet;
  * FINEST level)</td>
  * </tr>
  * <tr>
+ * <td>--xtract</td>
+ * <td>generate extraction logs</td>
+ * </tr>
+ * <tr>
  * <td>-l</td>
  * <td>access account and list folders (no drop options)</td>
  * </tr>
@@ -202,8 +206,6 @@ public class MailExtract {
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("l", "access account and list folders (no drop options)");
 		parser.accepts("z", "access account and list folders and there statistics (no drop options)");
-		parser.accepts("gs", "extract metadata permitted by generator_seda in required format");
-		parser.accepts("xml", "extract metadata in xml rather than json");
 
 		return parser;
 	}
@@ -229,7 +231,7 @@ public class MailExtract {
 			System.exit(1);
 		}
 
-		// do option parsing
+        // do option parsing
 		String destRootPath = "", destName = "";
 		String protocol = "", server = "localhost", user = "", password = "", container = "", folder = "";
 		int storeExtractorOptions = 0;
@@ -266,12 +268,6 @@ public class MailExtract {
 		}
 		if (options.has("namesshortened")) {
 			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
-		}
-		if (options.has("xml")) {
-			storeExtractorOptions |= StoreExtractor.CONST_XML;
-		}
-		if (options.has("gs")) {
-			storeExtractorOptions |= StoreExtractor.CONST_GENERATOR_SEDA;
 		}
 
 		// specific option parsing for imap protocol extraction
