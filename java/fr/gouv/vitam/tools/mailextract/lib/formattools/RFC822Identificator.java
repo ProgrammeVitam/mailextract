@@ -119,15 +119,20 @@ public class RFC822Identificator {
 	public boolean isRFC822(byte[] rawContent) throws ExtractionException {
 		String mimeType;
 
-		if (rawContent.length > 0) {
-			mimeType = tika.detect(rawContent);
-			if (mimeType.equals("message/rfc822"))
-				return true;
-			else if (objectMapper != null) {
-				mimeType = getSiegFriedMimeType(rawContent);
+		try {
+			if (rawContent.length > 0) {
+				mimeType = tika.detect(rawContent);
 				if (mimeType.equals("message/rfc822"))
 					return true;
+				else if (objectMapper != null) {
+					mimeType = getSiegFriedMimeType(rawContent);
+					if (mimeType.equals("message/rfc822"))
+						return true;
+				}
 			}
+		} catch (Exception e) {
+			// if any problem in identification tools, considered not a message
+			return false;
 		}
 		return false;
 	}
