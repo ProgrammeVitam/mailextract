@@ -282,11 +282,12 @@ public abstract class MailBoxMessage {
 
 		// metadata in SEDA 2.0-ontology order
 		messageNode.addMetadata("DescriptionLevel", "Item", true);
-		messageNode.addMetadata("Title", "lang", "fr", subject, true);
+		messageNode.addMetadata("Title", subject, true);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
-		messageNode.addSameSubKeyedMetadataList("Writer", "Identifier", from, true);
-		messageNode.addSameSubKeyedMetadataList("Addressee", "Identifier", recipientTo, true);
-		messageNode.addSameSubKeyedMetadataList("Recipient", "Identifier", recipientCcAndBcc, false);
+		messageNode.addMetadata("Description", "Message ayant pour sujet:\""+subject+"\"", true);
+		messageNode.addPersonMetadataList("Writer", from, true);
+		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
+		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
@@ -324,7 +325,8 @@ public abstract class MailBoxMessage {
 
 		attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", filename);
 		attachmentNode.addMetadata("DescriptionLevel", "Item", true);
-		attachmentNode.addMetadata("Title", "lang", "fr",
+		attachmentNode.addMetadata("Title",filename, true);
+		attachmentNode.addMetadata("Description",
 				"Document \"" + filename + "\" joint au message " + messageUID, true);
 		attachmentNode.addObject(rawContent, filename, "BinaryMaster", 1);
 		// Text extraction
@@ -360,7 +362,8 @@ public abstract class MailBoxMessage {
 		// recursively extracted
 		rootNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode.getFullName(), "Attached Messages");
 		rootNode.addMetadata("DescriptionLevel", "Item", true);
-		rootNode.addMetadata("Title", "lang", "fr", "Ensemble des messages attachés joint au message " + messageUID,
+		rootNode.addMetadata("Title", "Messages attachés",true);
+		rootNode.addMetadata("Description", "Ensemble des messages attachés joint au message " + messageUID,
 				true);
 		attachedMessage = false;
 		attachedMessagedateRange = new DateRange();

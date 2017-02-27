@@ -428,7 +428,7 @@ public abstract class StoreExtractor {
 
 		ArchiveUnit rootNode = rootAnalysisMBFolder.getArchiveUnit();
 		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
-		rootNode.addMetadata("Title", "lang", "fr",
+		rootNode.addMetadata("Title",
 				"Ensemble des messages électroniques envoyés et reçus par le titulaire du compte " + user
 						+ " sur le serveur " + server + " à la date du " + start,
 				true);

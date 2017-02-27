@@ -168,8 +168,8 @@ public class ArchiveUnit {
 	 * <p>
 	 * If value is null or empty, no metadata is added.
 	 * <p>
-	 * If mandatory flag is true and value is null or empty, the metadata lack
-	 * is logged
+	 * If mandatory flag is true and value is empty, the metadata is set to "".
+	 * If mandatory flag is true and value is null, the fact is logged
 	 *
 	 * @param key
 	 *            Metadata key
@@ -179,7 +179,7 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addMetadata(String key, String value, boolean mandatory) {
-		if ((value != null) && !value.isEmpty())
+		if (value != null)
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, value));
 		else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
@@ -191,8 +191,8 @@ public class ArchiveUnit {
 	 * <p>
 	 * If value is null or empty, no metadata is added.
 	 * <p>
-	 * If mandatory flag is true and value is null or empty, the metadata lack
-	 * is logged
+	 * If mandatory flag is true and value is empty, the metadata is set to "".
+	 * If mandatory flag is true and value is null, the fact is logged
 	 *
 	 * @param key
 	 *            Metadata key
@@ -206,11 +206,12 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) {
-		if ((value != null) && !value.isEmpty())
+		if (value != null)
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
-		else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+		else if (mandatory) {
+				getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name + "' in folder '"
 					+ rootPath + "'");
+		}
 	}
 
 	/**
@@ -257,18 +258,24 @@ public class ArchiveUnit {
 					+ rootPath + "'");
 	}
 
+	
+	class Person {
+		String firstName;
+		String birthName;
+		String identifier;
+	}
+	
 	/**
-	 * Adds for the key and subkey metadata an array of values, with values in
+	 * Adds for the key metadata an array of person values, with values in
 	 * valuesList
 	 * <p>
 	 * This is a utility method, used first for the addresses list. For example
-	 * the due structure for Addressee metadata in XML is:
+	 * the due structure for "TOTO<toto@sample.fr>" Addressee metadata in XML is:
 	 * <p>
-	 * <Addressee><Identifier>TOTO
-	 * &lt;toto@sample.fr&gt;</Identifier></Addressee>
-	 * <p>
-	 * <Addressee><Identifier>TITI
-	 * &lt;titi@sample.fr&gt;</Identifier></Addressee>
+	 * <Addressee>
+	 * <FirstName></FirstName>
+	 * <BirthName>TOTO</BirthName>
+	 * <Identifier>toto@sample.fr</Identifier></Addressee>
 	 * <p>
 	 * If valuesList is null or empty, no metadata is added.
 	 * <p>
@@ -277,22 +284,67 @@ public class ArchiveUnit {
 	 *
 	 * @param key
 	 *            Metadata key
-	 * @param subkey
-	 *            Subkey
 	 * @param valuesList
 	 *            Values list
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addSameSubKeyedMetadataList(String key, String subkey, List<String> valuesList, boolean mandatory) {
+	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) {
+		Person p;
+		MetadataXMLNode mvMetaData;
+		MetadataXMLList mlMetaData;
+		
 		if ((valuesList != null) && (valuesList.size() != 0)) {
 			for (String s : valuesList) {
-				MetadataXMLNode mvMetaData = new MetadataXMLNode(subkey, s);
-				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mvMetaData));
+				p=extractPersonFromAddress(s);
+				mlMetaData = new MetadataXMLList();
+				mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
+				mlMetaData.addMetadataXMLNode(mvMetaData);
+				mvMetaData = new MetadataXMLNode("BirthName", p.birthName);
+				mlMetaData.addMetadataXMLNode(mvMetaData);
+				mvMetaData = new MetadataXMLNode("Identifier", p.identifier);
+				mlMetaData.addMetadataXMLNode(mvMetaData);
+				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 			}
 		} else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
+	}
+	
+	/**
+	 * Extract a person from an address encoded.
+	 * Example TOTO<toto@sample.fr>" is extracted as:
+	 * <p>
+	 * FirstName="",
+	 * BirthName="Toto",
+	 * Identifier="toto@sample.fr"
+	 * <p>
+	 * @param s
+	 *            the s
+	 * @return the person
+	 */
+	Person extractPersonFromAddress(String s)
+	{
+		int beg,end;
+		Person p=new Person();
+		
+		if ((beg=s.indexOf("<"))!=-1) {
+			if ((end=s.indexOf(">"))!=-1) {
+				p.identifier=s.substring(beg+1, end).trim();
+				if (beg>0)
+					p.birthName=s.substring(0,beg-1).trim();
+				else 
+					p.birthName="";
+				p.firstName="";
+			}
+		}
+		else {
+			p.identifier=s.trim();
+			p.birthName="";
+			p.firstName="";			
+		}
+
+		return p;
 	}
 
 	/**
@@ -383,7 +435,7 @@ public class ArchiveUnit {
 		MetadataXMLNode contentmetadata = new MetadataXMLNode("Content", contentmetadatalist);
 
 		// write unit metadata file
-		writeFile(dirPath, "ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes());
+		writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes());
 
 		// write objects files
 		if (!objects.isEmpty()) {

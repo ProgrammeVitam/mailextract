@@ -300,7 +300,8 @@ public abstract class MailBoxFolder {
 			// get specific folder metadata to the unit
 			// compute and add to the folder ArchiveUnit the expected folder metadata
 			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
-			folderArchiveUnit.addMetadata("Title", "lang", "fr", getName(), true);
+			folderArchiveUnit.addMetadata("Title", getName(), true);
+			folderArchiveUnit.addMetadata("Description", "Dossier de messagerie :"+getFullName(), true);
 			if (dateRange.isDefined()) {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
