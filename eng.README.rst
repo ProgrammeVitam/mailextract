@@ -53,8 +53,11 @@ The arguments syntax is:
 --loglevel          event level to log (SEVERE| WARNING| INFO| FINE| FINER| FINEST)
 --namesshortened    generate short directories and files names
 --warning           generate warning when there's a problem on a message (otherwise log at FINEST level)
+-x					extract
 -l                  access account and list folders (no drop options)
 -z                  access account and list folders and there statistics (no drop options)
+
+To be noted: When no -x, -l or -z option is set, the graphic interface is opened
 
 Long options can be reduced to short ones (for example -h is equivalent to --help)
 

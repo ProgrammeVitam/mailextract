@@ -64,8 +64,11 @@ La syntaxe des arguments est:
 --loglevel          niveau de log (SEVERE| WARNING| INFO| FINE| FINER| FINEST)
 --namesshortened    limite la longueur des noms des répertoires sur le disque (utile dans les environnements avec longueur de chemin limité)
 --warning           génère un avertissement quand il y a un problème d'extraction limité à un message en particulier (sinon cela est loggé au niveau FINE)
+-x					fait l'extraction
 -l                  édite l'ensemble des répertoires de la messagerie (ne prend pas en compte les options -d et -k)
 -z                  édite l'ensemble des répertoires de la messagerie ainsi que le nombre et le poids des messages qu'ils contiennent (ne prend pas en compte les options -d et -k)
+
+A noter: Si aucune option -x, -l ou -z n'est mise l'interface graphique est lancée avec les éléments complétés
 
 Les libellés long des options peut être réduit au premier caractère précédé d'un seul - (par exemple -h est équivalent à --help)
 
