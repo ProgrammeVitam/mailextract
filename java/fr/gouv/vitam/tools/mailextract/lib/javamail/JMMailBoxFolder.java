@@ -189,7 +189,9 @@ public class JMMailBoxFolder extends MailBoxFolder {
 				message = folder.getMessage(i);
 				if (!((MimeMessage) message).isSet(Flags.Flag.DELETED)) {
 					JMMailBoxMessage jMMailBoxMessage = new JMMailBoxMessage(this, (MimeMessage) message);
+					jMMailBoxMessage.analyzeMessage();
 					jMMailBoxMessage.countMessage();
+					
 				}
 			}
 			folder.close(false);

@@ -345,7 +345,12 @@ public abstract class MailBoxMessage {
 			byte[] rawContent) throws ExtractionException {
 		JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(), rootNode.getName(),
 				getStoreExtractor().options, getLogger());
-		rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot();
+	// TODO CONST_EXTRACTION no use!!!
+		if (getStoreExtractor().hasOptions(StoreExtractor.CONST_EXTRACTION))
+				rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot();
+		else 
+			rfc822Extractor.rootAnalysisMBFolder.listFolder(true);
+			
 		getStoreExtractor().addTotalAttachedMessagesCount(
 				rfc822Extractor.getTotalMessagesCount() + rfc822Extractor.getTotalAttachedMessagesCount());
 		attachedMessagedateRange.extendRange(rfc822Extractor.rootAnalysisMBFolder.getDateRange());

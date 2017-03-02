@@ -413,7 +413,7 @@ public abstract class MailBoxFolder {
 		folderMessagesCount = 0;
 		folderMessagesRawSize = 0;
 		if (hasMessages())
-			doExtractFolderMessages();
+			doListFolderMessages();
 	}
 
 	/**

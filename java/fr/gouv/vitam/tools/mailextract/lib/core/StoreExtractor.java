@@ -217,6 +217,9 @@ public abstract class StoreExtractor {
 	/** NAMES_SHORTENED option constant */
 	final static public int CONST_NAMES_SHORTENED = 8;
 
+	/** EXTRACTION option constant */
+	final static public int CONST_EXTRACTION = 128;
+
 	// Write log identifying the mail box target, and options
 	private void writeTargetLog() {
 		getLogger().info("Target mail box with protocol=" + protocol
@@ -274,6 +277,16 @@ public abstract class StoreExtractor {
 
 	private int uniqID = 1;
 
+	
+	/**
+	 * Checks for dest name.
+	 *
+	 * @return true, if successful
+	 */
+	public boolean hasDestName(){
+		return !((destName==null) || destName.isEmpty());
+	}
+	
 	/**
 	 * Gets a uniq ID in store extractor context.
 	 * <p>
@@ -486,11 +499,9 @@ public abstract class StoreExtractor {
 					+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
 		} else {
 			System.out.println("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders, and "
-					+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
+					+ Integer.toString(getFolderTotalCount()) + " folders");
 			getLogger().info("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders, and "
-					+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
+					+ Integer.toString(getFolderTotalCount()) + " folders");
 		}
 
 	}
