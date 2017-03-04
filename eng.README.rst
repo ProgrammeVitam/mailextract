@@ -19,9 +19,9 @@ java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
 
 * Windows
 
-Use the mailextract.exe available in the "windows" directory(created with launch4j) in a "cmd" window
+Use the mailextract.exe, created with launch4j, in a "cmd" window install_dir\mailextract arguments...
 
-install_dir\mailextract arguments...
+Both files mailextract.jar and mailextract.exe are available on Bintray [https://bintray.com/programmevitam/vitam-mailextract-dist].
 
 MailExtract manual
 ------------------
@@ -66,3 +66,5 @@ Long options can be reduced to short ones (for example -h is equivalent to --hel
 **Warning**: Listing with detailed information is a potentially expensive operation, especially when accessing distant account, as all messages are inspected (in the case of a distant account that mean also downloaded...).
 
 Note: For now it can't extract S/MIME (ciphered and/or signed) messages.
+
+

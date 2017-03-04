@@ -20,19 +20,22 @@ Dans tous les cas s'il n'y a pas une option -x, -l ou -z (extraction, list, stat
 
 1. java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
 
+
 *Les utilitaires doivent toujours être lancés en mode UTF-8 pour assurer la cohérence des fichiers exportés et importés entre utilitaires*  
 
 
 * Windows
 
 1. Ouvrez l'application console "cmd"
-2. Utilisez l'application "mailextract.exe" disponible dans le répertoire "windows" (créé avec launch4j) en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
+2. Utilisez l'application "mailextract.exe", créée avec launch4j, en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
 
 Exemple : *c:\\Users\\XXX\\Desktop\\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\\Users\\XXX\\Documents" -d -a -f "INBOX\\Sent -x"*
 
 Cette commande permet, si le fichier mailextract est sur le bureau de l'utilisateur XXX, d'extraire les messages du répertoire INBOX\\Sent de la boite imap "toto@titi.fr" et d'en mettre le résultat dans un répertoire appelé toto@titi.fr-[timestamp] dans "Mes Documents", sans prendre les répertoires vides.  
 
 Pensez à mettre des "" autour des champs qui contiennent des caractères non-alphanumériques et qui pourraient être interprétés avant l'exécution de la commande. A noter aussi le séparateur de nom de répertoires à utiliser est celui natif du système d'exécution "\\" sous windows et "/" sous Linux.
+
+Les deux fichiers mailextract.jar et mailextract.exe sont disponibles sur Bintray [https://bintray.com/programmevitam/vitam-mailextract-dist].
 
 Manuel MailExtract
 ------------------
