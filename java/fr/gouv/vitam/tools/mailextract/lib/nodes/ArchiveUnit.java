@@ -148,7 +148,7 @@ public class ArchiveUnit {
 	 * @return Root path Archive Unit directory name
 	 */
 	public String getRootPath() {
-			return rootPath;
+		return rootPath;
 	}
 
 	/**
@@ -209,8 +209,8 @@ public class ArchiveUnit {
 		if (value != null)
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
 		else if (mandatory) {
-				getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name + "' in folder '"
-					+ rootPath + "'");
+			getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
+					+ "' in folder '" + rootPath + "'");
 		}
 	}
 
@@ -258,23 +258,21 @@ public class ArchiveUnit {
 					+ rootPath + "'");
 	}
 
-	
 	class Person {
 		String firstName;
 		String birthName;
 		String identifier;
 	}
-	
+
 	/**
 	 * Adds for the key metadata an array of person values, with values in
 	 * valuesList
 	 * <p>
 	 * This is a utility method, used first for the addresses list. For example
-	 * the due structure for "TOTO<toto@sample.fr>" Addressee metadata in XML is:
+	 * the due structure for "TOTO<toto@sample.fr>" Addressee metadata in XML
+	 * is:
 	 * <p>
-	 * <Addressee>
-	 * <FirstName></FirstName>
-	 * <BirthName>TOTO</BirthName>
+	 * <Addressee> <FirstName></FirstName> <BirthName>TOTO</BirthName>
 	 * <Identifier>toto@sample.fr</Identifier></Addressee>
 	 * <p>
 	 * If valuesList is null or empty, no metadata is added.
@@ -293,10 +291,10 @@ public class ArchiveUnit {
 		Person p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
-		
+
 		if ((valuesList != null) && (valuesList.size() != 0)) {
 			for (String s : valuesList) {
-				p=extractPersonFromAddress(s);
+				p = extractPersonFromAddress(s);
 				mlMetaData = new MetadataXMLList();
 				mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
 				mlMetaData.addMetadataXMLNode(mvMetaData);
@@ -310,38 +308,33 @@ public class ArchiveUnit {
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
-	
+
 	/**
-	 * Extract a person from an address encoded.
-	 * Example TOTO<toto@sample.fr>" is extracted as:
+	 * Extract a person from an address encoded. Example TOTO<toto@sample.fr>"
+	 * is extracted as:
 	 * <p>
-	 * FirstName="",
-	 * BirthName="Toto",
-	 * Identifier="toto@sample.fr"
+	 * FirstName="", BirthName="Toto", Identifier="toto@sample.fr"
 	 * <p>
+	 * 
 	 * @param s
 	 *            the s
 	 * @return the person
 	 */
-	Person extractPersonFromAddress(String s)
-	{
-		int beg,end;
-		Person p=new Person();
-		
-		if ((beg=s.indexOf("<"))!=-1) {
-			if ((end=s.indexOf(">"))!=-1) {
-				p.identifier=s.substring(beg+1, end).trim();
-				if (beg>0)
-					p.birthName=s.substring(0,beg-1).trim();
-				else 
-					p.birthName="";
-				p.firstName="";
-			}
-		}
-		else {
-			p.identifier=s.trim();
-			p.birthName="";
-			p.firstName="";			
+	Person extractPersonFromAddress(String s) {
+		int beg, end;
+		Person p = new Person();
+
+		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
+			p.identifier = s.substring(beg + 1, end).trim();
+			if (beg > 0)
+				p.birthName = s.substring(0, beg - 1).trim();
+			else
+				p.birthName = "";
+			p.firstName = "";
+		} else {
+			p.identifier = s.trim();
+			p.birthName = "";
+			p.firstName = "";
 		}
 
 		return p;
@@ -441,8 +434,7 @@ public class ArchiveUnit {
 		if (!objects.isEmpty()) {
 			// TODO improve generator_seda
 			for (ArchiveObject o : objects) {
-				writeFile(dirPath,
-						"__"+o.usage + "_" + Integer.toString(o.version) + "_" + o.filename, o.rawContent);
+				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + o.filename, o.rawContent);
 			}
 		}
 	}

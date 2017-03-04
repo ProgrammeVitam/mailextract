@@ -110,7 +110,7 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderMessages() throws ExtractionException {
+	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
 		PSTMessage message;
 
 		try {
@@ -119,7 +119,7 @@ public class LPMailBoxFolder extends MailBoxFolder {
 				LPMailBoxMessage lPMailBoxMessage = new LPMailBoxMessage(this, message);
 				lPMailBoxMessage.analyzeMessage();
 				dateRange.extendRange(lPMailBoxMessage.getSentDate());
-				lPMailBoxMessage.extractMessage();
+				lPMailBoxMessage.extractMessage(writeFlag);
 				lPMailBoxMessage.countMessage();
 				message = (PSTMessage) pstFolder.getNextChild();
 			}
@@ -138,14 +138,14 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 * int)
 	 */
 	@Override
-	protected void doExtractSubFolders(int level) throws ExtractionException {
+	protected void doExtractSubFolders(int level,boolean writeFlag) throws ExtractionException {
 		LPMailBoxFolder lPMailBoxSubFolder;
 
 		try {
 			final Vector<PSTFolder> subfolders = pstFolder.getSubFolders();
 			for (final PSTFolder subfolder : subfolders) {
 				lPMailBoxSubFolder = new LPMailBoxFolder(storeExtractor, subfolder, this);
-				if (lPMailBoxSubFolder.extractFolder(level + 1))
+				if (lPMailBoxSubFolder.extractFolder(level + 1,writeFlag))
 					incFolderSubFoldersCount();
 				dateRange.extendRange(lPMailBoxSubFolder.getDateRange());
 			}
@@ -209,7 +209,7 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderMessages() throws ExtractionException {
+	protected void doListFolderMessages(boolean stats) throws ExtractionException {
 		PSTMessage message;
 
 		try {

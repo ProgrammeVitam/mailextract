@@ -1,7 +1,7 @@
 VITAM TOOLS-MAILEXTRACT
 =======================
 
-Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtract) et l'ensemble de classe permttant l'implémentation de la fonction ailleurs (passage par la classe StoreExtractor).
+Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtract) et l'ensemble de classe permettant l'implémentation de la fonction ailleurs (passage par la classe StoreExtractor).
 
 Il utilise la bibliothèque JavaMail pour l'extraction de boites distantes (imap,imaps...) et dans les fichiers Thunderbird.
 
@@ -13,6 +13,8 @@ C'est un projet maven standard (archétype quickstart) avec une documentation ja
 
 Lancement
 ---------
+
+Dans tous les cas s'il n'y a pas une option -x, -l ou -z (extraction, list, stats), l'interface graphique est ouverte.
 
 * Linux or windows
 
@@ -26,7 +28,7 @@ Lancement
 1. Ouvrez l'application console "cmd"
 2. Utilisez l'application "mailextract.exe" disponible dans le répertoire "windows" (créé avec launch4j) en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
 
-Exemple : *c:\\Users\\XXX\\Desktop\\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\\Users\\XXX\\Documents" -d -a -f "INBOX\\Sent"*
+Exemple : *c:\\Users\\XXX\\Desktop\\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\\Users\\XXX\\Documents" -d -a -f "INBOX\\Sent -x"*
 
 Cette commande permet, si le fichier mailextract est sur le bureau de l'utilisateur XXX, d'extraire les messages du répertoire INBOX\\Sent de la boite imap "toto@titi.fr" et d'en mettre le résultat dans un répertoire appelé toto@titi.fr-[timestamp] dans "Mes Documents", sans prendre les répertoires vides.  
 
@@ -68,7 +70,7 @@ La syntaxe des arguments est:
 -l                  édite l'ensemble des répertoires de la messagerie (ne prend pas en compte les options -d et -k)
 -z                  édite l'ensemble des répertoires de la messagerie ainsi que le nombre et le poids des messages qu'ils contiennent (ne prend pas en compte les options -d et -k)
 
-A noter: Si aucune option -x, -l ou -z n'est mise l'interface graphique est lancée avec les éléments complétés
+A noter: Si aucune option -x, -l ou -z n'est mise l'interface graphique est lancée avec les éléments complétés.
 
 Les libellés long des options peut être réduit au premier caractère précédé d'un seul - (par exemple -h est équivalent à --help)
 

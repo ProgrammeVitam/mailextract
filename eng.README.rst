@@ -10,6 +10,8 @@ You can see under the manual for the application (and see what the StoreExtracto
 Launching
 ---------
 
+In all cases if there is no option -x, -l or -z (extraction, list, stats), the graphic interface is opened.
+
 * Linux or windows
 
 java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
@@ -57,7 +59,7 @@ The arguments syntax is:
 -l                  access account and list folders (no drop options)
 -z                  access account and list folders and there statistics (no drop options)
 
-To be noted: When no -x, -l or -z option is set, the graphic interface is opened
+To be noted: When no -x, -l or -z option is set, the graphic interface is opened, using defined parameters.
 
 Long options can be reduced to short ones (for example -h is equivalent to --help)
 

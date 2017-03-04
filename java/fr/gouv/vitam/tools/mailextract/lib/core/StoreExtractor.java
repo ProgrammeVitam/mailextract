@@ -217,9 +217,6 @@ public abstract class StoreExtractor {
 	/** NAMES_SHORTENED option constant */
 	final static public int CONST_NAMES_SHORTENED = 8;
 
-	/** EXTRACTION option constant */
-	final static public int CONST_EXTRACTION = 128;
-
 	// Write log identifying the mail box target, and options
 	private void writeTargetLog() {
 		getLogger().info("Target mail box with protocol=" + protocol
@@ -277,16 +274,15 @@ public abstract class StoreExtractor {
 
 	private int uniqID = 1;
 
-	
 	/**
 	 * Checks for dest name.
 	 *
 	 * @return true, if successful
 	 */
-	public boolean hasDestName(){
-		return !((destName==null) || destName.isEmpty());
+	public boolean hasDestName() {
+		return !((destName == null) || destName.isEmpty());
 	}
-	
+
 	/**
 	 * Gets a uniq ID in store extractor context.
 	 * <p>
@@ -437,14 +433,12 @@ public abstract class StoreExtractor {
 		writeTargetLog();
 		getLogger().info("Extraction processed");
 
-		rootAnalysisMBFolder.extractFolderAsRoot();
+		rootAnalysisMBFolder.extractFolderAsRoot(true);
 
 		ArchiveUnit rootNode = rootAnalysisMBFolder.getArchiveUnit();
 		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
-		rootNode.addMetadata("Title",
-				"Ensemble des messages électroniques envoyés et reçus par le titulaire du compte " + user
-						+ " sur le serveur " + server + " à la date du " + start,
-				true);
+		rootNode.addMetadata("Title", "Ensemble des messages électroniques envoyés et reçus par le titulaire du compte "
+				+ user + " sur le serveur " + server + " à la date du " + start, true);
 		if (rootAnalysisMBFolder.dateRange.isDefined()) {
 			rootNode.addMetadata("StartDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getStart()),
 					true);
@@ -453,10 +447,15 @@ public abstract class StoreExtractor {
 		rootNode.write();
 
 		Instant end = Instant.now();
+		String size = Double.toString(Math.round(((double) getTotalRawSize()) * 100.0 / (1024.0 * 1024.0)) / 100.0);
 		getLogger().info("Terminated in " + Duration.between(start, end).toString() + " writing "
 				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalMessagesCount())
-				+ " messages, for a total size of " + Long.toString(getTotalRawSize())+" and "
-						+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
+				+ " messages, for a total size of " + size + " MBytes and "
+				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
+		System.out.println("Terminated in " + Duration.between(start, end).toString() + " writing "
+				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalMessagesCount())
+				+ " messages, for a total size of " + size + " MBytes and "
+				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
 
 	}
 

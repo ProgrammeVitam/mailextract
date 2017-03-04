@@ -28,6 +28,8 @@ package fr.gouv.vitam.tools.mailextract.lib.formattools;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
@@ -67,13 +69,21 @@ public class FileTextExtractor {
 	 */
 	public String getText(byte[] rawContent) throws ExtractionException {
 		String s=null;
+		Level memLevel;
+		Logger logger;
 
-		
+		logger=Logger.getGlobal();
+		memLevel=logger.getLevel();
+		if (memLevel!=Level.FINEST)
+			logger.setLevel(Level.OFF);
 		try {
 			if (rawContent.length>0)
 				s = tika.parseToString(new ByteArrayInputStream(rawContent));
 		} catch (IOException | TikaException e) {
 			throw new ExtractionException("mailextract.formattools: Can't extract text content");
+		}
+		finally {
+			logger.setLevel(memLevel);
 		}
 
 		return s;

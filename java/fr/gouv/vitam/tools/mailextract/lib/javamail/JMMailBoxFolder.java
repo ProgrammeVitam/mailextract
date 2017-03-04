@@ -89,7 +89,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderMessages() throws ExtractionException {
+	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
 		int msgtotal;
 		Message message;
 
@@ -102,7 +102,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 					JMMailBoxMessage jMMailBoxMessage = new JMMailBoxMessage(this, (MimeMessage) message);
 					jMMailBoxMessage.analyzeMessage();
 					dateRange.extendRange(jMMailBoxMessage.getSentDate());
-					jMMailBoxMessage.extractMessage();
+					jMMailBoxMessage.extractMessage(writeFlag);
 					jMMailBoxMessage.countMessage();
 				}
 			}
@@ -116,7 +116,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doExtractSubFolders(int)
 	 */
 	@Override
-	protected void doExtractSubFolders(int level) throws ExtractionException {
+	protected void doExtractSubFolders(int level,boolean writeFlag) throws ExtractionException {
 		JMMailBoxFolder mBSubFolder;
 
 		try {
@@ -125,7 +125,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 			for (final Folder subfolder : subfolders) {
 
 				mBSubFolder = new JMMailBoxFolder(storeExtractor, subfolder, this);
-				if (mBSubFolder.extractFolder(level + 1))
+				if (mBSubFolder.extractFolder(level + 1,writeFlag))
 					incFolderSubFoldersCount();
 				dateRange.extendRange(mBSubFolder.getDateRange());
 			}
@@ -178,7 +178,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderMessages() throws ExtractionException {
+	protected void doListFolderMessages(boolean stats) throws ExtractionException {
 		int msgtotal;
 		Message message;
 
@@ -190,6 +190,8 @@ public class JMMailBoxFolder extends MailBoxFolder {
 				if (!((MimeMessage) message).isSet(Flags.Flag.DELETED)) {
 					JMMailBoxMessage jMMailBoxMessage = new JMMailBoxMessage(this, (MimeMessage) message);
 					jMMailBoxMessage.analyzeMessage();
+					if (stats)
+						jMMailBoxMessage.extractMessage(false);
 					jMMailBoxMessage.countMessage();
 					
 				}

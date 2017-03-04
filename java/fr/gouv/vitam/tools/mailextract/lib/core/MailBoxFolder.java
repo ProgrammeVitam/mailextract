@@ -254,13 +254,13 @@ public abstract class MailBoxFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public void extractFolderAsRoot() throws ExtractionException {
+	public void extractFolderAsRoot(boolean writeFlag) throws ExtractionException {
 		// log process on folder
 		storeExtractor.getLogger().fine("mailextract: Extract folder [root]");
 		// extract all messages in the folder to the unit directory
-		extractFolderMessages();
+		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
-		extractSubFolders(0);
+		extractSubFolders(0,writeFlag);
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
 		storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
@@ -285,15 +285,16 @@ public abstract class MailBoxFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public boolean extractFolder(int level) throws ExtractionException {
+	public boolean extractFolder(int level, boolean writeFlag) throws ExtractionException {
 		boolean result = false;
 
 		// log process on folder
 		storeExtractor.getLogger().fine("mailextract: Extract folder " + getFullName());
+
 		// extract all messages in the folder to the unit directory
-		extractFolderMessages();
+		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
-		extractSubFolders(level);
+		extractSubFolders(level,writeFlag);
 		if (folderMessagesCount + folderSubFoldersCount != 0 || (!storeExtractor
 				.hasOptions(StoreExtractor.CONST_DROP_EMPTY_FOLDERS)
 				&& !(level == 1 && storeExtractor.hasOptions(StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)))) {
@@ -306,7 +307,8 @@ public abstract class MailBoxFolder {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
 			}
-			folderArchiveUnit.write();
+			if (writeFlag)
+				folderArchiveUnit.write();
 			result = true;
 		} else
 			storeExtractor.getLogger().fine("mailextract: Empty folder " + getFullName() + " is droped");
@@ -319,11 +321,11 @@ public abstract class MailBoxFolder {
 	}
 
 	// encapsulate the subclasses real processing method
-	private void extractFolderMessages() throws ExtractionException {
+	private void extractFolderMessages(boolean writeFlag) throws ExtractionException {
 		folderMessagesCount = 0;
 		folderMessagesRawSize = 0;
 		if (hasMessages())
-			doExtractFolderMessages();
+			doExtractFolderMessages(writeFlag);
 	}
 
 	/**
@@ -338,13 +340,13 @@ public abstract class MailBoxFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doExtractFolderMessages() throws ExtractionException;
+	protected abstract void doExtractFolderMessages(boolean writeFlag) throws ExtractionException;
 
 	// encapsulate the subclasses real processing method
-	private void extractSubFolders(int level) throws ExtractionException {
+	private void extractSubFolders(int level,boolean writeFlag) throws ExtractionException {
 		folderSubFoldersCount = 0;
 		if (hasSubfolders())
-			doExtractSubFolders(level);
+			doExtractSubFolders(level, writeFlag);
 	}
 
 	/**
@@ -361,7 +363,7 @@ public abstract class MailBoxFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doExtractSubFolders(int level) throws ExtractionException;
+	protected abstract void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException;
 
 	/**
 	 * List all folders with or without statistics.
@@ -387,7 +389,7 @@ public abstract class MailBoxFolder {
 		storeExtractor.getLogger().fine("mailextract: List folder " + fullName);
 		if (stats) {
 			// inspect all messages in the folder for statistics
-			listFolderMessages();
+			listFolderMessages(stats);
 			// expose this folder statistics
 			String size = Double
 					.toString(Math.round(((double) folderMessagesRawSize) * 100.0 / (1024.0 * 1024.0)) / 100.0);
@@ -409,11 +411,11 @@ public abstract class MailBoxFolder {
 	}
 
 	// encapsulate the subclasses real processing method
-	private void listFolderMessages() throws ExtractionException {
+	private void listFolderMessages(boolean stats) throws ExtractionException {
 		folderMessagesCount = 0;
 		folderMessagesRawSize = 0;
 		if (hasMessages())
-			doListFolderMessages();
+			doListFolderMessages(stats);
 	}
 
 	/**
@@ -428,7 +430,7 @@ public abstract class MailBoxFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doListFolderMessages() throws ExtractionException;
+	protected abstract void doListFolderMessages(boolean stats) throws ExtractionException;
 
 	// encapsulate the subclasses real processing method
 	private void listSubFolders(boolean stats) throws ExtractionException {

@@ -172,9 +172,6 @@ public class MailExtractApp implements ActionListener, Runnable {
 	void doAction(int actionNumber) {
 		parseParams();
 
-		if (actionNumber == EXTRACT_ACTION)
-			storeExtractorOptions |= StoreExtractor.CONST_EXTRACTION;
-
 		new MailExtractThread(actionNumber, protocol, server, user, password, container, folder, destRootPath, destName,
 				storeExtractorOptions, logLevel).start();
 	}
@@ -470,14 +467,11 @@ public class MailExtractApp implements ActionListener, Runnable {
 				else
 					destName = user;
 
+				storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
+						folder, destRootPath, destName, storeExtractorOptions, logger);
 				if (options.has("l") || options.has("z")) {
-					storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
-							folder, destRootPath, destName, storeExtractorOptions, logger);
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {
-					storeExtractorOptions |= StoreExtractor.CONST_EXTRACTION;
-					storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
-							folder, destRootPath, destName, storeExtractorOptions, logger);
 					storeExtractor.extractAllFolders();
 				}
 			} catch (Exception e) {

@@ -29,6 +29,7 @@ package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import fr.gouv.vitam.tools.mailextract.lib.formattools.FileTextExtractor;
@@ -263,17 +264,20 @@ public abstract class MailBoxMessage {
 
 	/**
 	 * Create the Archive Unit structures with all content and metadata needed,
-	 * and then write them on disk.
+	 * and then write them on disk if writeFlag is true
 	 * <p>
 	 * This is "the" method where the extraction structure and content is mainly
 	 * defined (see also {@link MailBoxFolder#extractFolder extractFolder} and
 	 * {@link StoreExtractor#extractAllFolders extractAllFolders}).
 	 * 
+	 * @param writeFlag
+	 *            write or not flag (no write used for stats)
+	 *            
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public final void extractMessage() throws ExtractionException {
+	public final void extractMessage(boolean writeFlag) throws ExtractionException {
 		ArchiveUnit messageNode = null;
 
 		// create message unit
@@ -302,23 +306,23 @@ public abstract class MailBoxMessage {
 
 		// add object binary master
 		messageNode.addObject(rawContent, "object", "BinaryMaster", 1);
-		messageNode.write();
 
 		if ((textContent != null) && !textContent.isEmpty()) {
 			// add object text content
 			messageNode.addObject(textContent, "object", "TextContent", 1);
 		}
 
-		messageNode.write();
+		if (writeFlag)
+			messageNode.write();
 
 		if (attachments != null && !attachments.isEmpty()) {
 			// create all attachments subunits/object groups
-			extractMessageAttachments(messageNode);
+			extractMessageAttachments(messageNode,writeFlag);
 		}
 	}
 
 	/** Extract one standard message attachement. */
-	private final void extractOneMessageAttachment(ArchiveUnit messageNode, String filename, byte[] rawContent)
+	private final void extractOneMessageAttachment(ArchiveUnit messageNode, String filename, byte[] rawContent, boolean writeFlag)
 			throws ExtractionException {
 		ArchiveUnit attachmentNode;
 		String textExtract;
@@ -337,27 +341,33 @@ public abstract class MailBoxMessage {
 		} catch (ExtractionException ee) {
 			logWarning("mailextract: Can't extract text content from attachment " + filename + " in message " + subject);
 		}
-		attachmentNode.write();
+		if (writeFlag)
+			attachmentNode.write();
 	}
 
 	/** Recursively extract attached message. */
 	private final void extractAttachedMessage(ArchiveUnit rootNode, DateRange attachedMessagedateRange, String filename,
-			byte[] rawContent) throws ExtractionException {
-		JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(), rootNode.getName(),
+			byte[] rawContent, boolean writeFlag) throws ExtractionException {
+		Level memLevel;
+		
+		memLevel=getLogger().getLevel();
+		getLogger().setLevel(Level.OFF);
+		try {
+			JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(), rootNode.getName(),
+	
 				getStoreExtractor().options, getLogger());
-	// TODO CONST_EXTRACTION no use!!!
-		if (getStoreExtractor().hasOptions(StoreExtractor.CONST_EXTRACTION))
-				rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot();
-		else 
-			rfc822Extractor.rootAnalysisMBFolder.listFolder(true);
-			
+		rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
 		getStoreExtractor().addTotalAttachedMessagesCount(
 				rfc822Extractor.getTotalMessagesCount() + rfc822Extractor.getTotalAttachedMessagesCount());
 		attachedMessagedateRange.extendRange(rfc822Extractor.rootAnalysisMBFolder.getDateRange());
+		}
+		finally{
+			getLogger().setLevel(memLevel);
+		}
 	}
 
 	/** Extract all message attachments. */
-	private final void extractMessageAttachments(ArchiveUnit messageNode) throws ExtractionException {
+	private final void extractMessageAttachments(ArchiveUnit messageNode,boolean writeFlag) throws ExtractionException {
 		ArchiveUnit rootNode;
 		boolean attachedMessage;
 		DateRange attachedMessagedateRange;
@@ -386,13 +396,13 @@ public abstract class MailBoxMessage {
 				// recursive extraction of a message in attachment...
 				attachedMessage = true;
 				logWarning("mailextract: Attached message extraction from message " + subject);
-				extractAttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent);
-			} else {
+				extractAttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent,writeFlag);
+			} else if (writeFlag) {
 				// standard attachment file
-				extractOneMessageAttachment(messageNode, a.filename, a.rawContent);
+				extractOneMessageAttachment(messageNode, a.filename, a.rawContent,writeFlag);
 			}
 		}
-		if (attachedMessage) {
+		if (attachedMessage && writeFlag) {
 			if (attachedMessagedateRange.isDefined()) {
 				rootNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
 						true);
