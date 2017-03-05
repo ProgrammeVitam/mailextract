@@ -1,2 +1,3 @@
-*.jar
-
+/classes/
+/mailextract-0.16-SNAPSHOT-shaded.jar
+/mailextract-0.16-SNAPSHOT.jar

@@ -58,12 +58,12 @@ public class MailExtractThread extends Thread {
 
 	// generate a specific logger at the loglevel defined in constructor and
 	// sending to stdout console instead of stderr console
-	private static Logger generateLogger(String fileName, Level logLevel) throws Exception {
+	private Logger generateLogger(String fileName, Level logLevel) throws Exception {
 		Logger logger;
 		try {
 			Properties props = System.getProperties();
 			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-			logger = Logger.getLogger(MailExtractApp.class.getName());
+			logger = Logger.getLogger(Long.toString(this.getId()));
 			logger.setLevel(logLevel);
 
 			Formatter simpleFormatter;
@@ -162,13 +162,18 @@ public class MailExtractThread extends Thread {
 				else
 					throw new ExtractionException("mailextract: no destination name for extraction");
 				break;
-			}
-			Handler[] handler = logger.getHandlers();
-			for (Handler h : handler) {
-				h.close();
+
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
+		}
+		finally {
+			Handler[] handler = logger.getHandlers();
+			for (Handler h : handler) {
+				h.close();
+				logger.removeHandler(h);
+			}
+			logger=null;
 		}
 	}
 

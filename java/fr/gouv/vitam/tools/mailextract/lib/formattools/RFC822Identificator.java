@@ -56,7 +56,7 @@ public class RFC822Identificator {
 	private static final long MILLI_SECONDS_BETWEEN_TRIES = 1000;
 
 	/** Singleton instance **/
-	private static final RFC822Identificator INSTANCE = new RFC822Identificator();
+	private static RFC822Identificator INSTANCE = new RFC822Identificator();
 
 	/** Tika object **/
 	private Tika tika;

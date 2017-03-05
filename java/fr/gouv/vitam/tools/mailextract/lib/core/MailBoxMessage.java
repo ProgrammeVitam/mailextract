@@ -288,21 +288,49 @@ public abstract class MailBoxMessage {
 		messageNode.addMetadata("DescriptionLevel", "Item", true);
 		messageNode.addMetadata("Title", subject, true);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
-		messageNode.addMetadata("Description", "Message ayant pour sujet:\""+subject+"\"", true);
+
+		if ((textContent != null) && !textContent.isEmpty()) {
+			int begBeg, begEnd, endBeg, endEnd, len;
+
+			// extract description from text format
+			len = textContent.length();
+			begBeg = 0;
+			if (len <= 160) {
+				endBeg = len;
+				messageNode.addMetadata("Description", "Début du texte [" + textContent.substring(begBeg, endBeg) + "]",
+						true);
+			} else {
+				endBeg = 160;
+				endEnd = len;
+				begEnd = Math.max(endBeg, endEnd - 160);
+				messageNode.addMetadata("Description", "Début du texte [" + textContent.substring(begBeg, endBeg) + "]"
+						+ System.lineSeparator() + "Fin du texte [" + textContent.substring(begEnd, endEnd) + "]",
+						true);
+		}
+			// add object text content
+			messageNode.addObject(textContent, "object", "TextContent", 1);
+		} 
+		else
+			messageNode.addMetadata("Description", "Pas de description", true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
 		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
-//		// not in SEDA ontology
-//		messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID, false);
-//		messageNode.addSameMetadataList("OriginatingSystemId-References", references, false);
-//
-//		// not in SEDA ontology nor in the Vitam specs... (to be discussed)
-//		messageNode.addSameSubKeyedMetadataList("Sender", "Identifier", sender, false);
-//		messageNode.addSameSubKeyedMetadataList("ReplyTo", "Identifier", replyTo, false);
-//		messageNode.addSameSubKeyedMetadataList("ReturnPath", "Identifier", returnPath, false);
+		// // not in SEDA ontology
+		// messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID,
+		// false);
+		// messageNode.addSameMetadataList("OriginatingSystemId-References",
+		// references, false);
+		//
+		// // not in SEDA ontology nor in the Vitam specs... (to be discussed)
+		// messageNode.addSameSubKeyedMetadataList("Sender", "Identifier",
+		// sender, false);
+		// messageNode.addSameSubKeyedMetadataList("ReplyTo", "Identifier",
+		// replyTo, false);
+		// messageNode.addSameSubKeyedMetadataList("ReturnPath", "Identifier",
+		// returnPath, false);
 
 		// add object binary master
 		messageNode.addObject(rawContent, "object", "BinaryMaster", 1);
@@ -317,21 +345,20 @@ public abstract class MailBoxMessage {
 
 		if (attachments != null && !attachments.isEmpty()) {
 			// create all attachments subunits/object groups
-			extractMessageAttachments(messageNode,writeFlag);
+			extractMessageAttachments(messageNode, writeFlag);
 		}
 	}
 
 	/** Extract one standard message attachement. */
-	private final void extractOneMessageAttachment(ArchiveUnit messageNode, String filename, byte[] rawContent, boolean writeFlag)
-			throws ExtractionException {
+	private final void extractOneMessageAttachment(ArchiveUnit messageNode, String filename, byte[] rawContent,
+			boolean writeFlag) throws ExtractionException {
 		ArchiveUnit attachmentNode;
 		String textExtract;
 
 		attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", filename);
 		attachmentNode.addMetadata("DescriptionLevel", "Item", true);
-		attachmentNode.addMetadata("Title",filename, true);
-		attachmentNode.addMetadata("Description",
-				"Document \"" + filename + "\" joint au message " + messageUID, true);
+		attachmentNode.addMetadata("Title", filename, true);
+		attachmentNode.addMetadata("Description", "Document \"" + filename + "\" joint au message " + messageUID, true);
 		attachmentNode.addObject(rawContent, filename, "BinaryMaster", 1);
 		// Text extraction
 		try {
@@ -339,7 +366,8 @@ public abstract class MailBoxMessage {
 			if (!((textExtract == null) || textExtract.isEmpty()))
 				attachmentNode.addObject(textExtract.getBytes(), filename + ".txt", "TextContent", 1);
 		} catch (ExtractionException ee) {
-			logWarning("mailextract: Can't extract text content from attachment " + filename + " in message " + subject);
+			logWarning(
+					"mailextract: Can't extract text content from attachment " + filename + " in message " + subject);
 		}
 		if (writeFlag)
 			attachmentNode.write();
@@ -349,25 +377,26 @@ public abstract class MailBoxMessage {
 	private final void extractAttachedMessage(ArchiveUnit rootNode, DateRange attachedMessagedateRange, String filename,
 			byte[] rawContent, boolean writeFlag) throws ExtractionException {
 		Level memLevel;
-		
-		memLevel=getLogger().getLevel();
+
+		memLevel = getLogger().getLevel();
 		getLogger().setLevel(Level.OFF);
 		try {
-			JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(), rootNode.getName(),
-	
-				getStoreExtractor().options, getLogger());
-		rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
-		getStoreExtractor().addTotalAttachedMessagesCount(
-				rfc822Extractor.getTotalMessagesCount() + rfc822Extractor.getTotalAttachedMessagesCount());
-		attachedMessagedateRange.extendRange(rfc822Extractor.rootAnalysisMBFolder.getDateRange());
-		}
-		finally{
+			JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(),
+					rootNode.getName(),
+
+					getStoreExtractor().options, getLogger());
+			rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
+			getStoreExtractor().addTotalAttachedMessagesCount(
+					rfc822Extractor.getTotalMessagesCount() + rfc822Extractor.getTotalAttachedMessagesCount());
+			attachedMessagedateRange.extendRange(rfc822Extractor.rootAnalysisMBFolder.getDateRange());
+		} finally {
 			getLogger().setLevel(memLevel);
 		}
 	}
 
 	/** Extract all message attachments. */
-	private final void extractMessageAttachments(ArchiveUnit messageNode,boolean writeFlag) throws ExtractionException {
+	private final void extractMessageAttachments(ArchiveUnit messageNode, boolean writeFlag)
+			throws ExtractionException {
 		ArchiveUnit rootNode;
 		boolean attachedMessage;
 		DateRange attachedMessagedateRange;
@@ -377,9 +406,8 @@ public abstract class MailBoxMessage {
 		// recursively extracted
 		rootNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode.getFullName(), "Attached Messages");
 		rootNode.addMetadata("DescriptionLevel", "Item", true);
-		rootNode.addMetadata("Title", "Messages attachés",true);
-		rootNode.addMetadata("Description", "Ensemble des messages attachés joint au message " + messageUID,
-				true);
+		rootNode.addMetadata("Title", "Messages attachés", true);
+		rootNode.addMetadata("Description", "Ensemble des messages attachés joint au message " + messageUID, true);
 		attachedMessage = false;
 		attachedMessagedateRange = new DateRange();
 
@@ -388,18 +416,18 @@ public abstract class MailBoxMessage {
 			try {
 				isRFC822 = RFC822Identificator.getInstance().isRFC822(a.rawContent);
 			} catch (ExtractionException e) {
-				logWarning("mailextract: Error during mimetype identification of file " + a.filename
-						+ "in message " + subject);
+				logWarning("mailextract: Error during mimetype identification of file " + a.filename + "in message "
+						+ subject);
 				isRFC822 = false;
 			}
 			if (isRFC822) {
 				// recursive extraction of a message in attachment...
 				attachedMessage = true;
 				logWarning("mailextract: Attached message extraction from message " + subject);
-				extractAttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent,writeFlag);
+				extractAttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent, writeFlag);
 			} else if (writeFlag) {
 				// standard attachment file
-				extractOneMessageAttachment(messageNode, a.filename, a.rawContent,writeFlag);
+				extractOneMessageAttachment(messageNode, a.filename, a.rawContent, writeFlag);
 			}
 		}
 		if (attachedMessage && writeFlag) {

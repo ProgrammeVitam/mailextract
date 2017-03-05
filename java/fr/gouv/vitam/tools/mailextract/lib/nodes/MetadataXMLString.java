@@ -72,18 +72,23 @@ public class MetadataXMLString extends MetadataXML {
 		return encodeXMLString(value);
 	}
 
-	// TODO préciser l'encodage des métadonnées dans le JSON
+	// TODO préciser l'encodage des métadonnées dans le XML
 	// escape some problematic characters in JSON
 	private static String encodeXMLString(String in) {
-		in = in.replace("\\", "\\\\");
-		in = in.replace("\n", "\\n");
-		in = in.replace("\r", "\\r");
-		in = in.replace("\t", "\\t");
+//		in = in.replace("\\", "\\\\");
+//		in = in.replace("\n", "\\n");
+//		in = in.replace("\r", "\\r");
+//		in = in.replace("\t", "\\t");
+		in = in.replace("&amp;","&");
+		in = in.replace("&quot;","\"");
+		in = in.replace("&apos;","'");
+		in = in.replace("&lt;","<");
+		in = in.replace("&gt;",">");
+		in = in.replace("&", "&amp;");
 		in = in.replace("\"", "&quot;");
 		in = in.replace("'", "&apos;");
 		in = in.replace("<", "&lt;");
 		in = in.replace(">", "&gt;");
-		in = in.replace("&", "&amp;");
 
 		return in;
 	}

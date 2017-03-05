@@ -432,7 +432,6 @@ public class ArchiveUnit {
 
 		// write objects files
 		if (!objects.isEmpty()) {
-			// TODO improve generator_seda
 			for (ArchiveObject o : objects) {
 				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + o.filename, o.rawContent);
 			}
