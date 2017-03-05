@@ -1,3 +1,5 @@
-mailextract.jar
-windows/mailextract.exe
-/target/
+# Compiled source #
+###################
+windows\*.exe
+target\*.jar
+
