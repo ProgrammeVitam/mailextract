@@ -1,7 +1,7 @@
 VITAM TOOLS-MAILEXTRACT
 =======================
 
-This project implement a local or distant mail box extraction application (class MailExtract) and the really operational class (class StoreExtractor) that can be used elsewhere.
+This project implement a local or distant mail box extraction application (class MailExtractApp) and the really operational class (class StoreExtractor) that can be used elsewhere.
 It uses JavaMail library for distant imap(s) and local Thunderbird extraction, and java-libpst for local Outlook extraction (thanks to  to Richard Johnson http://github.com/rjohnsondev).
 It's a standard maven project (quickstart archetype) with full javadoc (in /doc)
 

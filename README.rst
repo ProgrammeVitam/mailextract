@@ -1,7 +1,7 @@
 VITAM TOOLS-MAILEXTRACT
 =======================
 
-Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtract) et l'ensemble de classe permettant l'implémentation de la fonction ailleurs (passage par la classe StoreExtractor).
+Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtractApp) et l'ensemble de classe permettant l'implémentation de la fonction ailleurs (passage par la classe StoreExtractor).
 
 Il utilise la bibliothèque JavaMail pour l'extraction de boites distantes (imap,imaps...) et dans les fichiers Thunderbird.
 
