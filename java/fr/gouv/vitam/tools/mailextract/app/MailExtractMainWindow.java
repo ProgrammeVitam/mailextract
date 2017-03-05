@@ -1,3 +1,29 @@
+/**
+ * Copyright French Prime minister Office/SGMAP/DINSIC/Vitam Program (2015-2019)
+ *
+ * contact.vitam@culture.gouv.fr
+ * 
+ * This software is a computer program whose purpose is to implement a digital archiving back-office system managing
+ * high volumetry securely and efficiently.
+ *
+ * This software is governed by the CeCILL 2.1 license under French law and abiding by the rules of distribution of free
+ * software. You can use, modify and/ or redistribute the software under the terms of the CeCILL 2.1 license as
+ * circulated by CEA, CNRS and INRIA at the following URL "http://www.cecill.info".
+ *
+ * As a counterpart to the access to the source code and rights to copy, modify and redistribute granted by the license,
+ * users are provided only with a limited warranty and the software's author, the holder of the economic rights, and the
+ * successive licensors have only limited liability.
+ *
+ * In this respect, the user's attention is drawn to the risks associated with loading, using, modifying and/or
+ * developing or reproducing the software by the user in light of its specific status of free software, that may mean
+ * that it is complicated to manipulate, and that also therefore means that it is reserved for developers and
+ * experienced professionals having in-depth computer knowledge. Users are therefore encouraged to load and test the
+ * software's suitability as regards their requirements in conditions enabling the security of their systems and/or data
+ * to be ensured and, more generally, to use and operate it in the same conditions as regards security.
+ *
+ * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
+ * accept its terms.
+ */
 package fr.gouv.vitam.tools.mailextract.app;
 
 import javax.swing.JFrame;
@@ -18,60 +44,115 @@ import javax.swing.JComboBox;
 import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import java.awt.Font;
 
+/**
+ * MailExtractMainWindow class for the main window with all parameters field and console text area
+ */
 public class MailExtractMainWindow extends JFrame {
 
 	private static final long serialVersionUID = 4607177374736676766L;
 
-	private MailExtractApp app;
+	private MailExtractGraphicApp app;
 
+	/** The folder field. */
 	JTextField folderField;
+	
+	/** The savedir field. */
 	JTextField savedirField;
 
+	/** The local radio button. */
 	JRadioButton localRadioButton;
+	
+	/** The thunderbird radio button. */
 	JRadioButton thunderbirdRadioButton;
+	
+	/** The outlook radio button. */
 	JRadioButton outlookRadioButton;
+	
+	/** The name label. */
 	JLabel nameLabel;
+	
+	/** The name field. */
 	JTextField nameField;
+	
+	/** The container label. */
 	JLabel containerLabel;
+	
+	/** The container field. */
 	JTextField containerField;
+	
+	/** The container button. */
 	JButton containerButton;
 	
+	/** The protocole radio button. */
 	JRadioButton protocoleRadioButton;
+	
+	/** The imap radio button. */
 	JRadioButton imapRadioButton;
+	
+	/** The imaps radio button. */
 	JRadioButton imapsRadioButton;
+	
+	/** The server label. */
 	JLabel serverLabel;
+	
+	/** The server field. */
 	JTextField serverField;
+	
+	/** The user label. */
 	JLabel userLabel;
+	
+	/** The user field. */
 	JTextField userField;
+	
+	/** The password label. */
 	JLabel passwordLabel;
+	
+	/** The password field. */
 	JTextField passwordField;	
 	
+	/** The loglevel combo box. */
 	JComboBox loglevelComboBox;
 	
+	/** The warning check box. */
 	JCheckBox warningCheckBox;
+	
+	/** The keeponlydeep check box. */
 	JCheckBox keeponlydeepCheckBox;
+	
+	/** The dropemptyfolders check box. */
 	JCheckBox dropemptyfoldersCheckBox;
+	
+	/** The nameshortened check box. */
 	JCheckBox nameshortenedCheckBox;
+	
+	/** The console text area. */
 	JTextArea consoleTextArea;
 	private JScrollPane scrollPane;
 		
-	public MailExtractApp getApp() {
+	/**
+	 * Gets the global graphic app.
+	 *
+	 * @return the app
+	 */
+	public MailExtractGraphicApp getApp() {
 		return app;
 	}
 
 	/**
-	 * Create the application.
+	 * Create the main window and initialize all the frames.
+	 *
+	 * @param app
+	 *            the app
 	 */
-	public MailExtractMainWindow(MailExtractApp app) {
+	public MailExtractMainWindow(MailExtractGraphicApp app) {
 		super();
 		this.app = app;
 		initialize();
 	}
 
-	/**
-	 * Initialize the contents of the frame.
-	 */
+	// Initialize the contents of the frame.
 	private void initialize() {
 		java.net.URL imageURL = getClass().getClassLoader().getResource("images/Logo48.png");
 		if (imageURL != null) {
@@ -92,6 +173,7 @@ public class MailExtractMainWindow extends JFrame {
 		String[] loglevelStrings={"OFF","SEVERE","WARNING","INFO","FINE","FINER","FINEST"};
 		
 		consoleTextArea = new JTextArea();
+		consoleTextArea.setFont(new Font("Courier 10 Pitch", Font.BOLD, 12));
 		consoleTextArea.setLineWrap(true);
 		
 		scrollPane = new JScrollPane(consoleTextArea);
@@ -151,7 +233,6 @@ public class MailExtractMainWindow extends JFrame {
 		getContentPane().add(warningCheckBox, gbc_warningCheckBox);
 		
 		loglevelComboBox = new JComboBox(loglevelStrings);
-		loglevelComboBox.setEditable(true);
 		GridBagConstraints gbc_loglevelComboBox = new GridBagConstraints();
 		gbc_loglevelComboBox.insets = new Insets(0, 0, 5, 5);
 		gbc_loglevelComboBox.fill = GridBagConstraints.HORIZONTAL;
@@ -449,19 +530,5 @@ public class MailExtractMainWindow extends JFrame {
 		groupProtocol.add(imapsRadioButton);
 		
 		pack();
-	}
-
-	void setRecordGrpOnly(boolean recordGrpOnly) {
-	}
-
-	void setFileName(boolean fileName) {
-	}
-
-	
-	void reload() {
-		resetPanes();
-	}
-
-	void resetPanes() {
 	}
 }

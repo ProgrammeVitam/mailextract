@@ -34,10 +34,10 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 /**
- * JavaMail Message for Thunderbird mbox directory/file structure.
+ * JavaMail Message for for RFC822 uniq message file.
  * <p>
  * This class as the only action to use the general parse method of MimeMessage
- * on the InputStream constructed in ThunderMboxFolder
+ * on the InputStream constructed in RFC822Folder
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.

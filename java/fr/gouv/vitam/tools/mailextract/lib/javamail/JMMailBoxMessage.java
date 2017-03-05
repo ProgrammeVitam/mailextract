@@ -41,7 +41,6 @@ import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxMessage;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 
-// TODO: Auto-generated Javadoc
 /**
  * MailBoxMessage sub-class for mail boxes extracted through JavaMail library.
  * <p>

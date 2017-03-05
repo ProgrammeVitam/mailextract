@@ -48,6 +48,9 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 
+/**
+ * Class for the RFC822 files identification tool.
+ */
 public class RFC822Identificator {
 	private static final int MAX_TRIES = 3;
 	private static final long MILLI_SECONDS_BETWEEN_TRIES = 1000;
@@ -67,9 +70,7 @@ public class RFC822Identificator {
 	/** * Default ObjectMapper */
 	private ObjectMapper objectMapper;
 
-	/**
-	 * Private constructor.
-	 */
+	// private constructor trying to find Siegfried server connection.
 	private RFC822Identificator() {
 		httpClient = HttpClients.createDefault();
 
@@ -88,9 +89,9 @@ public class RFC822Identificator {
 		}
 	}
 
+	// construct an ObjectMapper to interact with Siegfried
 	private static final ObjectMapper buildObjectMapper(JsonFactory jsonFactory) {
 		final ObjectMapper objectMapper = new ObjectMapper(jsonFactory);
-		// objectMapper.registerModule(new JavaTimeModule());
 		objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.UPPER_CAMEL_CASE);
 		objectMapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
 		objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
@@ -110,11 +111,13 @@ public class RFC822Identificator {
 	}
 
 	/**
-	 * Gets the mime type.
+	 * Gets the mime type, using Tika library and Siegfried server if listening
 	 *
 	 * @param rawContent
 	 *            the raw content
 	 * @return the mime type
+	 * @throws ExtractionException
+	 *             the extraction exception
 	 */
 	public boolean isRFC822(byte[] rawContent) throws ExtractionException {
 		String mimeType;
@@ -137,6 +140,7 @@ public class RFC822Identificator {
 		return false;
 	}
 
+	// ask Siegfried for the mime type
 	private String getSiegFriedMimeType(byte[] rawContent) throws ExtractionException {
 		int tries = 0;
 		String mimeType = "UNKNOWN";
@@ -171,11 +175,11 @@ public class RFC822Identificator {
 		try {
 			Thread.sleep(ms);
 		} catch (InterruptedException e) {// NOSONAR : This should never happen
-
 		}
 
 	}
 
+	// call the Siegfried server for complete identification of a raw content
 	private String callSiegfried(String siegfriedURL, byte[] rawContent) throws ExtractionException {
 		String returnSiegfriedValue = null;
 

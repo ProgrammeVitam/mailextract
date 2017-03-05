@@ -30,11 +30,19 @@ package fr.gouv.vitam.tools.mailextract.lib.nodes;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Class for a list of metadata XML representation
+ * <p> 
+ * This very simple class is aimed to construct and write metadata XML structure.
+ */
 public class MetadataXMLList extends MetadataXML {
 
 	/** The XML node list. */
 	private List<MetadataXMLNode> nodelist;
 
+	/**
+	 * Instantiates a new metadata XML list.
+	 */
 	public MetadataXMLList() {
 		this.nodelist=new ArrayList<MetadataXMLNode>();
 	}
@@ -71,8 +79,8 @@ public class MetadataXMLList extends MetadataXML {
 	/**
 	 * Adds an MetadataXMLNode to the list.
 	 *
-	 * @param value
-	 *            MetaData XML node
+	 * @param metadataxmlnode
+	 *            the metadata xml node
 	 */
 	public void addMetadataXMLNode(MetadataXMLNode metadataxmlnode) {
 		if ((metadataxmlnode != null) && !metadataxmlnode.isEmpty())

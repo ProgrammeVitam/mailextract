@@ -102,8 +102,7 @@ public abstract class MailBoxFolder {
 	 *            the father
 	 */
 	protected void finalizeMailBoxFolder(MailBoxFolder father) {
-		folderArchiveUnit = new ArchiveUnit(storeExtractor, father.folderArchiveUnit,
-				"Folder", getName());
+		folderArchiveUnit = new ArchiveUnit(storeExtractor, father.folderArchiveUnit, "Folder", getName());
 
 	}
 
@@ -260,7 +259,7 @@ public abstract class MailBoxFolder {
 		// extract all messages in the folder to the unit directory
 		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
-		extractSubFolders(0,writeFlag);
+		extractSubFolders(0, writeFlag);
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
 		storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
@@ -294,15 +293,16 @@ public abstract class MailBoxFolder {
 		// extract all messages in the folder to the unit directory
 		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
-		extractSubFolders(level,writeFlag);
+		extractSubFolders(level, writeFlag);
 		if (folderMessagesCount + folderSubFoldersCount != 0 || (!storeExtractor
 				.hasOptions(StoreExtractor.CONST_DROP_EMPTY_FOLDERS)
 				&& !(level == 1 && storeExtractor.hasOptions(StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)))) {
 			// get specific folder metadata to the unit
-			// compute and add to the folder ArchiveUnit the expected folder metadata
+			// compute and add to the folder ArchiveUnit the expected folder
+			// metadata
 			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
 			folderArchiveUnit.addMetadata("Title", getName(), true);
-			folderArchiveUnit.addMetadata("Description", "Dossier de messagerie :"+getFullName(), true);
+			folderArchiveUnit.addMetadata("Description", "Dossier de messagerie :" + getFullName(), true);
 			if (dateRange.isDefined()) {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
@@ -343,7 +343,7 @@ public abstract class MailBoxFolder {
 	protected abstract void doExtractFolderMessages(boolean writeFlag) throws ExtractionException;
 
 	// encapsulate the subclasses real processing method
-	private void extractSubFolders(int level,boolean writeFlag) throws ExtractionException {
+	private void extractSubFolders(int level, boolean writeFlag) throws ExtractionException {
 		folderSubFoldersCount = 0;
 		if (hasSubfolders())
 			doExtractSubFolders(level, writeFlag);
@@ -381,7 +381,8 @@ public abstract class MailBoxFolder {
 	 */
 	public void listFolder(boolean stats) throws ExtractionException {
 		// define a specific name "[root]" for the root folder
-		String fullName;
+		String fullName,tmp;
+		
 		fullName = getFullName();
 		if (fullName == null || fullName.isEmpty())
 			fullName = "[root]";
@@ -391,11 +392,10 @@ public abstract class MailBoxFolder {
 			// inspect all messages in the folder for statistics
 			listFolderMessages(stats);
 			// expose this folder statistics
-			String size = Double
-					.toString(Math.round(((double) folderMessagesRawSize) * 100.0 / (1024.0 * 1024.0)) / 100.0);
-			System.out.println(Integer.toString(folderMessagesCount) + " messages\t " + size + " MBytes\t " + fullName);
-			getLogger().fine("mailextract: " + Integer.toString(folderMessagesCount) + " messages\t " + size
-					+ " MBytes\t " + fullName);
+			tmp= String.format("%5d messages   %7.2f MBytes    %s", folderMessagesCount,
+					((double) folderMessagesRawSize)/ (1024.0 * 1024.0), fullName);
+			System.out.println(tmp);
+			getLogger().fine("mailextract: " + tmp);
 		} else {
 			System.out.println(fullName);
 		}

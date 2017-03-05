@@ -33,13 +33,14 @@ import java.net.URLDecoder;
 import javax.mail.*;
 import javax.mail.Folder;
 
+// TODO: Auto-generated Javadoc
 /**
- * JavaMail Store for Thunderbird mbox directory/file structure.
+ * JavaMail Store for RFC822 uniq message file.
  * <p><b>Warning:</b>Only for reading and without file locking or new messages management.
  */
 public class RFC822Store extends Store {
 
-	/** Path to the target Thunderbird mbox directory/file structure **/
+	/** Raw content of the uniq message file **/
 	private byte[] rawContent;
 
 	/**
@@ -60,9 +61,8 @@ public class RFC822Store extends Store {
 	 * and defined directory availability (not in params)
 	 * 
 	 * <p>
-	 * Here control the params coherence RFC822 single mail
-	 * rfc822://localhost
-	 * 
+	 * Here control the params coherence RFC822 single mail rfc822://localhost.
+	 *
 	 * @param host
 	 *            only localhost
 	 * @param port
@@ -101,9 +101,8 @@ public class RFC822Store extends Store {
 	/**
 	 * Gets the raw binary content.
 	 *
-	 * @param rawContent
+	 * @return the raw content
 	 *            the binary in memory mail content
-	 *            
 	 */
 	public byte[] getRawContent() {
 		return rawContent;
@@ -111,6 +110,8 @@ public class RFC822Store extends Store {
 
 	/**
 	 * Verify if a raw binary content exists.
+	 *
+	 * @return true, if successful
 	 */
 	public boolean hasRawContent() {
 		return !((rawContent==null) || (rawContent.length==0));

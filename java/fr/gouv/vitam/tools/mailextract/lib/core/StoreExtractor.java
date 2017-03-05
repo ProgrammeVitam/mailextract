@@ -476,6 +476,9 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	public void listAllFolders(boolean stats) throws ExtractionException {
+		String time, tmp;
+		Duration d;
+
 		Instant start = Instant.now();
 
 		writeTargetLog();
@@ -486,23 +489,17 @@ public abstract class StoreExtractor {
 		Instant end = Instant.now();
 		System.out.println("--------------------------------------------------------------------------------");
 
+		d = Duration.between(start, end);
+		time = String.format("%dm%02ds", d.toMinutes(), d.minusMinutes(d.toMinutes()).getSeconds());
+		tmp = String.format("Terminated in %s listing %d folders", time, getFolderTotalCount());
 		if (stats) {
-			String size = Double.toString(Math.round(((double) getTotalRawSize()) * 100.0 / (1024.0 * 1024.0)) / 100.0);
-			System.out.println("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders with "
-					+ Integer.toString(getTotalMessagesCount()) + " messages, for " + size + " MBytes, and "
-					+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
-			getLogger().info("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders with "
-					+ Integer.toString(getTotalMessagesCount()) + " messages, for " + size + " MBytes, and "
-					+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
-		} else {
-			System.out.println("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders");
-			getLogger().info("Terminated in " + Duration.between(start, end).toString() + " listing "
-					+ Integer.toString(getFolderTotalCount()) + " folders");
+			tmp += String.format(" with %d messages, for %.2f MBytes, and %d attached messages",
+					getTotalMessagesCount(), ((double) getTotalRawSize()) / (1024.0 * 1024.0),
+					getTotalAttachedMessagesCount());
 		}
 
+		System.out.println(tmp);
+		getLogger().info(tmp);
 	}
 
 }

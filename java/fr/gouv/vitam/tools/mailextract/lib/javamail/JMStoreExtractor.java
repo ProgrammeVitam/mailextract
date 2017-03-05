@@ -149,12 +149,6 @@ public class JMStoreExtractor extends StoreExtractor {
 	/**
 	 * Instantiates a new JavaMail StoreExtractor for single mail container.
 	 *
-	 * @param protocol
-	 *            Protocol used for extraction (imap| thundermbox [not tested
-	 *            gimap| pop3])
-	 * @param folder
-	 *            Path of the extracted folder in the account mail box, can be
-	 *            null if default root folder
 	 * @param destRootPath
 	 *            Root path of the extraction directory
 	 * @param destName

@@ -36,6 +36,9 @@ import org.apache.tika.exception.TikaException;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 
+/**
+ * Class for the text extraction tool. It uses Tika library.
+ */
 public class FileTextExtractor {
 
 	/** Singleton instance **/

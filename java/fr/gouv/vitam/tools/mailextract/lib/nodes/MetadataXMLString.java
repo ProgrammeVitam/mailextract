@@ -27,6 +27,12 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
+/**
+ * Class for a XML string value in metadata 
+ * <p>
+ * This very simple class is aimed to construct and write metadata XML
+ * structure.
+ */
 public class MetadataXMLString extends MetadataXML {
 
 	/** String value. */

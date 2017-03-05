@@ -1,13 +1,34 @@
+/**
+ * Copyright French Prime minister Office/SGMAP/DINSIC/Vitam Program (2015-2019)
+ *
+ * contact.vitam@culture.gouv.fr
+ * 
+ * This software is a computer program whose purpose is to implement a digital archiving back-office system managing
+ * high volumetry securely and efficiently.
+ *
+ * This software is governed by the CeCILL 2.1 license under French law and abiding by the rules of distribution of free
+ * software. You can use, modify and/ or redistribute the software under the terms of the CeCILL 2.1 license as
+ * circulated by CEA, CNRS and INRIA at the following URL "http://www.cecill.info".
+ *
+ * As a counterpart to the access to the source code and rights to copy, modify and redistribute granted by the license,
+ * users are provided only with a limited warranty and the software's author, the holder of the economic rights, and the
+ * successive licensors have only limited liability.
+ *
+ * In this respect, the user's attention is drawn to the risks associated with loading, using, modifying and/or
+ * developing or reproducing the software by the user in light of its specific status of free software, that may mean
+ * that it is complicated to manipulate, and that also therefore means that it is reserved for developers and
+ * experienced professionals having in-depth computer knowledge. Users are therefore encouraged to load and test the
+ * software's suitability as regards their requirements in conditions enabling the security of their systems and/or data
+ * to be ensured and, more generally, to use and operate it in the same conditions as regards security.
+ *
+ * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
+ * accept its terms.
+ */
 package fr.gouv.vitam.tools.mailextract.app;
 
-import java.awt.EventQueue;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Properties;
 import java.util.logging.ConsoleHandler;
@@ -18,8 +39,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import javax.swing.JFileChooser;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
@@ -27,270 +46,15 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
-public class MailExtractApp implements ActionListener, Runnable {
+/**
+ * MailExtractApp class for launching the command or the graphic application.
+ */
+public class MailExtractApp {
 
-	public MailExtractMainWindow mainWindow;
-	static public Logger logger;
-
-	// do option parsing in static main
-	String destRootPath = "", destName = "";
-	String protocol = "", server = "localhost", user = "", password = "", container = "", folder = "";
-	int storeExtractorOptions = 0;
-	boolean local = true;;
-	String logLevel = "";
-
-	private MailExtractApp(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int storeExtractorOptions, boolean local) {
-		this.protocol = protocol;
-		this.server = server;
-		this.user = user;
-		this.password = password;
-		this.container = container;
-		this.folder = folder;
-		this.destRootPath = destRootPath;
-		this.destName = destName;
-		this.storeExtractorOptions = storeExtractorOptions;
-		this.local = local;
-
-		EventQueue.invokeLater(this);
-	}
-
-	public void run() {
-		try {
-			mainWindow = new MailExtractMainWindow(this);
-			insertOptions();
-			redirectSystemStreams();
-			mainWindow.setVisible(true);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private void insertOptions() {
-		if (local) {
-			mainWindow.localRadioButton.doClick();
-			if (protocol.equals("libpst"))
-				mainWindow.outlookRadioButton.doClick();
-			else
-				mainWindow.thunderbirdRadioButton.doClick();
-			mainWindow.containerField.setText(container);
-		} else {
-			mainWindow.protocoleRadioButton.doClick();
-			if (protocol.equalsIgnoreCase("imap"))
-				mainWindow.imapRadioButton.doClick();
-			else
-				mainWindow.imapsRadioButton.doClick();
-			mainWindow.userField.setText(user);
-			mainWindow.passwordField.setText(password);
-			mainWindow.serverField.setText(server);
-		}
-		mainWindow.folderField.setText(folder);
-		mainWindow.savedirField.setText(destRootPath);
-		mainWindow.nameField.setText(destName);
-
-		if ((storeExtractorOptions | StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS) != 0) {
-			mainWindow.keeponlydeepCheckBox.setSelected(true);
-		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_DROP_EMPTY_FOLDERS) != 0) {
-			mainWindow.dropemptyfoldersCheckBox.setSelected(true);
-		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_WARNING_MSG_PROBLEM) != 0) {
-			mainWindow.warningCheckBox.setSelected(true);
-		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_NAMES_SHORTENED) != 0) {
-			mainWindow.nameshortenedCheckBox.setSelected(true);
-		}
-
-	}
-
-	public void actionPerformed(ActionEvent e) {
-		String command = e.getActionCommand();
-
-		// global panel local or protocole enable/disable
-		if (command.equals("local")) {
-			mainWindow.thunderbirdRadioButton.setEnabled(true);
-			mainWindow.outlookRadioButton.setEnabled(true);
-			mainWindow.containerLabel.setEnabled(true);
-			mainWindow.containerField.setEnabled(true);
-			mainWindow.containerButton.setEnabled(true);
-			mainWindow.imapRadioButton.setEnabled(false);
-			mainWindow.imapsRadioButton.setEnabled(false);
-			mainWindow.serverLabel.setEnabled(false);
-			mainWindow.serverField.setEnabled(false);
-			mainWindow.userLabel.setEnabled(false);
-			mainWindow.userField.setEnabled(false);
-			mainWindow.passwordLabel.setEnabled(false);
-			mainWindow.passwordField.setEnabled(false);
-		} else if (command.equals("protocole")) {
-			mainWindow.thunderbirdRadioButton.setEnabled(false);
-			mainWindow.outlookRadioButton.setEnabled(false);
-			mainWindow.containerLabel.setEnabled(false);
-			mainWindow.containerField.setEnabled(false);
-			mainWindow.containerButton.setEnabled(false);
-			mainWindow.imapRadioButton.setEnabled(true);
-			mainWindow.imapsRadioButton.setEnabled(true);
-			mainWindow.serverLabel.setEnabled(true);
-			mainWindow.serverField.setEnabled(true);
-			mainWindow.userLabel.setEnabled(true);
-			mainWindow.userField.setEnabled(true);
-			mainWindow.passwordLabel.setEnabled(true);
-			mainWindow.passwordField.setEnabled(true);
-		} else if (command.equals("container")) {
-			String filename = selectPath(false);
-			if (filename != null)
-				mainWindow.containerField.setText(filename);
-		} else if (command.equals("savedir")) {
-			String dirname = selectPath(true);
-			if (dirname != null)
-				mainWindow.savedirField.setText(dirname);
-		} else if (command.equals("list"))
-			doAction(LIST_ACTION);
-		else if (command.equals("stat"))
-			doAction(STAT_ACTION);
-		else if (command.equals("extract"))
-			doAction(EXTRACT_ACTION);
-	}
-
-	private String selectPath(boolean fileBool) {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser
-				.setFileSelectionMode((fileBool ? JFileChooser.DIRECTORIES_ONLY : JFileChooser.FILES_AND_DIRECTORIES));
-		fileChooser.setFileHidingEnabled(false);
-		int returnVal = fileChooser.showOpenDialog(this.mainWindow);
-
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = fileChooser.getSelectedFile();
-			return (file.getAbsolutePath());
-		} else
-			return null;
-	}
-
-	static final int LIST_ACTION = 1;
-	static final int STAT_ACTION = 2;
-	static final int EXTRACT_ACTION = 3;
-
-	void doAction(int actionNumber) {
-		parseParams();
-
-		new MailExtractThread(actionNumber, protocol, server, user, password, container, folder, destRootPath, destName,
-				storeExtractorOptions, logLevel).start();
-	}
-
-	void parseParams() {
-		destRootPath = "";
-		destName = "";
-		protocol = "";
-		server = "localhost";
-		user = "";
-		password = "";
-		container = "";
-		folder = "";
-		storeExtractorOptions = 0;
-		local = true;
-
-		// local
-		if (mainWindow.localRadioButton.isSelected()) {
-			if (mainWindow.thunderbirdRadioButton.isSelected())
-				protocol = "thundermbox";
-			else
-				protocol = "libpst";
-			container = mainWindow.containerField.getText();
-		}
-		// server
-		else {
-			if (mainWindow.imapsRadioButton.isSelected())
-				protocol = "imaps";
-			else
-				protocol = "imap";
-			server = mainWindow.serverField.getText();
-			user = mainWindow.userField.getText();
-			password = mainWindow.passwordField.getText();
-		}
-		folder = mainWindow.folderField.getText();
-		destRootPath = mainWindow.savedirField.getText();
-		destName = mainWindow.nameField.getText();
-
-		if (mainWindow.keeponlydeepCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS;
-		}
-		if (mainWindow.dropemptyfoldersCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_DROP_EMPTY_FOLDERS;
-		}
-		if (mainWindow.warningCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_WARNING_MSG_PROBLEM;
-		}
-		storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
-		logLevel = (String) mainWindow.loglevelComboBox.getSelectedItem();
-	}
-
-	// generate a specific logger at the loglevel defined in constructor
-	private static Logger generateLogger(String fileName, Level logLevel) throws Exception {
-		Logger logger;
-		try {
-			Properties props = System.getProperties();
-			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-			logger = Logger.getLogger(MailExtractApp.class.getName());
-			logger.setLevel(logLevel);
-
-			Formatter simpleFormatter;
-			simpleFormatter = new SimpleFormatter();
-
-			if (logLevel != Level.OFF) {
-				Handler fileHandler = new FileHandler(fileName);
-				fileHandler.setFormatter(simpleFormatter);
-				fileHandler.setLevel(logLevel);
-				logger.addHandler(fileHandler);
-			}
-
-			Handler consoleHandler = new ConsoleHandler();
-			consoleHandler.setFormatter(simpleFormatter);
-			consoleHandler.setLevel(logLevel);
-			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
-				consoleHandler.setEncoding("Cp850");
-			logger.addHandler(consoleHandler);
-
-			// don't use ConsoleHandler at global level
-			logger.setUseParentHandlers(false);
-		} catch (IOException e) {
-			throw new Exception("mailextract: Can't create logger");
-		}
-		return logger;
-	}
-
-	// try if possible to log in the store extractor logger all the information
-	// about the fatal error
-	final static void logFatalError(Exception e, StoreExtractor storeExtractor, Logger logger) {
-		logger.severe("Terminated with unrecoverable error");
-		if (!e.getMessage().isEmpty())
-			logger.severe(e.getMessage());
-		logger.severe(getPrintStackTrace(e));
-		if (storeExtractor == null
-				|| storeExtractor.getFolderTotalCount() + storeExtractor.getTotalMessagesCount() == 0)
-			logger.severe("No writing done");
-		else
-			logger.severe("Partial writing done " + Integer.toString(storeExtractor.getFolderTotalCount())
-					+ " folders and " + Integer.toString(storeExtractor.getTotalMessagesCount()) + " messages");
-
-	}
-
-	// make a String from the stack trace
-	final private static String getPrintStackTrace(Exception e) {
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		PrintWriter p = new PrintWriter(baos);
-
-		e.printStackTrace(p);
-		p.close();
-		return baos.toString();
-	}
-
-	static MailExtractApp theApp;
-
-	public static MailExtractApp getTheApp() {
-		return theApp;
-	}
+	static private Logger logger;
 
 	// define the jopt option parser
-	final static private OptionParser createOptionParser() {
+	private final static OptionParser createOptionParser() {
 		OptionParser parser;
 
 		parser = new OptionParser();
@@ -318,6 +82,20 @@ public class MailExtractApp implements ActionListener, Runnable {
 		return parser;
 	}
 
+	/**
+	 * The main method for both command and graphic version.
+	 *
+	 * @param args
+	 *            the arguments
+	 * @throws ClassNotFoundException
+	 *             the class not found exception
+	 * @throws InstantiationException
+	 *             the instantiation exception
+	 * @throws IllegalAccessException
+	 *             the illegal access exception
+	 * @throws UnsupportedLookAndFeelException
+	 *             the unsupported look and feel exception
+	 */
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
 			IllegalAccessException, UnsupportedLookAndFeelException {
 		UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
@@ -355,7 +133,7 @@ public class MailExtractApp implements ActionListener, Runnable {
 		// non specific option parsing
 		if (options.has("verbatim"))
 			logLevel = (String) options.valueOf("verbatim");
-		else if (options.has("l") || options.has("z"))
+		else if (options.has("l") || options.has("z") || (!options.has("l") && !options.has("z") && !options.has("x")))
 			logLevel = "OFF";
 		else
 			logLevel = "INFO";
@@ -448,8 +226,8 @@ public class MailExtractApp implements ActionListener, Runnable {
 
 		// if no do option graphic version
 		if (!options.has("l") && !options.has("z") && !options.has("x"))
-			theApp = new MailExtractApp(protocol, server, user, password, container, folder, destRootPath, destName,
-					storeExtractorOptions, local);
+			new MailExtractGraphicApp(protocol, server, user, password, container, folder, destRootPath, destName,
+					storeExtractorOptions, logLevel, local);
 		else {
 			StoreExtractor storeExtractor = null;
 
@@ -481,33 +259,64 @@ public class MailExtractApp implements ActionListener, Runnable {
 		}
 	}
 
-	private void updateTextArea(final String text) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				mainWindow.consoleTextArea.append(text);
+	// generate a specific logger at the loglevel defined in constructor
+	private final static Logger generateLogger(String fileName, Level logLevel) throws Exception {
+		Logger logger;
+		try {
+			Properties props = System.getProperties();
+			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
+			logger = Logger.getLogger(MailExtractApp.class.getName());
+			logger.setLevel(logLevel);
+
+			Formatter simpleFormatter;
+			simpleFormatter = new SimpleFormatter();
+
+			if (logLevel != Level.OFF) {
+				Handler fileHandler = new FileHandler(fileName);
+				fileHandler.setFormatter(simpleFormatter);
+				fileHandler.setLevel(logLevel);
+				logger.addHandler(fileHandler);
 			}
-		});
+
+			Handler consoleHandler = new ConsoleHandler();
+			consoleHandler.setFormatter(simpleFormatter);
+			consoleHandler.setLevel(logLevel);
+			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+				consoleHandler.setEncoding("Cp850");
+			logger.addHandler(consoleHandler);
+
+			// don't use ConsoleHandler at global level
+			logger.setUseParentHandlers(false);
+		} catch (IOException e) {
+			throw new Exception("mailextract: Can't create logger");
+		}
+		return logger;
 	}
 
-	private void redirectSystemStreams() {
-		OutputStream out = new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-				updateTextArea(String.valueOf((char) b));
-			}
+	// try if possible to log in the store extractor logger all the information
+	// about the fatal error
+	private final static void logFatalError(Exception e, StoreExtractor storeExtractor, Logger logger) {
+		logger.severe("Terminated with unrecoverable error");
+		if (!e.getMessage().isEmpty())
+			logger.severe(e.getMessage());
+		logger.severe(getPrintStackTrace(e));
+		if (storeExtractor == null
+				|| storeExtractor.getFolderTotalCount() + storeExtractor.getTotalMessagesCount() == 0)
+			logger.severe("No writing done");
+		else
+			logger.severe("Partial writing done " + Integer.toString(storeExtractor.getFolderTotalCount())
+					+ " folders and " + Integer.toString(storeExtractor.getTotalMessagesCount()) + " messages");
 
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				updateTextArea(new String(b, off, len));
-			}
-
-			@Override
-			public void write(byte[] b) throws IOException {
-				write(b, 0, b.length);
-			}
-		};
-
-		System.setOut(new PrintStream(out, true));
-		// System.setErr(new PrintStream(out, true));
 	}
+
+	// make a String from the stack trace
+	private final static String getPrintStackTrace(Exception e) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		PrintWriter p = new PrintWriter(baos);
+
+		e.printStackTrace(p);
+		p.close();
+		return baos.toString();
+	}
+
 }

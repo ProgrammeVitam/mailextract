@@ -38,7 +38,7 @@ import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
 
 /**
- * JavaMail Folder for Thunderbird mbox directory/file structure.
+ * JavaMail Folder simulated for RFC822 uniq message file.
  * <p>
  * This is the main class for folder analysis and message slicing.
  * <p>
@@ -285,7 +285,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public void appendMessages(Message[] msgs) throws MessagingException {
-		throw new MethodNotSupportedException("ThunderMBox: no writing supported");
+		throw new MethodNotSupportedException("RFC822: no writing supported");
 	}
 
 	/*
@@ -293,7 +293,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public Message[] expunge() throws MessagingException {
-		throw new MethodNotSupportedException("ThunderMBox: no writing supported");
+		throw new MethodNotSupportedException("RFC822: no writing supported");
 	}
 
 	/*
