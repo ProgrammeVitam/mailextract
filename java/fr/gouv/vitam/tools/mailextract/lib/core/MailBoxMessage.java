@@ -311,7 +311,7 @@ public abstract class MailBoxMessage {
 				// add object text content
 				messageNode.addObject(trimed, "object", "TextContent", 1);
 			}
-			messageNode.addMetadata("Description", "Pas de description", true);
+			else messageNode.addMetadata("Description", "Pas de description", true);
 		} else
 			messageNode.addMetadata("Description", "Pas de description", true);
 		messageNode.addPersonMetadataList("Writer", from, true);
