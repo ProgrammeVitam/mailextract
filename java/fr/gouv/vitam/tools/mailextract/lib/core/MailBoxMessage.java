@@ -272,7 +272,7 @@ public abstract class MailBoxMessage {
 	 * 
 	 * @param writeFlag
 	 *            write or not flag (no write used for stats)
-	 *            
+	 * 
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -289,28 +289,30 @@ public abstract class MailBoxMessage {
 		messageNode.addMetadata("Title", subject, true);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
 
-		if ((textContent != null) && !textContent.isEmpty()) {
-			int begBeg, begEnd, endBeg, endEnd, len;
+		if (textContent != null) {
+			String trimed = textContent.trim();
+			if (!trimed.isEmpty()) {
+				int begBeg, begEnd, endBeg, endEnd, len;
 
-			// extract description from text format
-			len = textContent.length();
-			begBeg = 0;
-			if (len <= 160) {
-				endBeg = len;
-				messageNode.addMetadata("Description", "Début du texte [" + textContent.substring(begBeg, endBeg) + "]",
-						true);
-			} else {
-				endBeg = 160;
-				endEnd = len;
-				begEnd = Math.max(endBeg, endEnd - 160);
-				messageNode.addMetadata("Description", "Début du texte [" + textContent.substring(begBeg, endBeg) + "]"
-						+ System.lineSeparator() + "Fin du texte [" + textContent.substring(begEnd, endEnd) + "]",
-						true);
-		}
-			// add object text content
-			messageNode.addObject(textContent, "object", "TextContent", 1);
-		} 
-		else
+				// extract description from text format
+				len = trimed.length();
+				begBeg = 0;
+				if (len <= 160) {
+					endBeg = len;
+					messageNode.addMetadata("Description", "Début du texte [" + trimed.substring(begBeg, endBeg) + "]",
+							true);
+				} else {
+					endBeg = 160;
+					endEnd = len;
+					begEnd = Math.max(endBeg, endEnd - 160);
+					messageNode.addMetadata("Description", "Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
+							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]", true);
+				}
+				// add object text content
+				messageNode.addObject(trimed, "object", "TextContent", 1);
+			}
+			messageNode.addMetadata("Description", "Pas de description", true);
+		} else
 			messageNode.addMetadata("Description", "Pas de description", true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
@@ -334,11 +336,6 @@ public abstract class MailBoxMessage {
 
 		// add object binary master
 		messageNode.addObject(rawContent, "object", "BinaryMaster", 1);
-
-		if ((textContent != null) && !textContent.isEmpty()) {
-			// add object text content
-			messageNode.addObject(textContent, "object", "TextContent", 1);
-		}
 
 		if (writeFlag)
 			messageNode.write();

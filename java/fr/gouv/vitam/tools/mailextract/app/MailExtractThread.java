@@ -79,8 +79,8 @@ public class MailExtractThread extends Thread {
 			Handler consoleHandler = new StdoutConsoleHandler();
 			consoleHandler.setFormatter(simpleFormatter);
 			consoleHandler.setLevel(logLevel);
-			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
-				consoleHandler.setEncoding("Cp850");
+//			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+//				consoleHandler.setEncoding("Cp850");
 			logger.addHandler(consoleHandler);
 
 			// don't use ConsoleHandler at global level
