@@ -310,10 +310,10 @@ public class ArchiveUnit {
 	}
 
 	/**
-	 * Extract a person from an address encoded. Example TOTO<toto@sample.fr>"
-	 * is extracted as:
+	 * Extract a person from an address encoded. Example TOTO
+	 * John<toto@sample.fr>" is extracted as:
 	 * <p>
-	 * FirstName="", BirthName="Toto", Identifier="toto@sample.fr"
+	 * FirstName="John", BirthName="TOTO", Identifier="toto@sample.fr"
 	 * <p>
 	 * 
 	 * @param s
@@ -323,20 +323,55 @@ public class ArchiveUnit {
 	Person extractPersonFromAddress(String s) {
 		int beg, end;
 		Person p = new Person();
+		String name, firstName, birthName;
 
-		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
-			p.identifier = s.substring(beg + 1, end).trim();
-			if (beg > 0)
-				p.birthName = s.substring(0, beg - 1).trim();
-			else
-				p.birthName = "";
-			p.firstName = "";
-		} else {
-			p.identifier = s.trim();
-			p.birthName = "";
-			p.firstName = "";
+		if ((s == null) || s.isEmpty()) {
+			p.identifier = "[Vide]";
+			p.birthName = "[Vide]";
+			p.firstName = "[Vide]";
 		}
+		try {
+			if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
+				p.identifier = s.substring(beg + 1, end).trim();
+				if (beg>0) {
+					name = s.substring(0, beg).trim();
+					beg = name.indexOf(' ');
+					if (beg != -1) 
+						beg = name.indexOf('.');
+				}
+				else {
+					if ((end = p.identifier.indexOf('@')) != -1)
+						name = p.identifier.substring(0, end);
+					else
+						name = p.identifier;
+					beg = name.indexOf('.');
+				}
+			} else {
+				p.identifier = s.trim();
+				if ((end = p.identifier.indexOf('@')) != -1)
+					name = p.identifier.substring(0, end);
+				else
+					name = p.identifier;
+				beg = name.indexOf('.');
+			}
 
+			if (beg != -1) {
+				firstName = name.substring(0, beg).trim();
+				birthName = name.substring(beg + 1).trim();
+				if ((firstName.equals(firstName.toUpperCase())) && (!birthName.equals(birthName.toUpperCase()))) {
+					p.birthName = firstName;
+					p.firstName = birthName;
+				} else {
+					p.birthName = birthName;
+					p.firstName = firstName;
+				}
+			} else {
+				p.birthName = name;
+				p.firstName = name;
+			}
+		} catch (IndexOutOfBoundsException e) {
+			System.out.println(s);
+		}
 		return p;
 	}
 

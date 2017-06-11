@@ -281,6 +281,8 @@ public abstract class MailBoxMessage {
 		ArchiveUnit messageNode = null;
 
 		// create message unit
+		if ((subject==null) || subject.isEmpty())
+			subject="[Vide]";
 		messageNode = new ArchiveUnit(mailBoxFolder.storeExtractor, mailBoxFolder.folderArchiveUnit, "Message",
 				subject);
 
@@ -311,9 +313,9 @@ public abstract class MailBoxMessage {
 				// add object text content
 				messageNode.addObject(trimed, "object", "TextContent", 1);
 			}
-			else messageNode.addMetadata("Description", "Pas de description", true);
+			else messageNode.addMetadata("Description", "[Vide]", true);
 		} else
-			messageNode.addMetadata("Description", "Pas de description", true);
+			messageNode.addMetadata("Description", "[Vide]", true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
 		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
