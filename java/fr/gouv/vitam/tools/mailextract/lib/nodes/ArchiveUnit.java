@@ -336,7 +336,7 @@ public class ArchiveUnit {
 				if (beg>0) {
 					name = s.substring(0, beg).trim();
 					beg = name.indexOf(' ');
-					if (beg != -1) 
+					if (beg == -1) 
 						beg = name.indexOf('.');
 				}
 				else {
