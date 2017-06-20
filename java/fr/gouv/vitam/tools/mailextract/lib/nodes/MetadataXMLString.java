@@ -27,6 +27,9 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
+import org.jsoup.Jsoup;
+import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
+
 /**
  * Class for a XML string value in metadata 
  * <p>
@@ -75,15 +78,7 @@ public class MetadataXMLString extends MetadataXML {
 	// TODO préciser l'encodage des métadonnées dans le XML
 	// escape some problematic characters in JSON
 	private static String encodeXMLString(String in) {
-//		in = in.replace("\\", "\\\\");
-//		in = in.replace("\n", "\\n");
-//		in = in.replace("\r", "\\r");
-//		in = in.replace("\t", "\\t");
-		in = in.replace("&amp;","&");
-		in = in.replace("&quot;","\"");
-		in = in.replace("&apos;","'");
-		in = in.replace("&lt;","<");
-		in = in.replace("&gt;",">");
+		// xml encoding
 		in = in.replace("&", "&amp;");
 		in = in.replace("\"", "&quot;");
 		in = in.replace("'", "&apos;");

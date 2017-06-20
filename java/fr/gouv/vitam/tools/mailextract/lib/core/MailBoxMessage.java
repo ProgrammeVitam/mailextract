@@ -32,7 +32,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jsoup.Jsoup;
+
 import fr.gouv.vitam.tools.mailextract.lib.formattools.FileTextExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.RFC822Identificator;
 import fr.gouv.vitam.tools.mailextract.lib.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
@@ -279,6 +282,7 @@ public abstract class MailBoxMessage {
 	 */
 	public final void extractMessage(boolean writeFlag) throws ExtractionException {
 		ArchiveUnit messageNode = null;
+		String description="[Vide]";
 
 		// create message unit
 		if ((subject==null) || subject.isEmpty())
@@ -301,41 +305,39 @@ public abstract class MailBoxMessage {
 				begBeg = 0;
 				if (len <= 160) {
 					endBeg = len;
-					messageNode.addMetadata("Description", "Début du texte [" + trimed.substring(begBeg, endBeg) + "]",
-							true);
+					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]";
 				} else {
 					endBeg = 160;
 					endEnd = len;
 					begEnd = Math.max(endBeg, endEnd - 160);
-					messageNode.addMetadata("Description", "Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
-							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]", true);
+					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
+							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]";
 				}
 				// add object text content
 				messageNode.addObject(trimed, "object", "TextContent", 1);
 			}
-			else messageNode.addMetadata("Description", "[Vide]", true);
-		} else
-			messageNode.addMetadata("Description", "[Vide]", true);
+		} 
+		
+		messageNode.addMetadata("Description", description, true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
 		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
-		// // not in SEDA ontology
-		// messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID,
-		// false);
-		// messageNode.addSameMetadataList("OriginatingSystemId-References",
-		// references, false);
-		//
-		// // not in SEDA ontology nor in the Vitam specs... (to be discussed)
-		// messageNode.addSameSubKeyedMetadataList("Sender", "Identifier",
-		// sender, false);
-		// messageNode.addSameSubKeyedMetadataList("ReplyTo", "Identifier",
-		// replyTo, false);
-		// messageNode.addSameSubKeyedMetadataList("ReturnPath", "Identifier",
-		// returnPath, false);
-
+		/* wait for multivalued unknown metadata good treatment in Vitam
+		// not in SEDA ontology
+		 
+		if ((inReplyToUID!=null) && !inReplyToUID.isEmpty())
+			messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID, false);
+		messageNode.addSameMetadataList("OriginatingSystemId-References", references, false);
+		
+		// not in SEDA ontology nor in the Vitam specs... (to be discussed)
+		messageNode.addPersonMetadataList("Sender", sender, false);
+		messageNode.addPersonMetadataList("ReplyTo", replyTo, false);
+		messageNode.addPersonMetadataList("ReturnPath", returnPath, false);
+		 */
+		
 		// add object binary master
 		messageNode.addObject(rawContent, "object", "BinaryMaster", 1);
 

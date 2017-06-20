@@ -35,6 +35,7 @@ import javax.mail.*;
 import javax.mail.internet.*;
 
 import org.jsoup.*;
+import org.jsoup.parser.Parser;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
@@ -317,6 +318,10 @@ public class JMMailBoxMessage extends MailBoxMessage {
 				}
 			}
 		}
+		
+		// to force HTML unescape even for wrongly typed (not html) parts
+		result=Parser.unescapeEntities(result, true);
+		
 		return result;
 	}
 

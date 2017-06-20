@@ -31,6 +31,7 @@ import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
@@ -73,12 +74,16 @@ public class HTMLTextExtractor {
 	 * @return formatted text
 	 */
 	public String getPlainText(Element element) {
+		String result;
+		
 		FormattingVisitor formatter = new FormattingVisitor();
 		NodeTraversor traversor = new NodeTraversor(formatter);
 		traversor.traverse(element); // walk the DOM, and call .head() and
 										// .tail() for each node
-
-		return formatter.toString();
+		// strip html tags
+		result=formatter.toString();
+		// unescape html characters
+		return Parser.unescapeEntities(result, true);
 	}
 }
 
