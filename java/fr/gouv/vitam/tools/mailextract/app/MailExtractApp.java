@@ -145,7 +145,7 @@ import joptsimple.OptionSet;
  * FINEST level)</td>
  * </tr>
  * <tr>
- * <td>--xtract</td>
+ * <td>-x</td>
  * <td>generate extraction logs</td>
  * </tr>
  * <tr>
@@ -156,14 +156,6 @@ import joptsimple.OptionSet;
  * <td>-z</td>
  * <td>access account and list folders and there statistics (no drop
  * options)</td>
- * </tr>
- * <tr>
- * <td>--xml</td>
- * <td>extract metadata in xml rather than json</td>
- * </tr>
- * <tr>
- * <td>--gs</td>
- * <td>extract metadata permitted by generator_seda in required format</td>
  * </tr>
  * </table>
  * Long options can be reduced to short ones (for example -h is equivalent to
