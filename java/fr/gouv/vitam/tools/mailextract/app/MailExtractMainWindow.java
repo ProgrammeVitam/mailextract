@@ -130,7 +130,10 @@ public class MailExtractMainWindow extends JFrame {
 	/** The console text area. */
 	JTextArea consoleTextArea;
 	private JScrollPane scrollPane;
-		
+	
+	/** The proposed log level */
+	String[] loglevelGraphicStrings={"OFF","ERREUR FATALE","AVERTISSEMENT","INFO PROCESS","INFO DOSSIERS","INFO MESSAGES","DETAIL MESSAGES"};
+
 	/**
 	 * Gets the global graphic app.
 	 *
@@ -166,11 +169,9 @@ public class MailExtractMainWindow extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.rowWeights = new double[]{0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
-		gridBagLayout.columnWeights = new double[]{0.0, 0.0, 1.0, 0.0};
+		gridBagLayout.columnWeights = new double[]{1, 1, 1, 1};
 		gridBagLayout.rowHeights = new int[]{0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 0, 0};
 		getContentPane().setLayout(gridBagLayout);
-		
-		String[] loglevelStrings={"OFF","SEVERE","WARNING","INFO","FINE","FINER","FINEST"};
 		
 		consoleTextArea = new JTextArea();
 		consoleTextArea.setFont(new Font("Courier 10 Pitch", Font.BOLD, 12));
@@ -183,7 +184,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_scrollPane.gridwidth = 4;
 		gbc_scrollPane.weightx = 1.0;
 		gbc_scrollPane.weighty = 1.0;
-		gbc_scrollPane.insets = new Insets(5, 5, 5, 5);
+		gbc_scrollPane.insets = new Insets(5, 5, 0, 0);
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.gridx = 0;
 		gbc_scrollPane.gridy = 11;
@@ -196,9 +197,9 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_nameshortenedCheckBox.gridy = 5;
 		getContentPane().add(nameshortenedCheckBox, gbc_nameshortenedCheckBox);
 		
-		JButton extractButton = new JButton("Extraire");
+		JButton extractButton = new JButton("Extraire messages");
 		GridBagConstraints gbc_extractButton = new GridBagConstraints();
-		gbc_extractButton.gridwidth = 2;
+		gbc_extractButton.gridwidth = 1;
 		gbc_extractButton.insets = new Insets(0, 0, 10, 10);
 		gbc_extractButton.gridx = 0;
 		gbc_extractButton.gridy = 10;
@@ -206,25 +207,34 @@ public class MailExtractMainWindow extends JFrame {
 		extractButton.setActionCommand("extract");
 		extractButton.addActionListener(app);
 		
-		JButton listButton = new JButton("Liste dossiers");
+		JButton listButton = new JButton("Lister dossiers");
 		GridBagConstraints gbc_listButton = new GridBagConstraints();
 		gbc_listButton.anchor = GridBagConstraints.EAST;
 		gbc_listButton.insets = new Insets(0, 0, 10, 10);
-		gbc_listButton.gridx = 2;
+		gbc_listButton.gridx = 1;
 		gbc_listButton.gridy = 10;
 		getContentPane().add(listButton, gbc_listButton);
 		listButton.setActionCommand("list");
 		listButton.addActionListener(app);
 		
-		JButton statButton = new JButton("Stats dossiers");
+		JButton statButton = new JButton("Lister stats dossiers");
 		GridBagConstraints gbc_statButton = new GridBagConstraints();
 		gbc_statButton.insets = new Insets(0, 0, 10, 10);
-		gbc_statButton.gridx = 3;
+		gbc_statButton.gridx = 2;
 		gbc_statButton.gridy = 10;
 		getContentPane().add(statButton, gbc_statButton);
 		statButton.setActionCommand("stat");
 		statButton.addActionListener(app);
 		
+		JButton emptyButton = new JButton("Vider log");
+		GridBagConstraints gbc_emptyButton = new GridBagConstraints();
+		gbc_emptyButton.insets = new Insets(0, 0, 10, 10);
+		gbc_emptyButton.gridx = 3;
+		gbc_emptyButton.gridy = 10;
+		getContentPane().add(emptyButton, gbc_emptyButton);
+		emptyButton.setActionCommand("empty");
+		emptyButton.addActionListener(app);
+
 		warningCheckBox = new JCheckBox("Remonte les pbs sur les messages");
 		GridBagConstraints gbc_warningCheckBox = new GridBagConstraints();
 		gbc_warningCheckBox.insets = new Insets(0, 0, 5, 5);
@@ -232,7 +242,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_warningCheckBox.gridy = 8;
 		getContentPane().add(warningCheckBox, gbc_warningCheckBox);
 		
-		loglevelComboBox = new JComboBox(loglevelStrings);
+		loglevelComboBox = new JComboBox(loglevelGraphicStrings);
 		GridBagConstraints gbc_loglevelComboBox = new GridBagConstraints();
 		gbc_loglevelComboBox.insets = new Insets(0, 0, 5, 5);
 		gbc_loglevelComboBox.fill = GridBagConstraints.HORIZONTAL;

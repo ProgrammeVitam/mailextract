@@ -48,7 +48,139 @@ import joptsimple.OptionSet;
 
 /**
  * MailExtractApp class for launching the command or the graphic application.
- */
+ * 
+ * <p>
+ * Main class of mailextract toolfor launching the command or the graphic application.
+ * 
+ * It performs extraction and structure listing of mail boxes from different sources:
+ * <ul>
+ * <li>IMAP or IMAPS server with user/password login</li>
+ * <li>Thunderbird directory containing mbox files and .sbd directory
+ * hierarchy</li>
+ * <li>Outlook pst file</li>
+ * </ul>
+ * 
+ * <p>
+ * The extraction generate on disk a directories/files structure convenient for
+ * SEDA archive packet (NF Z44-022). For detailed information see class
+ * {@link StoreExtractor}.
+ * 
+ * <p>
+ * The operation, extraction or listing, can be logged on console and file
+ * (root/username[-timestamp].log - cf args). At the different levels you can
+ * have: extraction errors (SEVERE), warning about extraction problems and items
+ * dropped (WARNING), information about global process (INFO), list of treated
+ * folders (FINE), list of treated messages (FINER), problems with some expected
+ * metadata (FINEST). <br>
+ * The default level of log is INFO for extracting and OFF for listing.
+ * 
+ * <p>
+ * The arguments syntax is:
+ * <table>
+ * <tr>
+ * <td>--help</td>
+ * <td>help</td>
+ * </tr>
+ * <tr>
+ * <td>--mailprotocol</td>
+ * <td>mail protocol for server access (imap|imaps...)</td>
+ * </tr>
+ * <tr>
+ * <td>--thunderbird</td>
+ * <td>thunderbird mbox directory</td>
+ * </tr>
+ * <tr>
+ * <td>--outlook</td>
+ * <td>outlook pst file</td>
+ * </tr>
+ * <tr>
+ * <td>--user</td>
+ * <td>user account name (also used for destination extraction naming)</td>
+ * </tr>
+ * <tr>
+ * <td>--password</td>
+ * <td>password</td>
+ * </tr>
+ * <tr>
+ * <td>--server</td>
+ * <td>mail server [HostName|IP](:port)</td>
+ * </tr>
+ * <tr>
+ * <td>--container</td>
+ * <td>mail container directory for mbox or file for pst</td>
+ * </tr>
+ * <tr>
+ * <td>--folder</td>
+ * <td>specific mail folder used as root for extraction or listing</td>
+ * </tr>
+ * <tr>
+ * <td>--rootdir</td>
+ * <td>root (default current directory) for output to root/username
+ * directory</td>
+ * </tr>
+ * <tr>
+ * <td>--addtimestamp</td>
+ * <td>add a timestamp to output directory (root/username-timestamp)</td>
+ * </tr>
+ * <tr>
+ * <td>--dropemptyfolders</td>
+ * <td>drop empty folders</td>
+ * </tr>
+ * <tr>
+ * <td>--keeponlydeep</td>
+ * <td>keep only empty folders not at root level</td>
+ * </tr>
+ * <tr>
+ * <td>--loglevel</td>
+ * <td>event level to log
+ * </td>
+ * </tr>
+ * <tr>
+ * <td>--namesshortened</td>
+ * <td>generate short directories and files names</td>
+ * </tr>
+ * <tr>
+ * <td>--warning</td>
+ * <td>generate warning when there's a problem on a message (otherwise log at
+ * FINEST level)</td>
+ * </tr>
+ * <tr>
+ * <td>--xtract</td>
+ * <td>generate extraction logs</td>
+ * </tr>
+ * <tr>
+ * <td>-l</td>
+ * <td>access account and list folders (no drop options)</td>
+ * </tr>
+ * <tr>
+ * <td>-z</td>
+ * <td>access account and list folders and there statistics (no drop
+ * options)</td>
+ * </tr>
+ * <tr>
+ * <td>--xml</td>
+ * <td>extract metadata in xml rather than json</td>
+ * </tr>
+ * <tr>
+ * <td>--gs</td>
+ * <td>extract metadata permitted by generator_seda in required format</td>
+ * </tr>
+ * </table>
+ * Long options can be reduced to short ones (for example -h is equivalent to
+ * --help)
+ *
+ * <p>
+ * <b>Warning:</b> Listing with detailed information is a potentially expensive
+ * operation, especially when accessing distant account, as all messages are
+ * inspected (in the case of a distant account that mean also downloaded...).
+ * 
+ * <p>
+ * Note: For now it can't extract S/MIME (ciphered and/or signed) messages.
+ * <p>
+ * It implements the operating class {@link StoreExtractor}
+ * 
+ * @author JSL
+ **/
 public class MailExtractApp {
 
 	static private Logger logger;
@@ -203,6 +335,7 @@ public class MailExtractApp {
 
 		// collect or construct all store extractor variables
 		user = (String) options.valueOf("user");
+		destName=user;
 		password = (String) options.valueOf("password");
 		server = (String) options.valueOf("server");
 		container = (String) options.valueOf("container");

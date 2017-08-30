@@ -174,7 +174,8 @@ public class ThunderMboxFileReader {
 				return true;
 			else if (line.startsWith("From - "))
 				return true;
-			getLogger().finest("mailextract.thundermbox: Misleading '"+line+"' line in file "+filePath+" at line "+Integer.toString(lineNum)+" is not considered as a message delimiter");
+			getLogger().finest("mailextract.thundermbox: Misleading '"+line+"' line in file "+filePath+
+					" at line "+Integer.toString(lineNum)+" is not considered as a message delimiter");
 			return false;
 		}
 	}

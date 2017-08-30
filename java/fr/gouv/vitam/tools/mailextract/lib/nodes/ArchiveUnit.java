@@ -112,7 +112,7 @@ public class ArchiveUnit {
 		if (unitType == null)
 			this.name = name;
 		else
-			this.name = this.normalizeUniqFilename(unitType, name);
+			this.name = this.normalizeUniqUnitname(unitType, name);
 		this.rootPath = father.getFullName();
 	}
 
@@ -476,23 +476,40 @@ public class ArchiveUnit {
 	// reduce if needed a filename conserving the extension
 	private String normalizeFilename(String filename) {
 		String result = "";
+		String extension="";
 		int len;
 
+		System.out.println("original="+filename);
+
+		// extract extension, short string after last point, if any
+		int lastPoint=filename.lastIndexOf('.');
+		if ((lastPoint!=-1) && (lastPoint>filename.length()-5)){
+			extension=filename.substring(lastPoint);
+			if (lastPoint>=1)
+				result=filename.substring(0, lastPoint);
+			else 
+				result="";
+		}
+		else 
+			result=filename;
+			
 		if (storeExtractor.hasOptions(StoreExtractor.CONST_NAMES_SHORTENED))
-			len = 8;
+			len = 48-4;
 		else
-			len = 32;
-		if (filename != null)
-			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
+			len = 128-4;
+		
+		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)
-			result = result.substring(result.length() - len);
+			result = result.substring(0,len);
 
-		return result;
+		System.out.println("normalized="+result+extension);
+		
+		return result+extension;
 	}
 
 	// create a unique name for an typed archive unit reduced if needed
-	private String normalizeUniqFilename(String type, String filename) {
+	private String normalizeUniqUnitname(String type, String filename) {
 		String result = "";
 		int len;
 

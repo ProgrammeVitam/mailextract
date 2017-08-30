@@ -203,6 +203,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			doAction(STAT_ACTION);
 		else if (command.equals("extract"))
 			doAction(EXTRACT_ACTION);
+		else if (command.equals("empty"))
+			doAction(EMPTY_LOG);
 	}
 
 	// get a file and/or directory from a standard selection dialog
@@ -230,13 +232,22 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	/** The Constant EXTRACT_ACTION. */
 	static final int EXTRACT_ACTION = 3;
 
+	/** The Constant EMPTY_LOG. */
+	static final int EMPTY_LOG = 4;
+
 	// do one of the 3 actions
 	private void doAction(int actionNumber) {
 		parseParams();
 
-		new MailExtractThread(actionNumber, protocol, server, user, password, container, folder, destRootPath, destName,
+		if (actionNumber==EMPTY_LOG){
+			mainWindow.consoleTextArea.setText("");
+		}	
+		else
+			new MailExtractThread(actionNumber, protocol, server, user, password, container, folder, destRootPath, destName,
 				storeExtractorOptions, logLevel).start();
 	}
+
+	String[] loglevelStrings={"OFF","SEVERE","WARNING","INFO","FINE","FINER","FINEST"};
 
 	// get the global parameters from the graphic fields
 	private void parseParams() {
@@ -283,7 +294,15 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			storeExtractorOptions |= StoreExtractor.CONST_WARNING_MSG_PROBLEM;
 		}
 		storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
+
+		// convert from log level name in the choice list to normalized log level
 		logLevel = (String) mainWindow.loglevelComboBox.getSelectedItem();
+		for (int i=0;i<7;i++){
+			if (logLevel==mainWindow.loglevelGraphicStrings[i]) {
+				logLevel=loglevelStrings[i];
+				break;
+			}
+		}
 	}
 
 	// used to update console text area

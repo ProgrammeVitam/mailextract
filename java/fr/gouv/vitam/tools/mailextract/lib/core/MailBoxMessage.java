@@ -251,6 +251,20 @@ public abstract class MailBoxMessage {
 	}
 
 	/**
+	 * Strip beginning < and ending > from a string
+	 */
+	private static String getTag(String str){
+		str.trim();
+		if (str.charAt(0)=='<') {
+			str=str.substring(1);
+		}
+		if (str.charAt(str.length()-1)=='>'){
+			str=str.substring(0, str.length()-1);
+		}
+		return str;
+	}
+	
+	/**
 	 * Analyze message to collect metadata and content information (protocol
 	 * specific).
 	 * 
@@ -283,6 +297,7 @@ public abstract class MailBoxMessage {
 	public final void extractMessage(boolean writeFlag) throws ExtractionException {
 		ArchiveUnit messageNode = null;
 		String description="[Vide]";
+		String content;
 
 		// create message unit
 		if ((subject==null) || subject.isEmpty())
@@ -293,31 +308,12 @@ public abstract class MailBoxMessage {
 		// metadata in SEDA 2.0-ontology order
 		messageNode.addMetadata("DescriptionLevel", "Item", true);
 		messageNode.addMetadata("Title", subject, true);
+		
+			// strip messageUID from < and >
+		messageUID=getTag(messageUID);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
 
-		if (textContent != null) {
-			String trimed = textContent.trim();
-			if (!trimed.isEmpty()) {
-				int begBeg, begEnd, endBeg, endEnd, len;
-
-				// extract description from text format
-				len = trimed.length();
-				begBeg = 0;
-				if (len <= 160) {
-					endBeg = len;
-					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]";
-				} else {
-					endBeg = 160;
-					endEnd = len;
-					begEnd = Math.max(endBeg, endEnd - 160);
-					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
-							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]";
-				}
-				// add object text content
-				messageNode.addObject(trimed, "object", "TextContent", 1);
-			}
-		} 
-		
+		description="Message extrait du contexte "+mailBoxFolder.storeExtractor.getDescription();
 		messageNode.addMetadata("Description", description, true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
@@ -338,8 +334,36 @@ public abstract class MailBoxMessage {
 		messageNode.addPersonMetadataList("ReturnPath", returnPath, false);
 		 */
 		
+		// extract text content in file format and in metadata
+		if (textContent != null) {
+			content = textContent.trim();
+			if (!content.isEmpty()) {
+//			String trimed = textContent.trim();
+//			if (!trimed.isEmpty()) {
+//				content=
+//				int begBeg, begEnd, endBeg, endEnd, len;
+//
+//				// extract description from text format
+//				len = trimed.length();
+//				begBeg = 0;
+//				if (len <= 160) {
+//					endBeg = len;
+//					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]";
+//				} else {
+//					endBeg = 160;
+//					endEnd = len;
+//					begEnd = Math.max(endBeg, endEnd - 160);
+//					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
+//							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]";
+//				}
+//				// add object text content
+//				messageNode.addObject(trimed, messageUID,".txt", "TextContent", 1);
+				messageNode.addMetadata("TextContent", content, true);
+				messageNode.addObject(content, messageUID+".txt", "TextContent", 1);
+			}
+		} 
 		// add object binary master
-		messageNode.addObject(rawContent, "object", "BinaryMaster", 1);
+		messageNode.addObject(rawContent, messageUID+".eml", "BinaryMaster", 1);
 
 		if (writeFlag)
 			messageNode.write();
@@ -365,7 +389,7 @@ public abstract class MailBoxMessage {
 		try {
 			textExtract = FileTextExtractor.getInstance().getText(rawContent);
 			if (!((textExtract == null) || textExtract.isEmpty()))
-				attachmentNode.addObject(textExtract.getBytes(), filename + ".txt", "TextContent", 1);
+				attachmentNode.addObject(textExtract.getBytes(), filename+".txt", "TextContent", 1);
 		} catch (ExtractionException ee) {
 			logWarning(
 					"mailextract: Can't extract text content from attachment " + filename + " in message " + subject);

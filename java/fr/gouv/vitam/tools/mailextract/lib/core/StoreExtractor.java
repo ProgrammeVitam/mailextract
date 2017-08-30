@@ -140,6 +140,9 @@ public abstract class StoreExtractor {
 	protected String destRootPath, destName;
 	/** Extractor options, flags coded on an int, defined thru constants **/
 	protected int options;
+	
+	/** Extractor context description */
+	protected String description;
 
 	/** Root folder for extraction (can be different form account root) **/
 	protected MailBoxFolder rootAnalysisMBFolder;
@@ -203,6 +206,8 @@ public abstract class StoreExtractor {
 		this.logger = logger;
 
 		// this.tika = new Tika();
+		
+		this.description=":p:"+protocol+":u:"+user;
 	}
 
 	/** KEEP_ONLY_DEEP_EMPTY_FOLDERS option constant */
@@ -370,6 +375,15 @@ public abstract class StoreExtractor {
 	 */
 	public boolean hasOptions(int flags) {
 		return (options & flags) != 0;
+	}
+
+	/**
+	 * Gets the extraction context description.
+	 *
+	 * @return the description String
+	 */
+	public String getDescription() {
+		return description;
 	}
 
 	/**

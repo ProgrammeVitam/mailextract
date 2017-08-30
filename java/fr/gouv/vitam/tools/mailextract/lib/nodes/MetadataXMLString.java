@@ -28,6 +28,8 @@
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
 import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 
 /**
@@ -78,6 +80,8 @@ public class MetadataXMLString extends MetadataXML {
 	// TODO préciser l'encodage des métadonnées dans le XML
 	// escape some problematic characters in JSON
 	private static String encodeXMLString(String in) {
+		// unescape HTML strings
+		in=Parser.unescapeEntities(in, true);
 		// xml encoding
 		in = in.replace("&", "&amp;");
 		in = in.replace("\"", "&quot;");
