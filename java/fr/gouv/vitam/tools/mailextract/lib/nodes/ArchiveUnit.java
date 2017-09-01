@@ -479,8 +479,6 @@ public class ArchiveUnit {
 		String extension="";
 		int len;
 
-		System.out.println("original="+filename);
-
 		// extract extension, short string after last point, if any
 		int lastPoint=filename.lastIndexOf('.');
 		if ((lastPoint!=-1) && (lastPoint>filename.length()-5)){
@@ -503,8 +501,6 @@ public class ArchiveUnit {
 		if (result.length() > len)
 			result = result.substring(0,len);
 
-		System.out.println("normalized="+result+extension);
-		
 		return result+extension;
 	}
 
