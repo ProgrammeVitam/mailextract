@@ -33,6 +33,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 
@@ -265,8 +266,8 @@ public class LPMailBoxMessage extends MailBoxMessage {
 				} catch (UnsupportedEncodingException uee) {
 					// too bad
 				}
-				logWarning("mailextract.javamail: Wrongly formatted address " + addressHeaderString
-						+ " in header " + name + " of message " + subject + ", keep raw address list in metadata");
+				logWarning("mailextract.javamail: Wrongly formatted address " + addressHeaderString + " in header "
+						+ name + " of message " + subject + ", keep raw address list in metadata");
 				addressList.add(addressHeaderString);
 				return addressList;
 			}
@@ -305,8 +306,8 @@ public class LPMailBoxMessage extends MailBoxMessage {
 					ccAndBccSet.add(normAddress);
 
 			} catch (Exception e) {
-				logWarning("mailextract.libpst: Can't get recipient number " + Integer.toString(i)
-						+ " in message " + subject);
+				logWarning("mailextract.libpst: Can't get recipient number " + Integer.toString(i) + " in message "
+						+ subject);
 			}
 		}
 
@@ -373,6 +374,8 @@ public class LPMailBoxMessage extends MailBoxMessage {
 		for (int i = 0; i < attachmentNumber; i++) {
 			try {
 				pstA = message.getAttachment(i);
+//				if (pstA.getAttachMethod()==5)
+//					System.out.println("AttachMethod="+pstA.getAttachMethod());
 				InputStream is = pstA.getFileInputStream();
 				ByteArrayOutputStream baos = new ByteArrayOutputStream();
 				byte[] buf = new byte[4096];
@@ -380,21 +383,156 @@ public class LPMailBoxMessage extends MailBoxMessage {
 				while ((bytesRead = is.read(buf)) != -1) {
 					baos.write(buf, 0, bytesRead);
 				}
-				Attachment attachment = new Attachment(pstA.getFilename(), baos.toByteArray());
+				Attachment attachment = new Attachment(pstA.getLongFilename(), baos.toByteArray(),pstA.getCreationTime(),pstA.getModificationTime(),NO_ATTACHED_MESSAGE);
 				lAttachment.add(attachment);
 			} catch (Exception e) {
-				logWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i)
-						+ " in message " + subject);
+				logWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i) + " in message "
+						+ subject);
 			}
 		}
 		return lAttachment;
 
 	}
 
-	// get the inner representation of message
-	// TODO get a good representation of rawContent nearer to eml format
+	// encode a String in quoted-printable, default MIME encoding
+	private static String encodeQP(String s) {
+		String result;
+
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try {
+			OutputStream encodedOut = MimeUtility.encode(baos, "quoted-printable");
+			encodedOut.write(s.getBytes());
+		} catch (Exception e) {
+		}
+		result = baos.toString();
+
+		return result;
+	}
+
+	// get the inner representation of message in MIME format but without attachments
+	// a small summary is added at the end to describe attachments
 	private byte[] getRawContent() {
-		return message.toString().getBytes();
+		String s, boundary;
+		int i, j;
+
+		// Get the Header and keep only the part before "\n\n"
+		s = message.getTransportMessageHeaders();
+		if (s.indexOf("\r\n\r\n") > 0)
+			s = s.substring(0, s.indexOf("\r\n\r\n") + 1); // +1 added to have a
+															// CRLF
+		if (s.indexOf("\n\n") > 0) // Different kind of CRLF ;=)
+			s = s.substring(0, s.indexOf("\n\n") + 1);
+
+		// Remove multipart headers to avoid conflicts
+
+		// Remove 'Content-Type'
+		i = s.indexOf("Content-Type");
+		if (i > 0) {
+			j = s.indexOf("\n", i);
+			if (j > 0)
+				s = s.substring(0, i) + s.substring(j + 1);
+			else
+				s = s.substring(0, i);
+		}
+
+		// Remove 'Content-Transfer-Encoding'
+		i = s.indexOf("Content-Transfer-Encoding");
+		if (i > 0) {
+			j = s.indexOf("\n", i);
+			if (j > 0)
+				s = s.substring(0, i) + s.substring(j + 1);
+			else
+				s = s.substring(0, i);
+		}
+
+		// Remove 'MIME-Version'
+		i = s.indexOf("MIME-Version");
+		if (i > 0) {
+			i = s.lastIndexOf('\n', i) + 1;
+			j = s.indexOf("\n", i);
+			if (j > 0)
+				s = s.substring(0, i) + s.substring(j + 1);
+			else
+				s = s.substring(0, i);
+		}
+
+		// Remove 'boundary'
+		i = s.indexOf("boundary");
+		if (i > 0) {
+			i = s.lastIndexOf('\n', i) + 1;
+			j = s.indexOf("\n", i);
+			if (j > 0)
+				s = s.substring(0, i) + s.substring(j + 1);
+			else
+				s = s.substring(0, i);
+		}
+
+		// Get attachment description strings for different formats
+		String line, sAttach, sAttachHTML, sAttachRTF;
+		sAttach = "";
+		sAttachHTML = "";
+		sAttachRTF = "";
+
+		if (!this.attachments.isEmpty()) {
+			line = "================================================";
+			sAttach = "\r\n" + line + "\r\n";
+			sAttachHTML = "<BR>" + line + "<BR>\r\n";
+			line = "Le message extrait contient " + this.attachments.size() + " fichier(s) attaché(s) ";
+			sAttach += line + "\r\n";
+			sAttachHTML += line + "<BR>\r\n";
+			for (Attachment a : attachments) {
+				sAttach += "\r\n - " + a.getFilename()+""+a.getRawContent().length+" octets";
+				sAttachHTML += "<br> - " + a.getFilename()+""+a.getRawContent().length+" octets";
+			}
+			line = "================================================";
+			sAttach += "\r\n" + line + "\r\n";
+			sAttachHTML += "<BR>" + line + "<BR>\r\n";
+			sAttachRTF = "{\\rtf1\\ansi\\deff0\\r\\n" + sAttach + "}";
+		}
+
+		// Add all the body form plain, HTML and RTF
+		String part;
+
+		boundary = "Part01234546789876543210123456789mailextract";
+		s += "MIME-Version: 1.0\r\nContent-Type: multipart/alternative;charset=\"UTF-8\";\r\n\tboundary=\"" + boundary
+				+ "\"\r\n";
+
+		// plain part
+		part = message.getBody();
+		if (part.length() > 0) {
+			s += "\r\n--" + boundary + "\r\n";
+			part += sAttach;
+			part = encodeQP(part);
+			s = s + "Content-Type: text/plain; charset=\"UTF-8\"; format-flowed\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+					+ part + "\r\n";
+		}
+
+		// RTF part
+		try {
+			part = message.getRTFBody();
+			if (part.length() > 0) {
+				s += "\r\n--" + boundary + "\r\n";
+				part += sAttachRTF;
+				part = encodeQP(part);
+				s = s + "Content-Type: text/rtf; charset=\"UTF-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+						+ part + "\r\n";
+			}
+		} catch (Exception e) {
+		}
+
+		// HTML part
+		part = message.getBodyHTML();
+		if (part.length() > 0) {
+			s += "\r\n--" + boundary + "\r\n";
+			part += sAttachHTML;
+			part = encodeQP(part);
+			s = s + "Content-Type: text/html; charset=\"UTF-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
+					+ part + "\r\n";
+		}
+
+		s += "\r\n--" + boundary + "--\r\n\r\n";
+
+		return s.getBytes();
 	}
 
 	// main analyze method
@@ -412,8 +550,7 @@ public class LPMailBoxMessage extends MailBoxMessage {
 		subject = message.getSubject();
 		getLogger().finer("mailextract.javamail: Extract message " + subject);
 
-		// global content extraction
-		rawContent = getRawContent();
+		// header content extraction
 		headers = getHeaders();
 		mailHeader = getDecodedHeader();
 
@@ -429,6 +566,9 @@ public class LPMailBoxMessage extends MailBoxMessage {
 
 		textContent = message.getBody();
 		attachments = getAttachments();
+
+		// finally reconstruct an eml form after attachments extraction
+		rawContent = getRawContent();
 
 		messageUID = message.getInternetMessageId();
 		inReplyToUID = message.getInReplyToId();

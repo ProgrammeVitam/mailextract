@@ -4,7 +4,7 @@
 
 	<groupId>fr.gouv.vitam.tools</groupId>
 	<artifactId>mailextract</artifactId>
-	<version>0.16-SNAPSHOT</version>
+	<version>0.20-SNAPSHOT</version>
 
 	<name>mailextract</name>
 	<url>http://maven.apache.org</url>
@@ -21,11 +21,6 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>com.sun.mail</groupId>
-			<artifactId>javax.mail</artifactId>
-			<version>1.5.6</version>
-		</dependency>
-		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
 			<version>1.9.2</version>
@@ -40,11 +35,6 @@
 			<groupId>org.apache.poi</groupId>
 			<artifactId>poi-ooxml-schemas</artifactId>
 			<version>3.15-beta2</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.tika</groupId>
-			<artifactId>tika-parsers</artifactId>
-			<version>1.14</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
@@ -75,6 +65,16 @@
 			<groupId>net.sf.launch4j</groupId>
 			<artifactId>launch4j</artifactId>
 			<version>3.9</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.mail</groupId>
+			<artifactId>javax.mail</artifactId>
+			<version>1.6.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.tika</groupId>
+			<artifactId>tika-parsers</artifactId>
+			<version>1.15</version>
 		</dependency>
 	</dependencies>
 	<build>

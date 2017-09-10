@@ -151,6 +151,13 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.nameshortenedCheckBox.setSelected(true);
 		}
 		
+		// convert from normalized log level name to the choice list log level
+		for (int i=0;i<7;i++){
+			if (logLevel.equals(loglevelStrings[i])) {
+				logLevel=mainWindow.loglevelGraphicStrings[i];
+				break;
+			}
+		}
 		mainWindow.loglevelComboBox.setSelectedItem(logLevel);
 	}
 
@@ -293,12 +300,14 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (mainWindow.warningCheckBox.isSelected()) {
 			storeExtractorOptions |= StoreExtractor.CONST_WARNING_MSG_PROBLEM;
 		}
-		storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
-
+		if (mainWindow.nameshortenedCheckBox.isSelected()) {
+			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
+		}
+		
 		// convert from log level name in the choice list to normalized log level
 		logLevel = (String) mainWindow.loglevelComboBox.getSelectedItem();
 		for (int i=0;i<7;i++){
-			if (logLevel==mainWindow.loglevelGraphicStrings[i]) {
+			if (logLevel.equals(mainWindow.loglevelGraphicStrings[i])) {
 				logLevel=loglevelStrings[i];
 				break;
 			}

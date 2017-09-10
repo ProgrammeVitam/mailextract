@@ -333,7 +333,7 @@ public class JMMailBoxMessage extends MailBoxMessage {
 			return null;
 		}
 	}
-
+	
 	// get mime attachments with raw content and filename
 	private List<Attachment> getAttachments() throws ExtractionException {
 		List<Attachment> attachments = new ArrayList<Attachment>();
@@ -359,10 +359,37 @@ public class JMMailBoxMessage extends MailBoxMessage {
 					if (filename == null) {
 						filename = "noname";
 					}
-					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray()));
+					
+					// search for file dates if any
+					Date creationDate=null;
+					Date modificationDate=null;
+					String[] headers;
+					ContentDisposition disposition;
+					String date;
+					
+					headers=bodyPart.getHeader("Content-Disposition");
+					if ((headers!=null) && (headers.length!=0)) {
+						disposition=new ContentDisposition(headers[0]);
+						date=disposition.getParameter("creation-date");
+						if ((date!=null) && (!date.isEmpty()))
+							creationDate = mailDateFormat.parse(date);
+						date=disposition.getParameter("modification-date");
+						if ((date!=null) && (!date.isEmpty()))
+							modificationDate = mailDateFormat.parse(date);
+					}
+					
+					// detect if attached message
+					int attachedMessage=NO_ATTACHED_MESSAGE;
+					headers=bodyPart.getHeader("Content-type");
+					if (headers.length!=0) {
+						if (headers[0].indexOf("rfc822")>0)
+							attachedMessage=RFC822_ATTACHED_MESSAGE;
+					}
+					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(),creationDate,modificationDate,attachedMessage));
 				}
 			}
 		} catch (Exception e) {
+			e.printStackTrace(System.out);
 			logWarning("mailextract.javamail: Badly formatted mime message, can't extract all attachments " + subject);
 			return attachments;
 		}
@@ -420,11 +447,6 @@ public class JMMailBoxMessage extends MailBoxMessage {
 			logWarning("mailextract.javamail: Can't extract dates from message " + subject);
 		}
 
-		// global content extraction
-		rawContent = getRawContent();
-		textContent = getTextContent();
-		attachments = getAttachments();
-
 		try {
 			messageUID = message.getMessageID();
 		} catch (MessagingException e) {
@@ -460,5 +482,12 @@ public class JMMailBoxMessage extends MailBoxMessage {
 
 			logWarning("mailextract.javamail: Can't extract addresses from message " + subject);
 		}
+		
+		// global content extraction
+		rawContent = getRawContent();
+		textContent = getTextContent();
+		attachments = getAttachments();
+
 	}
+	
 }

@@ -442,6 +442,8 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	public void extractAllFolders() throws ExtractionException {
+		String title;
+		
 		Instant start = Instant.now();
 
 		writeTargetLog();
@@ -451,8 +453,18 @@ public abstract class StoreExtractor {
 
 		ArchiveUnit rootNode = rootAnalysisMBFolder.getArchiveUnit();
 		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
-		rootNode.addMetadata("Title", "Ensemble des messages électroniques envoyés et reçus par le titulaire du compte "
-				+ user + " sur le serveur " + server + " à la date du " + start, true);
+
+		// title generation from context
+		if ((user!=null) && (!user.isEmpty()))
+				title="Ensemble des messages électroniques envoyés et reçus par le compte "+ user;
+		else if ((container!=null) && (!container.isEmpty()))
+			title="Ensemble des messages électroniques du container "+ container;
+		else
+			title="Ensemble de messages ";
+		if ((server!=null) && (!server.isEmpty()))
+				title+= " sur le serveur " + server;
+		title+= " à la date du " + start;
+		rootNode.addMetadata("Title", title, true);
 		if (rootAnalysisMBFolder.dateRange.isDefined()) {
 			rootNode.addMetadata("StartDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getStart()),
 					true);

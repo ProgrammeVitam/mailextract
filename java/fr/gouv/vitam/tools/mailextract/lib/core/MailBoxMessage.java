@@ -33,6 +33,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.jsoup.Jsoup;
+import org.jsoup.select.Evaluator.IsEmpty;
 
 import fr.gouv.vitam.tools.mailextract.lib.formattools.FileTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
@@ -152,6 +153,11 @@ public abstract class MailBoxMessage {
 	/** List of "Sender" addresses. */
 	protected List<String> sender;
 
+	/** Types of attached messages */
+	protected static final int NO_ATTACHED_MESSAGE = 0;
+	protected static final int RFC822_ATTACHED_MESSAGE = 1;
+	protected static final int PST_ATTACHED_MESSAGE = 2;
+
 	/**
 	 * Utility class to encapsulate an attachment file with content and metadata
 	 * (for now only filename) size and filename.
@@ -164,6 +170,12 @@ public abstract class MailBoxMessage {
 		/** Filename. */
 		String filename;
 
+		/** File dates. */
+		Date creationDate, modificationDate;
+
+		/** Attached message flag. */
+		int attachedMessage;
+
 		/**
 		 * Instantiates a new attachment.
 		 *
@@ -171,10 +183,28 @@ public abstract class MailBoxMessage {
 		 *            Filename
 		 * @param rawContent
 		 *            Binary raw content
+		 * @param creationDate
+		 *            Creation Date
+		 * @param modificationDate
+		 *            Last modification Date
+		 * @param attachedMessage
+		 *            Is an attached message flag
 		 */
-		public Attachment(String filename, byte[] rawContent) {
+		public Attachment(String filename, byte[] rawContent, Date creationDate, Date modificationDate,
+				int attachedMessage) {
 			this.filename = filename;
 			this.rawContent = rawContent;
+			this.creationDate = creationDate;
+			this.modificationDate = modificationDate;
+			this.attachedMessage = attachedMessage;
+		}
+
+		public String getFilename() {
+			return filename;
+		}
+
+		public byte[] getRawContent() {
+			return rawContent;
 		}
 
 	}
@@ -253,17 +283,21 @@ public abstract class MailBoxMessage {
 	/**
 	 * Strip beginning < and ending > from a string
 	 */
-	private static String getTag(String str){
+	private static String getTag(String str) {
 		str.trim();
-		if (str.charAt(0)=='<') {
-			str=str.substring(1);
+		if (!str.isEmpty()) {
+			if (str.charAt(0) == '<') {
+				str = str.substring(1);
+			}
 		}
-		if (str.charAt(str.length()-1)=='>'){
-			str=str.substring(0, str.length()-1);
+		if (!str.isEmpty()) {
+			if (str.charAt(str.length() - 1) == '>') {
+				str = str.substring(0, str.length() - 1);
+			}
 		}
 		return str;
 	}
-	
+
 	/**
 	 * Analyze message to collect metadata and content information (protocol
 	 * specific).
@@ -272,6 +306,9 @@ public abstract class MailBoxMessage {
 	 * This is the main method for sub classes, where all metadata and
 	 * information has to be extracted in standard representation out of the
 	 * inner representation of the message.
+	 * 
+	 * If needed a fake raw SMTP content (.eml) is generated with all the body
+	 * formats available but without the attachments, which are extracted too.
 	 *
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
@@ -296,24 +333,24 @@ public abstract class MailBoxMessage {
 	 */
 	public final void extractMessage(boolean writeFlag) throws ExtractionException {
 		ArchiveUnit messageNode = null;
-		String description="[Vide]";
+		String description = "[Vide]";
 		String content;
 
 		// create message unit
-		if ((subject==null) || subject.isEmpty())
-			subject="[Vide]";
+		if ((subject == null) || subject.isEmpty())
+			subject = "[Vide]";
 		messageNode = new ArchiveUnit(mailBoxFolder.storeExtractor, mailBoxFolder.folderArchiveUnit, "Message",
 				subject);
 
 		// metadata in SEDA 2.0-ontology order
 		messageNode.addMetadata("DescriptionLevel", "Item", true);
 		messageNode.addMetadata("Title", subject, true);
-		
-			// strip messageUID from < and >
-		messageUID=getTag(messageUID);
+
+		// strip messageUID from < and >
+		messageUID = getTag(messageUID);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
 
-		description="Message extrait du contexte "+mailBoxFolder.storeExtractor.getDescription();
+		description = "Message extrait du compte " + mailBoxFolder.storeExtractor.user;
 		messageNode.addMetadata("Description", description, true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
@@ -321,49 +358,22 @@ public abstract class MailBoxMessage {
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
-		/* wait for multivalued unknown metadata good treatment in Vitam
 		// not in SEDA ontology
-		 
-		if ((inReplyToUID!=null) && !inReplyToUID.isEmpty())
-			messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID, false);
-		messageNode.addSameMetadataList("OriginatingSystemId-References", references, false);
-		
-		// not in SEDA ontology nor in the Vitam specs... (to be discussed)
-		messageNode.addPersonMetadataList("Sender", sender, false);
-		messageNode.addPersonMetadataList("ReplyTo", replyTo, false);
-		messageNode.addPersonMetadataList("ReturnPath", returnPath, false);
-		 */
-		
+
+		// reply-to messageID
+		if ((inReplyToUID != null) && !inReplyToUID.isEmpty())
+			messageNode.addMetadata("OriginatingSystemId-ReplyTo", getTag(inReplyToUID), false);
+
 		// extract text content in file format and in metadata
 		if (textContent != null) {
 			content = textContent.trim();
 			if (!content.isEmpty()) {
-//			String trimed = textContent.trim();
-//			if (!trimed.isEmpty()) {
-//				content=
-//				int begBeg, begEnd, endBeg, endEnd, len;
-//
-//				// extract description from text format
-//				len = trimed.length();
-//				begBeg = 0;
-//				if (len <= 160) {
-//					endBeg = len;
-//					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]";
-//				} else {
-//					endBeg = 160;
-//					endEnd = len;
-//					begEnd = Math.max(endBeg, endEnd - 160);
-//					description="Début du texte [" + trimed.substring(begBeg, endBeg) + "]"
-//							+ System.lineSeparator() + "Fin du texte [" + trimed.substring(begEnd, endEnd) + "]";
-//				}
-//				// add object text content
-//				messageNode.addObject(trimed, messageUID,".txt", "TextContent", 1);
 				messageNode.addMetadata("TextContent", content, true);
-				messageNode.addObject(content, messageUID+".txt", "TextContent", 1);
+				messageNode.addObject(content, messageUID + ".txt", "TextContent", 1);
 			}
-		} 
+		}
 		// add object binary master
-		messageNode.addObject(rawContent, messageUID+".eml", "BinaryMaster", 1);
+		messageNode.addObject(rawContent, messageUID + ".eml", "BinaryMaster", 1);
 
 		if (writeFlag)
 			messageNode.write();
@@ -375,41 +385,58 @@ public abstract class MailBoxMessage {
 	}
 
 	/** Extract one standard message attachement. */
-	private final void extractOneMessageAttachment(ArchiveUnit messageNode, String filename, byte[] rawContent,
-			boolean writeFlag) throws ExtractionException {
+	private final void extractOneMessageAttachment(ArchiveUnit messageNode, Attachment attachment, boolean writeFlag)
+			throws ExtractionException {
 		ArchiveUnit attachmentNode;
 		String textExtract;
 
-		attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", filename);
+		attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", attachment.filename);
 		attachmentNode.addMetadata("DescriptionLevel", "Item", true);
-		attachmentNode.addMetadata("Title", filename, true);
-		attachmentNode.addMetadata("Description", "Document \"" + filename + "\" joint au message " + messageUID, true);
-		attachmentNode.addObject(rawContent, filename, "BinaryMaster", 1);
-		// Text extraction
+		attachmentNode.addMetadata("Title", attachment.filename, true);
+		attachmentNode.addMetadata("Description",
+				"Document \"" + attachment.filename + "\" joint au message " + messageUID, true);
+
+		// get the max of creation and modification date which define the
+		// creation date of the present file
+		// (max for correcting a current confusion between theese two dates)
+		Date date = null;
+		if (attachment.creationDate != null) {
+			if (attachment.modificationDate != null)
+				date = (attachment.creationDate.compareTo(attachment.modificationDate) > 0 ? attachment.creationDate
+						: attachment.modificationDate);
+			else
+				date = attachment.creationDate;
+		} else if (attachment.modificationDate != null)
+			date = attachment.modificationDate;
+		if (date != null)
+			attachmentNode.addMetadata("CreatedDate", DateRange.getISODateString(attachment.creationDate), true);
+
+		// Raw object extraction
+		attachmentNode.addObject(attachment.rawContent, attachment.filename, "BinaryMaster", 1);
+
+		// Text object extraction
 		try {
-			textExtract = FileTextExtractor.getInstance().getText(rawContent);
+			textExtract = FileTextExtractor.getInstance().getText(attachment.rawContent);
 			if (!((textExtract == null) || textExtract.isEmpty()))
-				attachmentNode.addObject(textExtract.getBytes(), filename+".txt", "TextContent", 1);
+				attachmentNode.addObject(textExtract.getBytes(), attachment.filename + ".txt", "TextContent", 1);
 		} catch (ExtractionException ee) {
-			logWarning(
-					"mailextract: Can't extract text content from attachment " + filename + " in message " + subject);
+			logWarning("mailextract: Can't extract text content from attachment " + attachment.filename + " in message "
+					+ subject);
 		}
 		if (writeFlag)
 			attachmentNode.write();
 	}
 
 	/** Recursively extract attached message. */
-	private final void extractAttachedMessage(ArchiveUnit rootNode, DateRange attachedMessagedateRange, String filename,
-			byte[] rawContent, boolean writeFlag) throws ExtractionException {
+	private final void extractRFC822AttachedMessage(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
+			String filename, byte[] rawContent, boolean writeFlag) throws ExtractionException {
 		Level memLevel;
 
 		memLevel = getLogger().getLevel();
 		getLogger().setLevel(Level.OFF);
 		try {
 			JMStoreExtractor rfc822Extractor = new JMStoreExtractor(rawContent, rootNode.getRootPath(),
-					rootNode.getName(),
-
-					getStoreExtractor().options, getLogger());
+					rootNode.getName(), getStoreExtractor().options, getStoreExtractor().user, getLogger());
 			rfc822Extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
 			getStoreExtractor().addTotalAttachedMessagesCount(
 					rfc822Extractor.getTotalMessagesCount() + rfc822Extractor.getTotalAttachedMessagesCount());
@@ -423,9 +450,9 @@ public abstract class MailBoxMessage {
 	private final void extractMessageAttachments(ArchiveUnit messageNode, boolean writeFlag)
 			throws ExtractionException {
 		ArchiveUnit rootNode;
-		boolean attachedMessage;
+		// boolean attachedMessage;
+		int attachedMessageType;
 		DateRange attachedMessagedateRange;
-		boolean isRFC822;
 
 		// prepare an ArchiveUnit to keep all attached message that can be
 		// recursively extracted
@@ -433,29 +460,33 @@ public abstract class MailBoxMessage {
 		rootNode.addMetadata("DescriptionLevel", "Item", true);
 		rootNode.addMetadata("Title", "Messages attachés", true);
 		rootNode.addMetadata("Description", "Ensemble des messages attachés joint au message " + messageUID, true);
-		attachedMessage = false;
+		attachedMessageType = NO_ATTACHED_MESSAGE;
 		attachedMessagedateRange = new DateRange();
 
 		for (Attachment a : attachments) {
 			// message identification
-			try {
-				isRFC822 = RFC822Identificator.getInstance().isRFC822(a.rawContent);
-			} catch (ExtractionException e) {
-				logWarning("mailextract: Error during mimetype identification of file " + a.filename + "in message "
-						+ subject);
-				isRFC822 = false;
-			}
-			if (isRFC822) {
+			if (a.attachedMessage == RFC822_ATTACHED_MESSAGE)
+				attachedMessageType = RFC822_ATTACHED_MESSAGE;
+			// else {
+			// try {
+			// if (RFC822Identificator.getInstance().isRFC822(a.rawContent))
+			// attachedMessageType = RFC822_ATTACHED_MESSAGE;
+			// } catch (ExtractionException e) {
+			// logWarning("mailextract: Error during mimetype identification of
+			// file " + a.filename + "in message "
+			// + subject);
+			// }
+			// }
+			if (attachedMessageType == RFC822_ATTACHED_MESSAGE) {
 				// recursive extraction of a message in attachment...
-				attachedMessage = true;
 				logWarning("mailextract: Attached message extraction from message " + subject);
-				extractAttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent, writeFlag);
+				extractRFC822AttachedMessage(rootNode, attachedMessagedateRange, a.filename, a.rawContent, writeFlag);
 			} else if (writeFlag) {
 				// standard attachment file
-				extractOneMessageAttachment(messageNode, a.filename, a.rawContent, writeFlag);
+				extractOneMessageAttachment(messageNode, a, writeFlag);
 			}
 		}
-		if (attachedMessage && writeFlag) {
+		if ((attachedMessageType != NO_ATTACHED_MESSAGE) && writeFlag) {
 			if (attachedMessagedateRange.isDefined()) {
 				rootNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
 						true);

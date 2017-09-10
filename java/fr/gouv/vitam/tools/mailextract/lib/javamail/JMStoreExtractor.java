@@ -155,6 +155,8 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            Name of the extraction directory
 	 * @param options
 	 *            Options (flag composition of CONST_)
+	 * @param user
+	 *            User name
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
 	 * @throws ExtractionException
@@ -162,8 +164,8 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(byte[] rawContent, String destRootPath, String destName, int options,
-			Logger logger) throws ExtractionException {
-		super("rfc822", "", "", "", "", "", destRootPath, destName, options, logger);
+			String user, Logger logger) throws ExtractionException {
+		super("rfc822", "", user, "", "", "", destRootPath, destName, options, logger);
 
 		String url = "rfc822://localhost";
 

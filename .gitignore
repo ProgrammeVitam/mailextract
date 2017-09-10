@@ -3,3 +3,5 @@
 windows\*.exe
 target\*.jar
 
+/target/
+/.apt_generated/

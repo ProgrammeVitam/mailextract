@@ -310,10 +310,10 @@ public class ArchiveUnit {
 	}
 
 	/**
-	 * Extract a person from an address encoded. Example TOTO
-	 * John<toto@sample.fr>" is extracted as:
+	 * Extract a person from an address encoded. Example TOTO John
+	 * Do<toto@sample.fr>" is extracted as:
 	 * <p>
-	 * FirstName="John", BirthName="TOTO", Identifier="toto@sample.fr"
+	 * FirstName="John Do", BirthName="John Do", Identifier="toto@sample.fr"
 	 * <p>
 	 * 
 	 * @param s
@@ -323,55 +323,27 @@ public class ArchiveUnit {
 	Person extractPersonFromAddress(String s) {
 		int beg, end;
 		Person p = new Person();
-		String name, firstName, birthName;
+		String name;
 
 		if ((s == null) || s.isEmpty()) {
 			p.identifier = "[Vide]";
 			p.birthName = "[Vide]";
 			p.firstName = "[Vide]";
 		}
-		try {
-			if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
-				p.identifier = s.substring(beg + 1, end).trim();
-				if (beg>0) {
-					name = s.substring(0, beg).trim();
-					beg = name.indexOf(' ');
-					if (beg == -1) 
-						beg = name.indexOf('.');
-				}
-				else {
-					if ((end = p.identifier.indexOf('@')) != -1)
-						name = p.identifier.substring(0, end);
-					else
-						name = p.identifier;
-					beg = name.indexOf('.');
-				}
-			} else {
-				p.identifier = s.trim();
-				if ((end = p.identifier.indexOf('@')) != -1)
-					name = p.identifier.substring(0, end);
-				else
-					name = p.identifier;
-				beg = name.indexOf('.');
-			}
-
-			if (beg != -1) {
-				firstName = name.substring(0, beg).trim();
-				birthName = name.substring(beg + 1).trim();
-				if ((firstName.equals(firstName.toUpperCase())) && (!birthName.equals(birthName.toUpperCase()))) {
-					p.birthName = firstName;
-					p.firstName = birthName;
-				} else {
-					p.birthName = birthName;
-					p.firstName = firstName;
-				}
-			} else {
-				p.birthName = name;
-				p.firstName = name;
-			}
-		} catch (IndexOutOfBoundsException e) {
-			System.out.println(s);
+		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
+			p.identifier = s.substring(beg + 1, end).trim();
+			name = s.substring(0, beg).trim();
+		} else {
+			p.identifier = s.trim();
+			if ((end = p.identifier.indexOf('@')) != -1)
+				name = p.identifier.substring(0, end);
+			else
+				name = "[Vide]";
 		}
+
+		p.firstName = name;
+		p.birthName = name;
+
 		return p;
 	}
 
@@ -427,15 +399,20 @@ public class ArchiveUnit {
 			if (byteContent != null)
 				output.write(byteContent);
 		} catch (IOException ex) {
-			throw new ExtractionException("mailextract: Illegal destination file, writing unit \"" + name + "\""
-					+ "dir=" + dirPath + " filename=" + filename);
+			if (dirPath.length() + filename.length() > 250)
+				throw new ExtractionException(
+						"mailextract: Illegal destination file (may be too long pathname), writing unit \"" + name
+								+ "\"" + " dir=" + dirPath + " filename=" + filename);
+			else
+				throw new ExtractionException("mailextract: Illegal destination file, writing unit \"" + name + "\""
+						+ " dir=" + dirPath + " filename=" + filename);
 		} finally {
 			if (output != null)
 				try {
 					output.close();
 				} catch (IOException e) {
 					throw new ExtractionException("mailextract: Can't close file, writing unit \"" + name + "\""
-							+ "dir=" + dirPath + " filename=" + filename);
+							+ " dir=" + dirPath + " filename=" + filename);
 				}
 		}
 	}
@@ -476,36 +453,31 @@ public class ArchiveUnit {
 	// reduce if needed a filename conserving the extension
 	private String normalizeFilename(String filename) {
 		String result = "";
-		String extension="";
+		String extension = "";
 		int len;
 
-		System.out.println("original="+filename);
-
 		// extract extension, short string after last point, if any
-		int lastPoint=filename.lastIndexOf('.');
-		if ((lastPoint!=-1) && (lastPoint>filename.length()-5)){
-			extension=filename.substring(lastPoint);
-			if (lastPoint>=1)
-				result=filename.substring(0, lastPoint);
-			else 
-				result="";
-		}
-		else 
-			result=filename;
-			
+		int lastPoint = filename.lastIndexOf('.');
+		if (lastPoint != -1) {
+			extension = filename.substring(lastPoint);
+			if (lastPoint >= 1)
+				result = filename.substring(0, lastPoint);
+			else
+				result = "";
+		} else
+			result = filename;
+
 		if (storeExtractor.hasOptions(StoreExtractor.CONST_NAMES_SHORTENED))
-			len = 48-4;
+			len = 32 - extension.length();
 		else
-			len = 128-4;
-		
+			len = 128 - extension.length();
+
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)
-			result = result.substring(0,len);
-
-		System.out.println("normalized="+result+extension);
+			result = result.substring(0, len);
 		
-		return result+extension;
+		return result + extension;
 	}
 
 	// create a unique name for an typed archive unit reduced if needed
