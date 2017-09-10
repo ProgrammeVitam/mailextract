@@ -472,6 +472,7 @@ public class ArchiveUnit {
 		else
 			len = 128 - extension.length();
 
+		//TODO: best filter
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)

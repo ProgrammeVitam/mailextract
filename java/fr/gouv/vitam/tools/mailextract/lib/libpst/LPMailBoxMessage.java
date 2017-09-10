@@ -373,17 +373,23 @@ public class LPMailBoxMessage extends MailBoxMessage {
 		}
 		for (int i = 0; i < attachmentNumber; i++) {
 			try {
+				Attachment attachment;
+
 				pstA = message.getAttachment(i);
-//				if (pstA.getAttachMethod()==5)
-//					System.out.println("AttachMethod="+pstA.getAttachMethod());
-				InputStream is = pstA.getFileInputStream();
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				byte[] buf = new byte[4096];
-				int bytesRead;
-				while ((bytesRead = is.read(buf)) != -1) {
-					baos.write(buf, 0, bytesRead);
+				if (pstA.getAttachMethod() == 5) {
+					attachment = new Attachment(pstA.getLongFilename(), "Embedded Message - to be done".getBytes(),
+							pstA.getCreationTime(), pstA.getModificationTime(), NO_ATTACHED_MESSAGE);
+				} else {
+					InputStream is = pstA.getFileInputStream();
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					byte[] buf = new byte[4096];
+					int bytesRead;
+					while ((bytesRead = is.read(buf)) != -1) {
+						baos.write(buf, 0, bytesRead);
+					}
+					attachment = new Attachment(pstA.getLongFilename(), baos.toByteArray(), pstA.getCreationTime(),
+							pstA.getModificationTime(), NO_ATTACHED_MESSAGE);
 				}
-				Attachment attachment = new Attachment(pstA.getLongFilename(), baos.toByteArray(),pstA.getCreationTime(),pstA.getModificationTime(),NO_ATTACHED_MESSAGE);
 				lAttachment.add(attachment);
 			} catch (Exception e) {
 				logWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i) + " in message "
@@ -409,7 +415,8 @@ public class LPMailBoxMessage extends MailBoxMessage {
 		return result;
 	}
 
-	// get the inner representation of message in MIME format but without attachments
+	// get the inner representation of message in MIME format but without
+	// attachments
 	// a small summary is added at the end to describe attachments
 	private byte[] getRawContent() {
 		String s, boundary;
@@ -481,8 +488,8 @@ public class LPMailBoxMessage extends MailBoxMessage {
 			sAttach += line + "\r\n";
 			sAttachHTML += line + "<BR>\r\n";
 			for (Attachment a : attachments) {
-				sAttach += "\r\n - " + a.getFilename()+""+a.getRawContent().length+" octets";
-				sAttachHTML += "<br> - " + a.getFilename()+""+a.getRawContent().length+" octets";
+				sAttach += "\r\n - " + a.getFilename() + "" + a.getRawContent().length + " octets";
+				sAttachHTML += "<br> - " + a.getFilename() + "" + a.getRawContent().length + " octets";
 			}
 			line = "================================================";
 			sAttach += "\r\n" + line + "\r\n";

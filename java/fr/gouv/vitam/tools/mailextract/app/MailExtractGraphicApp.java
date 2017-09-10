@@ -138,16 +138,16 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		mainWindow.savedirField.setText(destRootPath);
 		mainWindow.nameField.setText(destName);
 
-		if ((storeExtractorOptions | StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS) != 0) {
+		if ((storeExtractorOptions & StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS) != 0) {
 			mainWindow.keeponlydeepCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_DROP_EMPTY_FOLDERS) != 0) {
+		if ((storeExtractorOptions & StoreExtractor.CONST_DROP_EMPTY_FOLDERS) != 0) {
 			mainWindow.dropemptyfoldersCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_WARNING_MSG_PROBLEM) != 0) {
+		if ((storeExtractorOptions & StoreExtractor.CONST_WARNING_MSG_PROBLEM) != 0) {
 			mainWindow.warningCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions | StoreExtractor.CONST_NAMES_SHORTENED) != 0) {
+		if ((storeExtractorOptions & StoreExtractor.CONST_NAMES_SHORTENED) != 0) {
 			mainWindow.nameshortenedCheckBox.setSelected(true);
 		}
 		

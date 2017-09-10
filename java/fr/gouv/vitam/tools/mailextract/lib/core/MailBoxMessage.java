@@ -64,8 +64,7 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
  * <p>
  * Metadata information extracted for study
  * <li>Message unique ID of the message replied to (and in some implementation
- * forwarded) by the current message (OriginatingSystemId-ReplyTo
- * metadata),</li>
+ * forwarded) by the current message (OriginatingSystemIdReplyTo metadata),</li>
  * <li>List of message unique ID of messages in the same thread of forward and
  * reply (OriginatingSystemId-References metadata),</li>
  * <li>List of "Sender" addresses, address of the person sending the mail, for
@@ -350,8 +349,8 @@ public abstract class MailBoxMessage {
 		messageUID = getTag(messageUID);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
 
-		description = "Message extrait du compte " + mailBoxFolder.storeExtractor.user;
-		messageNode.addMetadata("Description", description, true);
+//		description = "Message extrait du compte " + mailBoxFolder.storeExtractor.user;
+//		messageNode.addMetadata("Description", description, true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
 		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
@@ -362,7 +361,7 @@ public abstract class MailBoxMessage {
 
 		// reply-to messageID
 		if ((inReplyToUID != null) && !inReplyToUID.isEmpty())
-			messageNode.addMetadata("OriginatingSystemId-ReplyTo", getTag(inReplyToUID), false);
+			messageNode.addMetadata("OriginatingSystemIdReplyTo", getTag(inReplyToUID), false);
 
 		// extract text content in file format and in metadata
 		if (textContent != null) {
@@ -390,8 +389,11 @@ public abstract class MailBoxMessage {
 		ArchiveUnit attachmentNode;
 		String textExtract;
 
+		if ((attachment.filename == null) || attachment.filename.isEmpty())
+			attachment.filename="[Vide]";
 		attachmentNode = new ArchiveUnit(mailBoxFolder.storeExtractor, messageNode, "Attachment", attachment.filename);
 		attachmentNode.addMetadata("DescriptionLevel", "Item", true);
+		// TODO: temporary caused by pst attached messages not treated
 		attachmentNode.addMetadata("Title", attachment.filename, true);
 		attachmentNode.addMetadata("Description",
 				"Document \"" + attachment.filename + "\" joint au message " + messageUID, true);
