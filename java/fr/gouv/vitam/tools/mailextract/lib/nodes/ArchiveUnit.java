@@ -475,15 +475,9 @@ public class ArchiveUnit {
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)
-<<<<<<< HEAD
 			result = result.substring(0, len);
 		
 		return result + extension;
-=======
-			result = result.substring(0,len);
-
-		return result+extension;
->>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 	}
 
 	// create a unique name for an typed archive unit reduced if needed
