@@ -101,7 +101,6 @@
 								</filter>
 							</filters>
 							<shadedArtifactAttached>true</shadedArtifactAttached>
-							<!-- <minimizeJar>true</minimizeJar> javax.mail and tika wrong side effect -->
 							<transformers>
 								<transformer
 									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">

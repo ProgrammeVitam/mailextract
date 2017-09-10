@@ -350,7 +350,11 @@ public abstract class MailBoxMessage {
 		messageUID = getTag(messageUID);
 		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
 
+<<<<<<< HEAD
 		description = "Message extrait du compte " + mailBoxFolder.storeExtractor.user;
+=======
+		description = "Message extrait du contexte " + mailBoxFolder.storeExtractor.getDescription();
+>>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 		messageNode.addMetadata("Description", description, true);
 		messageNode.addPersonMetadataList("Writer", from, true);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
@@ -358,16 +362,61 @@ public abstract class MailBoxMessage {
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
+<<<<<<< HEAD
 		// not in SEDA ontology
 
 		// reply-to messageID
 		if ((inReplyToUID != null) && !inReplyToUID.isEmpty())
 			messageNode.addMetadata("OriginatingSystemId-ReplyTo", getTag(inReplyToUID), false);
+=======
+		/*
+		 * wait for multivalued unknown metadata good treatment in Vitam // not
+		 * in SEDA ontology
+		 * 
+		 * if ((inReplyToUID!=null) && !inReplyToUID.isEmpty())
+		 * messageNode.addMetadata("OriginatingSystemId-ReplyTo", inReplyToUID,
+		 * false);
+		 * messageNode.addSameMetadataList("OriginatingSystemId-References",
+		 * references, false);
+		 * 
+		 * // not in SEDA ontology nor in the Vitam specs... (to be discussed)
+		 * messageNode.addPersonMetadataList("Sender", sender, false);
+		 * messageNode.addPersonMetadataList("ReplyTo", replyTo, false);
+		 * messageNode.addPersonMetadataList("ReturnPath", returnPath, false);
+		 */
+>>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 
 		// extract text content in file format and in metadata
 		if (textContent != null) {
 			content = textContent.trim();
 			if (!content.isEmpty()) {
+<<<<<<< HEAD
+=======
+				// String trimed = textContent.trim();
+				// if (!trimed.isEmpty()) {
+				// content=
+				// int begBeg, begEnd, endBeg, endEnd, len;
+				//
+				// // extract description from text format
+				// len = trimed.length();
+				// begBeg = 0;
+				// if (len <= 160) {
+				// endBeg = len;
+				// description="Début du texte [" + trimed.substring(begBeg,
+				// endBeg) + "]";
+				// } else {
+				// endBeg = 160;
+				// endEnd = len;
+				// begEnd = Math.max(endBeg, endEnd - 160);
+				// description="Début du texte [" + trimed.substring(begBeg,
+				// endBeg) + "]"
+				// + System.lineSeparator() + "Fin du texte [" +
+				// trimed.substring(begEnd, endEnd) + "]";
+				// }
+				// // add object text content
+				// messageNode.addObject(trimed, messageUID,".txt",
+				// "TextContent", 1);
+>>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 				messageNode.addMetadata("TextContent", content, true);
 				messageNode.addObject(content, messageUID + ".txt", "TextContent", 1);
 			}
@@ -418,7 +467,11 @@ public abstract class MailBoxMessage {
 		try {
 			textExtract = FileTextExtractor.getInstance().getText(attachment.rawContent);
 			if (!((textExtract == null) || textExtract.isEmpty()))
+<<<<<<< HEAD
 				attachmentNode.addObject(textExtract.getBytes(), attachment.filename + ".txt", "TextContent", 1);
+=======
+				attachmentNode.addObject(textExtract.getBytes(), filename + ".txt", "TextContent", 1);
+>>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 		} catch (ExtractionException ee) {
 			logWarning("mailextract: Can't extract text content from attachment " + attachment.filename + " in message "
 					+ subject);

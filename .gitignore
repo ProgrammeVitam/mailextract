@@ -3,5 +3,8 @@
 windows\*.exe
 target\*.jar
 
+<<<<<<< HEAD
 /target/
+=======
+>>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
 /.apt_generated/
