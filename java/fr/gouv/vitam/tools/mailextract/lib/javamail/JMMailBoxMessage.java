@@ -404,14 +404,13 @@ public class JMMailBoxMessage extends MailBoxMessage {
 	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#analyzeMessage()
 	 */
-	public void analyzeMessage() throws ExtractionException {
+	public void doAnalyzeMessage() throws ExtractionException {
 		List<String> cc, bcc;
 
 		// header metadata extraction
 		// * special global
 		subject = getSubject();
 
-		getLogger().finer("mailextract.javamail: Extract message " + subject);
 		mailHeader = getDecodedHeader();
 		// * recipients and co
 		try {

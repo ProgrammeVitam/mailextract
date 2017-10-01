@@ -79,8 +79,6 @@ public class MailExtractThread extends Thread {
 			Handler consoleHandler = new StdoutConsoleHandler();
 			consoleHandler.setFormatter(simpleFormatter);
 			consoleHandler.setLevel(logLevel);
-//			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
-//				consoleHandler.setEncoding("Cp850");
 			logger.addHandler(consoleHandler);
 
 			// don't use ConsoleHandler at global level
@@ -121,7 +119,7 @@ public class MailExtractThread extends Thread {
 			String container, String folder, String destRootPath, String destName, int storeExtractorOptions,
 			String logLevel) {
 
-		Logger logger = null;
+		logger = null;
 
 		try {
 			logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
@@ -134,7 +132,6 @@ public class MailExtractThread extends Thread {
 			this.storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
 					folder, destRootPath, destName, storeExtractorOptions, logger);
 			this.actionNumber = actionNumber;
-			this.logger = logger;
 		} catch (Exception e) {
 			this.actionNumber = 0;
 			System.out.println(e.getMessage());
@@ -166,14 +163,15 @@ public class MailExtractThread extends Thread {
 			}
 		} catch (Exception e) {
 			System.out.println(e.getMessage());
-		}
-		finally {
-			Handler[] handler = logger.getHandlers();
-			for (Handler h : handler) {
-				h.close();
-				logger.removeHandler(h);
+		} finally {
+			if (logger != null) {
+				Handler[] handler = logger.getHandlers();
+				for (Handler h : handler) {
+					h.close();
+					logger.removeHandler(h);
+				}
+				logger = null;
 			}
-			logger=null;
 		}
 	}
 

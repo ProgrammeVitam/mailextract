@@ -179,7 +179,7 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addMetadata(String key, String value, boolean mandatory) {
-		if (value != null)
+		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, value));
 		else if (mandatory)
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
@@ -206,7 +206,7 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) {
-		if (value != null)
+		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
 		else if (mandatory) {
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
@@ -426,6 +426,7 @@ public class ArchiveUnit {
 	 */
 	public void write() throws ExtractionException {
 		String dirPath;
+		String filename;
 
 		// different name if groupe unit or unit with objects
 		if (objects.isEmpty())
@@ -445,7 +446,11 @@ public class ArchiveUnit {
 		// write objects files
 		if (!objects.isEmpty()) {
 			for (ArchiveObject o : objects) {
-				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + o.filename, o.rawContent);
+				if (o.filename==null || o.filename.isEmpty())
+					filename="undefined";	
+				else
+					filename=o.filename;
+				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + filename, o.rawContent);
 			}
 		}
 	}

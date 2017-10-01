@@ -91,7 +91,7 @@ public class LPStoreExtractor extends StoreExtractor {
 		try {
 			pstFile = new PSTFile(container);
 		} catch (Exception e) {
-			throw new ExtractionException("PSTFile: can't open " + container + ", doesn't exist or is not a pst file");
+			throw new ExtractionException("mailExtract.libpst: can't open " + container + ", doesn't exist or is not a pst file");
 		}
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
@@ -100,13 +100,16 @@ public class LPStoreExtractor extends StoreExtractor {
 		try {
 			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), folder);
 
+			if (pstFolder==null)
+				throw new ExtractionException("mailExtract.libpst: Can't find the root folder " + folder + " in pst file");
+				
 			lPRootMailBoxFolder = LPMailBoxFolder.createRootFolder(this, pstFolder, rootNode);
 
 			rootAnalysisMBFolder = lPRootMailBoxFolder;
 		} catch (IOException e) {
-			throw new ExtractionException("mailextract.javamail: Can't use " + container + " pst file");
+			throw new ExtractionException("mailExtract.libpst: Can't use " + container + " pst file");
 		} catch (PSTException e) {
-			throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
+			throw new ExtractionException("mailExtract.libpst: Can't find extraction root folder " + folder);
 		}
 	}
 

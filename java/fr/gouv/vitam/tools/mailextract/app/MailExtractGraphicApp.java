@@ -197,11 +197,11 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.passwordLabel.setEnabled(true);
 			mainWindow.passwordField.setEnabled(true);
 		} else if (command.equals("container")) {
-			String filename = selectPath(false);
+			String filename = selectPath(mainWindow.containerField.getText(),false);
 			if (filename != null)
 				mainWindow.containerField.setText(filename);
 		} else if (command.equals("savedir")) {
-			String dirname = selectPath(true);
+			String dirname = selectPath(mainWindow.savedirField.getText(),true);
 			if (dirname != null)
 				mainWindow.savedirField.setText(dirname);
 		} else if (command.equals("list"))
@@ -216,15 +216,20 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 
 	// get a file and/or directory from a standard selection dialog
 	// if dirBool is true only directory can be selected
-	private String selectPath(boolean dirBool) {
+	private String selectPath(String folder,boolean dirBool) {
+		File file;
+		
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser
 				.setFileSelectionMode((dirBool ? JFileChooser.DIRECTORIES_ONLY : JFileChooser.FILES_AND_DIRECTORIES));
 		fileChooser.setFileHidingEnabled(false);
+		file=new File(folder);
+		if (file.exists())
+			fileChooser.setSelectedFile(file);
 		int returnVal = fileChooser.showOpenDialog(this.mainWindow);
 
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = fileChooser.getSelectedFile();
+			file = fileChooser.getSelectedFile();
 			return (file.getAbsolutePath());
 		} else
 			return null;

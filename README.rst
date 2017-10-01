@@ -18,7 +18,7 @@ Dans tous les cas s'il n'y a pas une option -x, -l ou -z (extraction, list, stat
 
 * Linux or windows
 
-1. java -Dfile.encoding="UTF-8" -jar mailextract.jar arguments...
+1. java -Dfile.encoding="UTF-8" -jar MailExtract.jar arguments...
 
 
 *Les utilitaires doivent toujours être lancés en mode UTF-8 pour assurer la cohérence des fichiers exportés et importés entre utilitaires*  
@@ -27,7 +27,7 @@ Dans tous les cas s'il n'y a pas une option -x, -l ou -z (extraction, list, stat
 * Windows
 
 1. Ouvrez l'application console "cmd"
-2. Utilisez l'application "mailextract.exe", créée avec launch4j, en entrant la commande "install_dir\mailextract arguments..." (cf ci-dessous pour la description des arguments)
+2. Utilisez l'application "MailExtract.exe", créée avec launch4j, en entrant la commande "install_dir\MailExtract arguments..." (cf ci-dessous pour la description des arguments)
 
 Exemple : *c:\\Users\\XXX\\Desktop\\mailextract -m imap -u "toto@titi.fr" -p "AZERTY" -s imap.titi.fr -r "c:\\Users\\XXX\\Documents" -d -a -f "INBOX\\Sent -x"*
 
@@ -35,7 +35,9 @@ Cette commande permet, si le fichier mailextract est sur le bureau de l'utilisat
 
 Pensez à mettre des "" autour des champs qui contiennent des caractères non-alphanumériques et qui pourraient être interprétés avant l'exécution de la commande. A noter aussi le séparateur de nom de répertoires à utiliser est celui natif du système d'exécution "\\" sous windows et "/" sous Linux.
 
-Les deux fichiers mailextract.jar et mailextract.exe sont disponibles sur Bintray [https://bintray.com/programmevitam/vitam-mailextract-dist].
+On peut aussi l'ouvrir en lançant simplement par clic sur "MailExtract.exe". Dans ce cas, ou s'il n'y a pas un argument d'action, c'est l'interface graphique qui est lancée.
+
+Les deux fichiers MailExtract.jar et MailExtract.exe sont disponibles sur Bintray [https://bintray.com/programmevitam/vitam-mailextract-dist].
 
 Manuel MailExtract
 ------------------
@@ -46,7 +48,7 @@ Il réalise l'extraction ou l'édition de la structure de boites de messageries 
 * *répertoire Thunderbird* contenant des fichiers mbox et des hiérarchies en .sbd
 * fichier *Outlook pst*
 
-L'extraction génère une structure de répertoire et fichiers (format "sur disque") représentant une structure d'Archive Unit au sesn du SEDA (NF Z44-022). Pour plus d'information voir le javadoc de la classe StoreExtractor.
+L'extraction génère une structure de répertoire et fichiers (format "sur disque") représentant une structure d'Archive Unit au sens du SEDA (NF Z44-022). Pour plus d'information voir le javadoc de la classe StoreExtractor.
 L'opération, d'extraction ou d'édition, peut être loggée sur la console et dans un fichier (root/username[-timestamp].log - cf args).
 Selon le niveau choisi de log vous aurez: erreur fatale d'extraction (SEVERE), avertissement sur les problèmes d'extraction et les items abandonnés (WARNING), informations sur le process global (INFO), liste des répertoires traités (FINE), liste des messages traités (FINER), problèmes avec certaines méta-données (FINEST).
 Le niveau par défaut de log est INFO pour l'extraction et OFF pour l'édition de structure.

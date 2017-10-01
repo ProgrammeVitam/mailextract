@@ -297,6 +297,8 @@ public abstract class MailBoxMessage {
 		return str;
 	}
 
+	protected abstract void doAnalyzeMessage() throws ExtractionException;
+
 	/**
 	 * Analyze message to collect metadata and content information (protocol
 	 * specific).
@@ -313,7 +315,11 @@ public abstract class MailBoxMessage {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public abstract void analyzeMessage() throws ExtractionException;
+	public void analyzeMessage() throws ExtractionException{
+		doAnalyzeMessage();
+		getLogger().finer("mailextract.javamail: Extracted message " + (subject==null?"Unknown title":subject));
+		getLogger().finest("with SentDate="+(sentDate==null?"Unknown sent date":sentDate.toString()));
+	}
 
 	/**
 	 * Create the Archive Unit structures with all content and metadata needed,
@@ -347,14 +353,14 @@ public abstract class MailBoxMessage {
 
 		// strip messageUID from < and >
 		messageUID = getTag(messageUID);
-		messageNode.addMetadata("OriginatingSystemId", messageUID, true);
+		messageNode.addMetadata("OriginatingSystemId", messageUID, false);
 
 //		description = "Message extrait du compte " + mailBoxFolder.storeExtractor.user;
 //		messageNode.addMetadata("Description", description, true);
-		messageNode.addPersonMetadataList("Writer", from, true);
-		messageNode.addPersonMetadataList("Addressee", recipientTo, true);
+		messageNode.addPersonMetadataList("Writer", from, false);
+		messageNode.addPersonMetadataList("Addressee", recipientTo, false);
 		messageNode.addPersonMetadataList("Recipient", recipientCcAndBcc, false);
-		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), true);
+		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), false);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
 		// not in SEDA ontology
