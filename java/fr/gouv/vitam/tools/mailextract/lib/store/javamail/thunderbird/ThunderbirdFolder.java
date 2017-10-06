@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.thundermbox;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -56,16 +56,16 @@ import com.sun.mail.imap.protocol.BASE64MailboxDecoder;
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class ThunderMboxFolder extends Folder {
+public class ThunderbirdFolder extends Folder {
 
 	private String folderFullName; // is root if name is null
 	private int total; // total number of messages in mailbox
 	private volatile boolean opened = false;
 	private int holdsFlags;
 	private List<MessageFork> messages;
-	private ThunderMboxStore mstore;
+	private ThunderbirdStore mstore;
 	private File folderFile;
-	private ThunderMboxFileReader tmfilereader;
+	private ThunderbirdFileReader tmfilereader;
 	private Logger logger = Logger.getGlobal();
 
 	private class MessageFork {
@@ -101,7 +101,7 @@ public class ThunderMboxFolder extends Folder {
 	 *             Messaging exception from inner JavaMail calls
 	 */
 	// constructors
-	public ThunderMboxFolder(ThunderMboxStore store, String folderFullName) throws MessagingException {
+	public ThunderbirdFolder(ThunderbirdStore store, String folderFullName) throws MessagingException {
 		super(store);
 		this.mstore = store;
 
@@ -125,7 +125,7 @@ public class ThunderMboxFolder extends Folder {
 	 * @throws MessagingException
 	 *             Messaging exception from inner JavaMail calls
 	 */
-	public ThunderMboxFolder(ThunderMboxStore store, String folderFullName, int holdsFlags) throws MessagingException {
+	public ThunderbirdFolder(ThunderbirdStore store, String folderFullName, int holdsFlags) throws MessagingException {
 		super(store);
 		this.mstore = store;
 
@@ -356,7 +356,7 @@ public class ThunderMboxFolder extends Folder {
 
 		ArrayList<Folder> folders = new ArrayList<Folder>();
 		for (Entry<String, Integer> entry : boxes.entrySet()) {
-			folders.add(new ThunderMboxFolder(mstore, getSubFolderFullName(entry.getKey()), entry.getValue()));
+			folders.add(new ThunderbirdFolder(mstore, getSubFolderFullName(entry.getKey()), entry.getValue()));
 		}
 
 		result = folders.toArray(result);
@@ -428,7 +428,7 @@ public class ThunderMboxFolder extends Folder {
 	 */
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
-		return new ThunderMboxFolder(mstore, getSubFolderFullName(name));
+		return new ThunderbirdFolder(mstore, getSubFolderFullName(name));
 	}
 
 	/*
@@ -494,7 +494,7 @@ public class ThunderMboxFolder extends Folder {
 		MessageFork mf;
 
 		try {
-			tmfilereader = new ThunderMboxFileReader(logger, folderFile);
+			tmfilereader = new ThunderbirdFileReader(logger, folderFile);
 			opened = true; // now really opened
 			long beg, end;
 
@@ -560,7 +560,7 @@ public class ThunderMboxFolder extends Folder {
 		// GC
 		// optimal for the extraction usage with only one get by message
 		try {
-			m = new ThunderMboxMessage(this,
+			m = new ThunderbirdMessage(this,
 					tmfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
 		} catch (IOException e) {
 			throw new MessagingException("ThunderMBox: Open Failure, can't read: " + folderFile.getPath());

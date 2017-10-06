@@ -49,7 +49,15 @@ public class FileTextExtractor {
 
 	/** Private constructor */
 	private FileTextExtractor() {
+		Level memLevel;
+		Logger logger;
+
+		logger = Logger.getGlobal();
+		memLevel = logger.getLevel();
+		if (memLevel != Level.FINEST)
+			logger.setLevel(Level.OFF);
 		tika = new Tika();
+		logger.setLevel(memLevel);
 	}
 
 	/**
@@ -71,21 +79,20 @@ public class FileTextExtractor {
 	 *             if text extract was not possible
 	 */
 	public String getText(byte[] rawContent) throws ExtractionException {
-		String s=null;
+		String s = null;
 		Level memLevel;
 		Logger logger;
 
-		logger=Logger.getGlobal();
-		memLevel=logger.getLevel();
-		if (memLevel!=Level.FINEST)
+		logger = Logger.getGlobal();
+		memLevel = logger.getLevel();
+		if (memLevel != Level.FINEST)
 			logger.setLevel(Level.OFF);
 		try {
-			if (rawContent.length>0)
+			if (rawContent.length > 0)
 				s = tika.parseToString(new ByteArrayInputStream(rawContent));
 		} catch (IOException | TikaException e) {
 			throw new ExtractionException("mailextract.formattools: Can't extract text content");
-		}
-		finally {
+		} finally {
 			logger.setLevel(memLevel);
 		}
 

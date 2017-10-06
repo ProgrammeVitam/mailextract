@@ -308,7 +308,7 @@ public class MailExtractApp {
 				System.out.println("need a container pointing to thunderbird mbox directory");
 				System.exit(1);
 			}
-			protocol = "thundermbox";
+			protocol = "thunderbird";
 			local = true;
 		}
 		// specific option parsing for outlook pst file extraction

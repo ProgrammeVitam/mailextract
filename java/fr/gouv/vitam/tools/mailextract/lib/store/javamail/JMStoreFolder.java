@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
 import javax.mail.Flags;
 import javax.mail.Folder;
@@ -34,35 +34,35 @@ import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.javamail.thundermbox.ThunderMboxFolder;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird.ThunderbirdFolder;
 
 /**
- * MailBoxFolder sub-class for mail boxes extracted through JavaMail library.
+ * StoreFolder sub-class for mail boxes extracted through JavaMail library.
  * <p>
  * For now, IMAP and Thunderbird mbox structure through MailExtract application, could also be used for POP3 and Gmail, via StoreExtractor (not tested). 
  */
-public class JMMailBoxFolder extends MailBoxFolder {
+public class JMStoreFolder extends StoreFolder {
 	
 	/** Native JavaMail folder. */
 	protected Folder folder;
 
 	// for the root folder
-	private JMMailBoxFolder(StoreExtractor storeExtractor, final Folder folder) {
+	private JMStoreFolder(StoreExtractor storeExtractor, final Folder folder) {
 		super(storeExtractor);
 		this.folder = folder;
-		if (folder instanceof ThunderMboxFolder)
-			((ThunderMboxFolder) folder).setLogger(storeExtractor.getLogger());
+		if (folder instanceof ThunderbirdFolder)
+			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
 	}
 
 	// for a folder with a father
-	private JMMailBoxFolder(StoreExtractor storeExtractor, final Folder folder, MailBoxFolder father) {
+	private JMStoreFolder(StoreExtractor storeExtractor, final Folder folder, StoreFolder father) {
 		super(storeExtractor);
 		this.folder = folder;
-		if (folder instanceof ThunderMboxFolder)
-			((ThunderMboxFolder) folder).setLogger(storeExtractor.getLogger());
+		if (folder instanceof ThunderbirdFolder)
+			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
 		finalizeMailBoxFolder(father);
 	}
 
@@ -75,18 +75,18 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	 *            Root native JavaMail folder
 	 * @param rootArchiveUnit
 	 *            Root ArchiveUnit
-	 * @return the JM mail box folder
+	 * @return the JM store folder
 	 */
-	public static JMMailBoxFolder createRootFolder(StoreExtractor storeExtractor, final Folder folder,
+	public static JMStoreFolder createRootFolder(StoreExtractor storeExtractor, final Folder folder,
 			ArchiveUnit rootArchiveUnit) {
-		JMMailBoxFolder result = new JMMailBoxFolder(storeExtractor, folder);
+		JMStoreFolder result = new JMStoreFolder(storeExtractor, folder);
 		result.folderArchiveUnit = rootArchiveUnit;
 
 		return result;
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doExtractFolderMessages()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#doExtractFolderMessages(boolean)
 	 */
 	@Override
 	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
@@ -99,11 +99,11 @@ public class JMMailBoxFolder extends MailBoxFolder {
 			for (int i = 1; i <= msgtotal; i++) {
 				message = folder.getMessage(i);
 				if (!((MimeMessage) message).isSet(Flags.Flag.DELETED)) {
-					JMMailBoxMessage jMMailBoxMessage = new JMMailBoxMessage(this, (MimeMessage) message);
-					jMMailBoxMessage.analyzeMessage();
-					dateRange.extendRange(jMMailBoxMessage.getSentDate());
-					jMMailBoxMessage.extractMessage(writeFlag);
-					jMMailBoxMessage.countMessage();
+					JMStoreMessage jMStoreMessage = new JMStoreMessage(this, (MimeMessage) message);
+					jMStoreMessage.analyzeMessage();
+					dateRange.extendRange(jMStoreMessage.getSentDate());
+					jMStoreMessage.extractMessage(writeFlag);
+					jMStoreMessage.countMessage();
 				}
 			}
 			folder.close(false);
@@ -113,18 +113,18 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doExtractSubFolders(int)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#doExtractSubFolders(int, boolean)
 	 */
 	@Override
 	protected void doExtractSubFolders(int level,boolean writeFlag) throws ExtractionException {
-		JMMailBoxFolder mBSubFolder;
+		JMStoreFolder mBSubFolder;
 
 		try {
 			final Folder[] subfolders = folder.list();
 
 			for (final Folder subfolder : subfolders) {
 
-				mBSubFolder = new JMMailBoxFolder(storeExtractor, subfolder, this);
+				mBSubFolder = new JMStoreFolder(storeExtractor, subfolder, this);
 				if (mBSubFolder.extractFolder(level + 1,writeFlag))
 					incFolderSubFoldersCount();
 				dateRange.extendRange(mBSubFolder.getDateRange());
@@ -135,7 +135,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#getFullName()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#getFullName()
 	 */
 	@Override
 	public String getFullName() {
@@ -143,7 +143,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#getName()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#getName()
 	 */
 	@Override
 	public String getName() {
@@ -151,7 +151,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#hasMessages()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasMessages()
 	 */
 	@Override
 	public boolean hasMessages() throws ExtractionException {
@@ -163,7 +163,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#hasSubfolders()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasSubfolders()
 	 */
 	@Override
 	public boolean hasSubfolders() throws ExtractionException {
@@ -175,7 +175,7 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#doListFolderMessages(boolean)
 	 */
 	@Override
 	protected void doListFolderMessages(boolean stats) throws ExtractionException {
@@ -188,11 +188,11 @@ public class JMMailBoxFolder extends MailBoxFolder {
 			for (int i = 1; i <= msgtotal; i++) {
 				message = folder.getMessage(i);
 				if (!((MimeMessage) message).isSet(Flags.Flag.DELETED)) {
-					JMMailBoxMessage jMMailBoxMessage = new JMMailBoxMessage(this, (MimeMessage) message);
-					jMMailBoxMessage.analyzeMessage();
+					JMStoreMessage jMStoreMessage = new JMStoreMessage(this, (MimeMessage) message);
+					jMStoreMessage.analyzeMessage();
 					if (stats)
-						jMMailBoxMessage.extractMessage(false);
-					jMMailBoxMessage.countMessage();
+						jMStoreMessage.extractMessage(false);
+					jMStoreMessage.countMessage();
 					
 				}
 			}
@@ -204,17 +204,17 @@ public class JMMailBoxFolder extends MailBoxFolder {
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListSubFolders(boolean)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#doListSubFolders(boolean)
 	 */
 	@Override
 	protected void doListSubFolders(boolean stats) throws ExtractionException {
-		JMMailBoxFolder mBSubFolder;
+		JMStoreFolder mBSubFolder;
 
 		try {
 			final Folder[] subfolders = folder.list();
 
 			for (final Folder subfolder : subfolders) {
-				mBSubFolder = new JMMailBoxFolder(storeExtractor, subfolder, this);
+				mBSubFolder = new JMStoreFolder(storeExtractor, subfolder, this);
 				mBSubFolder.listFolder(stats);
 				incFolderSubFoldersCount();
 			}

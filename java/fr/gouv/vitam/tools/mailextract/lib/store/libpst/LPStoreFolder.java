@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.libpst;
+package fr.gouv.vitam.tools.mailextract.lib.store.libpst;
 
 import java.io.File;
 import java.io.IOException;
@@ -36,12 +36,12 @@ import com.pff.PSTFolder;
 import com.pff.PSTMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 
 /**
- * MailBoxFolder sub-class for mail boxes extracted through libpst library.
+ * StoreFolder sub-class for mail boxes extracted through libpst library.
  * <p>
  * The java-libpst is a pure java library for the reading of Outlook PST and OST
  * files.
@@ -53,7 +53,7 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
  * specs by Microsoft.
  * <p> Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPMailBoxFolder extends MailBoxFolder {
+public class LPStoreFolder extends StoreFolder {
 	
 	/** Native libpst folder **/
 	protected PSTFolder pstFolder;
@@ -63,7 +63,7 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	private String name;
 
 	// for the root folder
-	private LPMailBoxFolder(StoreExtractor storeExtractor, PSTFolder pstFolder) {
+	private LPStoreFolder(StoreExtractor storeExtractor, PSTFolder pstFolder) {
 		super(storeExtractor);
 		this.pstFolder = pstFolder;
 		this.fullName = "";
@@ -71,7 +71,7 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	}
 
 	// for a folder with a father
-	private LPMailBoxFolder(StoreExtractor storeExtractor, PSTFolder pstFolder, LPMailBoxFolder father) {
+	private LPStoreFolder(StoreExtractor storeExtractor, PSTFolder pstFolder, LPStoreFolder father) {
 		super(storeExtractor);
 		this.pstFolder = pstFolder;
 		this.name = pstFolder.getDisplayName();
@@ -93,11 +93,11 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 *            Root native libpst folder
 	 * @param rootArchiveUnit
 	 *            Root ArchiveUnit
-	 * @return the LP mail box folder
+	 * @return the LP store folder
 	 */
-	public static LPMailBoxFolder createRootFolder(LPStoreExtractor storeExtractor, PSTFolder pstFolder,
+	public static LPStoreFolder createRootFolder(LPStoreExtractor storeExtractor, PSTFolder pstFolder,
 			ArchiveUnit rootArchiveUnit) {
-		LPMailBoxFolder result = new LPMailBoxFolder(storeExtractor, pstFolder);
+		LPStoreFolder result = new LPStoreFolder(storeExtractor, pstFolder);
 		result.folderArchiveUnit = rootArchiveUnit;
 
 		return result;
@@ -116,11 +116,11 @@ public class LPMailBoxFolder extends MailBoxFolder {
 		try {
 			message = (PSTMessage) pstFolder.getNextChild();
 			while (message != null) {
-				LPMailBoxMessage lPMailBoxMessage = new LPMailBoxMessage(this, message);
-				lPMailBoxMessage.analyzeMessage();
-				dateRange.extendRange(lPMailBoxMessage.getSentDate());
-				lPMailBoxMessage.extractMessage(writeFlag);
-				lPMailBoxMessage.countMessage();
+				LPStoreMessage lPStoreMessage = new LPStoreMessage(this, message);
+				lPStoreMessage.analyzeMessage();
+				dateRange.extendRange(lPStoreMessage.getSentDate());
+				lPStoreMessage.extractMessage(writeFlag);
+				lPStoreMessage.countMessage();
 				message = (PSTMessage) pstFolder.getNextChild();
 			}
 		} catch (IOException e) {
@@ -139,12 +139,12 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 */
 	@Override
 	protected void doExtractSubFolders(int level,boolean writeFlag) throws ExtractionException {
-		LPMailBoxFolder lPMailBoxSubFolder;
+		LPStoreFolder lPMailBoxSubFolder;
 
 		try {
 			final Vector<PSTFolder> subfolders = pstFolder.getSubFolders();
 			for (final PSTFolder subfolder : subfolders) {
-				lPMailBoxSubFolder = new LPMailBoxFolder(storeExtractor, subfolder, this);
+				lPMailBoxSubFolder = new LPStoreFolder(storeExtractor, subfolder, this);
 				if (lPMailBoxSubFolder.extractFolder(level + 1,writeFlag))
 					incFolderSubFoldersCount();
 				dateRange.extendRange(lPMailBoxSubFolder.getDateRange());
@@ -215,8 +215,8 @@ public class LPMailBoxFolder extends MailBoxFolder {
 		try {
 			message = (PSTMessage) pstFolder.getNextChild();
 			while (message != null) {
-				LPMailBoxMessage lPMailBoxMessage = new LPMailBoxMessage(this, message);
-				lPMailBoxMessage.countMessage();
+				LPStoreMessage lPStoreMessage = new LPStoreMessage(this, message);
+				lPStoreMessage.countMessage();
 				message = (PSTMessage) pstFolder.getNextChild();
 			}
 		} catch (IOException e) {
@@ -234,12 +234,12 @@ public class LPMailBoxFolder extends MailBoxFolder {
 	 */
 	@Override
 	protected void doListSubFolders(boolean stats) throws ExtractionException {
-		LPMailBoxFolder lPMailBoxSubFolder;
+		LPStoreFolder lPMailBoxSubFolder;
 
 		try {
 			final Vector<PSTFolder> subfolders = pstFolder.getSubFolders();
 			for (final PSTFolder subfolder : subfolders) {
-				lPMailBoxSubFolder = new LPMailBoxFolder(storeExtractor, subfolder, this);
+				lPMailBoxSubFolder = new LPStoreFolder(storeExtractor, subfolder, this);
 				lPMailBoxSubFolder.listFolder(stats);
 				incFolderSubFoldersCount();
 			}

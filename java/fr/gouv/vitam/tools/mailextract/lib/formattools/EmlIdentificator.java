@@ -51,12 +51,12 @@ import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 /**
  * Class for the RFC822 files identification tool.
  */
-public class RFC822Identificator {
+public class EmlIdentificator {
 	private static final int MAX_TRIES = 3;
 	private static final long MILLI_SECONDS_BETWEEN_TRIES = 1000;
 
 	/** Singleton instance **/
-	private static RFC822Identificator INSTANCE = new RFC822Identificator();
+	private static EmlIdentificator INSTANCE = new EmlIdentificator();
 
 	/** Tika object **/
 	private Tika tika;
@@ -71,7 +71,7 @@ public class RFC822Identificator {
 	private ObjectMapper objectMapper;
 
 	// private constructor trying to find Siegfried server connection.
-	private RFC822Identificator() {
+	private EmlIdentificator() {
 		httpClient = HttpClients.createDefault();
 
 		// try to connect to see if SiegFried is active
@@ -106,7 +106,7 @@ public class RFC822Identificator {
 	 *
 	 * @return single instance of FileTextExtractor
 	 */
-	public static RFC822Identificator getInstance() {
+	public static EmlIdentificator getInstance() {
 		return INSTANCE;
 	}
 

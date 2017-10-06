@@ -27,9 +27,9 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
-import fr.gouv.vitam.tools.mailextract.lib.javamail.JMStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.libpst.LPStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.store.libpst.LPStoreExtractor;
 
 import java.io.File;
 //import java.io.IOException;
@@ -103,7 +103,7 @@ import java.util.logging.Logger;
  * used
  * <p>
  * For detailed information on descritptive metadata collected see
- * {@link MailBoxFolder} and {@link MailBoxMessage}.
+ * {@link StoreFolder} and {@link StoreMessage}.
  * <p>
  * The extraction or listing operation is logged on console and file
  * (root/username[-timestamp].log - cf args). At the different levels (using
@@ -117,7 +117,7 @@ import java.util.logging.Logger;
  */
 public abstract class StoreExtractor {
 
-	/** Protocol used for extraction (imap| thundermbox| pstfile) */
+	/** Protocol used for extraction (imap| thunderbird| pstfile) */
 	protected String protocol;
 	/** Server of target account ((hostname|ip)[:port]) **/
 	protected String server;
@@ -140,18 +140,21 @@ public abstract class StoreExtractor {
 	protected String destRootPath, destName;
 	/** Extractor options, flags coded on an int, defined thru constants **/
 	protected int options;
-	
+
 	/** Extractor context description */
 	protected String description;
 
 	/** Root folder for extraction (can be different form account root) **/
-	protected MailBoxFolder rootAnalysisMBFolder;
+	protected StoreFolder rootAnalysisMBFolder;
 
 	// private fields for global statictics
 	private int totalMessagesCount;
 	private int totalAttachedMessagesCount;
 	private int totalFoldersCount;
 	private long totalRawSize;
+
+	// private root storeExtractor for nested extraction, null if root
+	private StoreExtractor rootStoreExtractor;
 
 	// private logger
 	private Logger logger;
@@ -160,7 +163,7 @@ public abstract class StoreExtractor {
 	 * Instantiates a new store extractor.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (imap| thundermbox| pstfile)
+	 *            Protocol used for extraction (imap| thunderbird| pstfile)
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
@@ -178,6 +181,8 @@ public abstract class StoreExtractor {
 	 *            Name of the extraction directory
 	 * @param options
 	 *            Extractor options
+	 * @param rootStoreExtractor
+	 *            the creating store extractor in nested extraction, or null if root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
 	 * @throws ExtractionException
@@ -185,8 +190,8 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	protected StoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, Logger logger)
-			throws ExtractionException {
+			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
+			Logger logger) throws ExtractionException {
 
 		this.protocol = protocol;
 		this.server = server;
@@ -203,11 +208,10 @@ public abstract class StoreExtractor {
 		this.totalMessagesCount = 0;
 		this.totalRawSize = 0;
 
+		this.rootStoreExtractor = rootStoreExtractor;
 		this.logger = logger;
 
-		// this.tika = new Tika();
-		
-		this.description=":p:"+protocol+":u:"+user;
+		this.description = ":p:" + protocol + ":u:" + user;
 	}
 
 	/** KEEP_ONLY_DEEP_EMPTY_FOLDERS option constant */
@@ -222,45 +226,57 @@ public abstract class StoreExtractor {
 	/** NAMES_SHORTENED option constant */
 	final static public int CONST_NAMES_SHORTENED = 8;
 
-	// Write log identifying the mail box target, and options
-	private void writeTargetLog() {
-		getLogger().info("Target mail box with protocol=" + protocol
-				+ (server == null || server.isEmpty() ? "" : "  server=" + server)
-				+ (user == null || user.isEmpty() ? "" : " user=" + user)
-				+ (password == null || password.isEmpty() ? "" : " password=" + password)
-				+ (container == null || container.isEmpty() ? "" : " container=" + container)
-				+ (folder == null || folder.isEmpty() ? "" : " folder=" + folder));
-		getLogger().info("to directory " + destRootPath + File.separator + destName);
+	/**
+	 * Log the context of the StoreExtractor.
+	 */
+	public void writeTargetLog() {
 
-		boolean first = true;
-		String optionsLog = "";
-		if (hasOptions(CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)) {
-			optionsLog += "keeping all empty folders except root level ones";
-			first = false;
-		}
-		if (hasOptions(CONST_DROP_EMPTY_FOLDERS)) {
-			if (!first)
-				optionsLog += ", ";
-			optionsLog += "droping all empty folders";
-			first = false;
-		}
-		if (hasOptions(CONST_WARNING_MSG_PROBLEM)) {
-			if (!first)
-				optionsLog += ", ";
-			optionsLog += "generate warning when there's a problem on a message (otherwise log at FINEST level)";
-			first = false;
-		}
-		if (hasOptions(CONST_NAMES_SHORTENED)) {
-			if (!first)
-				optionsLog += ", ";
-			optionsLog += "with shortened names";
-			first = false;
-		}
-		if (!first)
-			optionsLog += ", ";
-		optionsLog += "with log level " + getLogger().getLevel();
+		// if root extractor log extraction context
+		if (rootStoreExtractor == null) {
+			getLogger().info("Target mail box with protocol=" + protocol
+					+ (server == null || server.isEmpty() ? "" : "  server=" + server)
+					+ (user == null || user.isEmpty() ? "" : " user=" + user)
+					+ (password == null || password.isEmpty() ? "" : " password=" + password)
+					+ (container == null || container.isEmpty() ? "" : " container=" + container)
+					+ (folder == null || folder.isEmpty() ? "" : " folder=" + folder));
+			getLogger().info("to directory " + destRootPath + File.separator + destName);
 
-		getLogger().info(optionsLog);
+			boolean first = true;
+			String optionsLog = "";
+			if (hasOptions(CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)) {
+				optionsLog += "keeping all empty folders except root level ones";
+				first = false;
+			}
+			if (hasOptions(CONST_DROP_EMPTY_FOLDERS)) {
+				if (!first)
+					optionsLog += ", ";
+				optionsLog += "droping all empty folders";
+				first = false;
+			}
+			if (hasOptions(CONST_WARNING_MSG_PROBLEM)) {
+				if (!first)
+					optionsLog += ", ";
+				optionsLog += "generate warning when there's a problem on a message (otherwise log at FINEST level)";
+				first = false;
+			}
+			if (hasOptions(CONST_NAMES_SHORTENED)) {
+				if (!first)
+					optionsLog += ", ";
+				optionsLog += "with shortened names";
+				first = false;
+			}
+			if (!first)
+				optionsLog += ", ";
+			optionsLog += "with log level " + getLogger().getLevel();
+
+			getLogger().info(optionsLog);
+		}
+		// if internal extractor give attachment context
+		else {
+			getLogger().finer("Target attached store protocol=" + protocol);
+			getLogger().finer("to directory " + destRootPath);
+		}
+
 	}
 
 	/**
@@ -291,12 +307,17 @@ public abstract class StoreExtractor {
 	/**
 	 * Gets a uniq ID in store extractor context.
 	 * <p>
-	 * Sequence incremented at each call
+	 * Sequence incremented at each call in root store extractor context to
+	 * garanty unicity for the whole extraction process even in nested
+	 * extractions.
 	 *
 	 * @return a uniq ID
 	 */
 	public int getUniqID() {
-		return uniqID++;
+		if (rootStoreExtractor == null)
+			return uniqID++;
+		else
+			return rootStoreExtractor.getUniqID();
 	}
 
 	/**
@@ -387,10 +408,38 @@ public abstract class StoreExtractor {
 	}
 
 	/**
+	 * Is the store extractor the root one in nested extraction.
+	 *
+	 * @return the description String
+	 */
+	public boolean isRoot() {
+		return rootStoreExtractor==null;
+	}
+
+	// /**
+	// * Gets the extractor depth in nested store extraction.
+	// *
+	// * @return depth
+	// */
+	// public int getDepth() {
+	// return depth;
+	// }
+	//
+	// /**
+	// * Gets the extractor extractor tag to diversify the file hierarchy names
+	// of attached messages.
+	// *
+	// * @return depth
+	// */
+	// public String getTag() {
+	// return tag;
+	// }
+
+	/**
 	 * Create a store extractor as a factory creator.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (thundermbox| pstfiles| imap|
+	 *            Protocol used for extraction (thunderbird| pstfiles| imap|
 	 *            imaps[not tested gimap| pop3])
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
@@ -420,13 +469,61 @@ public abstract class StoreExtractor {
 			String container, String folder, String destRootPath, String destName, int options, Logger logger)
 			throws ExtractionException {
 
+		return createInternalStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
+				options, null, logger);
+	}
 
+	/**
+	 * Create an internal depth store extractor as a factory creator.
+	 *
+	 * @param protocol
+	 *            Protocol used for extraction (thunderbird| pstfiles| imap|
+	 *            imaps[not tested gimap| pop3])
+	 * @param server
+	 *            Server of target account ((hostname|ip)[:port
+	 * @param user
+	 *            User account name
+	 * @param password
+	 *            Password, can be null if not used
+	 * @param container
+	 *            Path to the local extraction target (Thunderbird or Outlook
+	 * @param folder
+	 *            Path of the extracted folder in the account mail box, can be
+	 *            null if default root folder
+	 * @param destRootPath
+	 *            Root path of the extraction directory
+	 * @param destName
+	 *            Name of the extraction directory
+	 * @param options
+	 *            Options (flag composition of CONST_)
+	 * @param rootStoreExtractor
+	 *            the creating store extractor in nested extraction, or null if root one
+	 * @param logger
+	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @return the store extractor, constructed as a non abstract subclass
+	 * @throws ExtractionException
+	 *             Any unrecoverable extraction exception (access trouble, major
+	 *             format problems...)
+	 */
+	public static StoreExtractor createInternalStoreExtractor(String protocol, String server, String user,
+			String password, String container, String folder, String destRootPath, String destName, int options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+
+		StoreExtractor store;
+
+		// get read of leading file separator in folder
+		if ((folder!=null) && (!folder.isEmpty()) && (folder.substring(0,1)==File.separator))
+			folder=folder.substring(1);
+		
 		if (protocol.equals("libpst"))
-			return new LPStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-					options, logger);
+			store = new LPStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
+					options, rootStoreExtractor, logger);
 		else
-			return new JMStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-					options, logger);
+			store = new JMStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
+					options, rootStoreExtractor, logger);
+
+		return store;
+
 	}
 
 	/**
@@ -435,8 +532,8 @@ public abstract class StoreExtractor {
 	 * 
 	 * <p>
 	 * This is a method where the extraction structure and content is partially
-	 * defined (see also {@link MailBoxMessage#extractMessage extractMessage}
-	 * and {@link MailBoxFolder#extractFolder extractFolder}).
+	 * defined (see also {@link StoreMessage#extractMessage extractMessage}
+	 * and {@link StoreFolder#extractFolder extractFolder}).
 	 * 
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
@@ -444,7 +541,7 @@ public abstract class StoreExtractor {
 	 */
 	public void extractAllFolders() throws ExtractionException {
 		String title;
-		
+
 		Instant start = Instant.now();
 
 		writeTargetLog();
@@ -456,15 +553,15 @@ public abstract class StoreExtractor {
 		rootNode.addMetadata("DescriptionLevel", "RecordGrp", true);
 
 		// title generation from context
-		if ((user!=null) && (!user.isEmpty()))
-				title="Ensemble des messages électroniques envoyés et reçus par le compte "+ user;
-		else if ((container!=null) && (!container.isEmpty()))
-			title="Ensemble des messages électroniques du container "+ container;
+		if ((user != null) && (!user.isEmpty()))
+			title = "Ensemble des messages électroniques envoyés et reçus par le compte " + user;
+		else if ((container != null) && (!container.isEmpty()))
+			title = "Ensemble des messages électroniques du container " + container;
 		else
-			title="Ensemble de messages ";
-		if ((server!=null) && (!server.isEmpty()))
-				title+= " sur le serveur " + server;
-		title+= " à la date du " + start;
+			title = "Ensemble de messages ";
+		if ((server != null) && (!server.isEmpty()))
+			title += " sur le serveur " + server;
+		title += " à la date du " + start;
 		rootNode.addMetadata("Title", title, true);
 		if (rootAnalysisMBFolder.dateRange.isDefined()) {
 			rootNode.addMetadata("StartDate", DateRange.getISODateString(rootAnalysisMBFolder.dateRange.getStart()),

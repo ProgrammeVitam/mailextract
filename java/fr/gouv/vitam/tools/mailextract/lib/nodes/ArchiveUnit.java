@@ -136,10 +136,7 @@ public class ArchiveUnit {
 	 * @return Full path Archive Unit directory name
 	 */
 	public String getFullName() {
-		if (objects.isEmpty())
-			return rootPath + File.separator + name;
-		else
-			return rootPath + File.separator + "__" + name + "__";
+		return rootPath + File.separator + getName();
 	}
 
 	/**
@@ -429,10 +426,7 @@ public class ArchiveUnit {
 		String filename;
 
 		// different name if groupe unit or unit with objects
-		if (objects.isEmpty())
-			dirPath = rootPath + File.separator + name;
-		else
-			dirPath = rootPath + File.separator + "__" + name + "__";
+		dirPath = getFullName();
 
 		// write unit directory
 		createDirectory(dirPath);
@@ -446,10 +440,10 @@ public class ArchiveUnit {
 		// write objects files
 		if (!objects.isEmpty()) {
 			for (ArchiveObject o : objects) {
-				if (o.filename==null || o.filename.isEmpty())
-					filename="undefined";	
+				if (o.filename == null || o.filename.isEmpty())
+					filename = "undefined";
 				else
-					filename=o.filename;
+					filename = o.filename;
 				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + filename, o.rawContent);
 			}
 		}
@@ -477,12 +471,12 @@ public class ArchiveUnit {
 		else
 			len = 128 - extension.length();
 
-		//TODO: best filter
+		// TODO: best filter
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)
 			result = result.substring(0, len);
-		
+
 		return result + extension;
 	}
 

@@ -25,11 +25,11 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.rfc822;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-
+import java.io.FileInputStream;
+import java.io.IOException;
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
@@ -38,20 +38,21 @@ import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
 
 /**
- * JavaMail Folder simulated for RFC822 uniq message file.
+ * JavaMail Folder simulated for Eml uniq message file.
  * <p>
  * This is the main class for folder analysis and message slicing.
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class RFC822Folder extends Folder {
+public class EmlFolder extends Folder {
 
 	private volatile boolean opened = false;
-	private RFC822Store rfc822store;
+	private EmlStore emlstore;
+	private FileInputStream  emlfileinputstream;
 
 	/**
-	 * Instantiates a new RFC822 simulated folder.
+	 * Instantiates a new Eml simulated folder.
 	 *
 	 * @param store
 	 *            Store
@@ -59,9 +60,9 @@ public class RFC822Folder extends Folder {
 	 *             Messaging exception from inner JavaMail calls
 	 */
 	// constructors
-	public RFC822Folder(RFC822Store store) throws MessagingException {
+	public EmlFolder(EmlStore store) throws MessagingException {
 		super(store);
-		this.rfc822store = store;
+		this.emlstore = store;
 	}
 
 	/*
@@ -100,7 +101,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public Folder[] list(String pattern) throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: list with pattern not supported");
+		throw new MethodNotSupportedException("Eml: list with pattern not supported");
 	}
 
 	/*
@@ -173,10 +174,10 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
-		if ((name==null)||(name.isEmpty()))
-			return new RFC822Folder(rfc822store);
-		else 
-			throw new MethodNotSupportedException("RFC822: no folder supported");
+		if ((name == null) || (name.isEmpty()))
+			return new EmlFolder(emlstore);
+		else
+			throw new MethodNotSupportedException("Eml: no folder supported");
 	}
 
 	/*
@@ -184,7 +185,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public boolean create(int type) throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: no writing supported");
+		throw new MethodNotSupportedException("Eml: no writing supported");
 	}
 
 	/*
@@ -192,7 +193,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public boolean delete(boolean recurse) throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: no writing supported");
+		throw new MethodNotSupportedException("Eml: no writing supported");
 	}
 
 	/*
@@ -200,7 +201,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public boolean renameTo(Folder f) throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: no writing supported");
+		throw new MethodNotSupportedException("Eml: no writing supported");
 	}
 
 	/*
@@ -221,20 +222,24 @@ public class RFC822Folder extends Folder {
 	@Override
 	public void open(int mode) throws MessagingException {
 		if (opened)
-			throw new IllegalStateException("RFC822: simulated folder is already open");
+			throw new IllegalStateException("Eml: simulated folder is already open");
 
 		this.mode = mode;
 		switch (mode) {
 		case READ_WRITE:
-			throw new MethodNotSupportedException("RFC822: no writing supported");
+			throw new MethodNotSupportedException("Eml: no writing supported");
 		case READ_ONLY:
 		default:
-			if (!rfc822store.hasRawContent())
-				throw new MessagingException("RFC822: open failure no raw content");
 			break;
 		}
-		
-		opened=true;
+
+		try {
+			emlfileinputstream = new FileInputStream(new File(emlstore.getContainer()));
+		} catch (IOException e) {
+			throw new MessagingException("Eml: open failure, can't read: " + emlstore.getContainer());
+		}
+
+		opened = true;
 	}
 
 	/*
@@ -245,8 +250,13 @@ public class RFC822Folder extends Folder {
 	@Override
 	public void close(boolean expunge) throws MessagingException {
 		if (!opened)
-			throw new IllegalStateException("RFC822: simulated folder is not open");
+			throw new IllegalStateException("Eml: simulated folder is not open");
 		opened = false;
+		try {
+			emlfileinputstream.close();
+		} catch (IOException e) {
+			// forget it
+		}
 	}
 
 	/*
@@ -267,15 +277,10 @@ public class RFC822Folder extends Folder {
 	@Override
 	public Message getMessage(int msgno) throws MessagingException {
 		if (msgno != 1)
-			throw new IndexOutOfBoundsException("RFC822: only message 1, no message number " + msgno);
+			throw new IndexOutOfBoundsException("Eml: only message 1, no message number " + msgno);
 		Message m;
-		
-		// each get regenerate a message with no strong link so that it can be
-		// GC. Optimal for the extraction usage with only one get by message
-		if (!rfc822store.hasRawContent())
-			throw new MessagingException("RFC822: open failure no raw content");
-		m = new RFC822Message(this,
-					new ByteArrayInputStream(rfc822store.getRawContent()), msgno);
+
+		m = new EmlMessage(this, emlfileinputstream, msgno);
 
 		return m;
 	}
@@ -285,7 +290,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public void appendMessages(Message[] msgs) throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: no writing supported");
+		throw new MethodNotSupportedException("Eml: no writing supported");
 	}
 
 	/*
@@ -293,7 +298,7 @@ public class RFC822Folder extends Folder {
 	 */
 	@Override
 	public Message[] expunge() throws MessagingException {
-		throw new MethodNotSupportedException("RFC822: no writing supported");
+		throw new MethodNotSupportedException("Eml: no writing supported");
 	}
 
 	/*

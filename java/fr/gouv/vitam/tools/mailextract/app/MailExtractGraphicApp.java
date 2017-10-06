@@ -277,7 +277,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		// local
 		if (mainWindow.localRadioButton.isSelected()) {
 			if (mainWindow.thunderbirdRadioButton.isSelected())
-				protocol = "thundermbox";
+				protocol = "thunderbird";
 			else
 				protocol = "libpst";
 			container = mainWindow.containerField.getText();

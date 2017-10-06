@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
 import java.io.*;
 import java.util.*;
@@ -38,17 +38,17 @@ import org.jsoup.*;
 import org.jsoup.parser.Parser;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxMessage;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 
 /**
- * MailBoxMessage sub-class for mail boxes extracted through JavaMail library.
+ * StoreMessage sub-class for mail boxes extracted through JavaMail library.
  * <p>
  * For now, IMAP and Thunderbird mbox structure through MailExtract application,
  * could also be used for POP3 and Gmail, via StoreExtractor (not tested).
  */
-public class JMMailBoxMessage extends MailBoxMessage {
+public class JMStoreMessage extends StoreMessage {
 
 	/** Native JavaMail message. */
 	protected MimeMessage message;
@@ -67,15 +67,13 @@ public class JMMailBoxMessage extends MailBoxMessage {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public JMMailBoxMessage(MailBoxFolder mBFolder, MimeMessage message) throws ExtractionException {
+	public JMStoreMessage(StoreFolder mBFolder, MimeMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#getMessageSize()
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#getMessageSize()
 	 */
 	@Override
 	public long getMessageSize() {
@@ -233,7 +231,7 @@ public class JMMailBoxMessage extends MailBoxMessage {
 		Header header;
 
 		try {
-			for (@SuppressWarnings("unchecked")
+			for (
 			Enumeration<Header> headers = (message.getAllHeaders()); headers.hasMoreElements();) {
 				header = headers.nextElement();
 				line = header.getName() + ": ";
@@ -303,9 +301,8 @@ public class JMMailBoxMessage extends MailBoxMessage {
 						break;
 					}
 				} else if (bp.isMimeType("text/html")) {
-					result = getPartTextContent(bp);
-				} else {
-					return getPartTextContent(bp);
+					result = HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String) p.getContent()));
+					break;
 				}
 			}
 		} else if (p.isMimeType("multipart/*")) {
@@ -338,14 +335,17 @@ public class JMMailBoxMessage extends MailBoxMessage {
 	private List<Attachment> getAttachments() throws ExtractionException {
 		List<Attachment> attachments = new ArrayList<Attachment>();
 		String filename;
+		int attachmentType;
 
 		try {
 			Object contentObject = message.getContent();
+			
 			if (contentObject instanceof Multipart) {
 				Multipart multipart = (Multipart) contentObject;
 				for (int i = 0; i < multipart.getCount(); i++) {
 					BodyPart bodyPart = multipart.getBodyPart(i);
 					filename = bodyPart.getFileName();
+					// skip not attachment part
 					if (!Part.ATTACHMENT.equalsIgnoreCase(bodyPart.getDisposition()) && (filename == null)) {
 						continue; // dealing with attachments only
 					}
@@ -368,8 +368,16 @@ public class JMMailBoxMessage extends MailBoxMessage {
 					String date;
 					
 					headers=bodyPart.getHeader("Content-Disposition");
-					if ((headers!=null) && (headers.length!=0)) {
+					// if no disposition header consider as attached file
+					if ((headers==null) || (headers.length==0)) {
+						attachmentType=FILE_ATTACHMENT;
+					}
+					else {
 						disposition=new ContentDisposition(headers[0]);
+						if (Part.INLINE.equalsIgnoreCase(disposition.getDisposition()))
+							attachmentType=INLINE_ATTACHMENT;
+						else 
+							attachmentType=FILE_ATTACHMENT;
 						date=disposition.getParameter("creation-date");
 						if ((date!=null) && (!date.isEmpty()))
 							creationDate = mailDateFormat.parse(date);
@@ -378,14 +386,14 @@ public class JMMailBoxMessage extends MailBoxMessage {
 							modificationDate = mailDateFormat.parse(date);
 					}
 					
-					// detect if attached message
-					int attachedMessage=NO_ATTACHED_MESSAGE;
+					// detect if declared attached message
 					headers=bodyPart.getHeader("Content-type");
 					if (headers.length!=0) {
 						if (headers[0].indexOf("rfc822")>0)
-							attachedMessage=RFC822_ATTACHED_MESSAGE;
+							attachmentType=EML_STORE_ATTACHMENT+STORE_ATTACHMENT;
 					}
-					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(),creationDate,modificationDate,attachedMessage));
+					
+					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(),creationDate,modificationDate,attachmentType));
 				}
 			}
 		} catch (Exception e) {
@@ -399,10 +407,8 @@ public class JMMailBoxMessage extends MailBoxMessage {
 
 	// main analyze method
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#analyzeMessage()
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#doAnalyzeMessage()
 	 */
 	public void doAnalyzeMessage() throws ExtractionException {
 		List<String> cc, bcc;

@@ -25,20 +25,19 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
 import javax.mail.*;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.javamail.JMMailBoxFolder;
-import fr.gouv.vitam.tools.mailextract.lib.javamail.rfc822.RFC822Store;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreFolder;
 
-import java.io.*;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 /**
@@ -51,11 +50,11 @@ public class JMStoreExtractor extends StoreExtractor {
 	private Store store;
 
 	/**
-	 * Instantiates a new JavaMail StoreExtractor for protcols or complex
+	 * Instantiates a new JavaMail StoreExtractor for protcole or complex
 	 * containers.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (imap| thundermbox [not tested
+	 *            Protocol used for extraction (imap| thunderbird [not tested
 	 *            gimap| pop3])
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
@@ -74,6 +73,8 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            Name of the extraction directory
 	 * @param options
 	 *            Options (flag composition of CONST_)
+	 * @param rootStoreExtractor
+	 *            the creating store extractor in nested extraction, or null if root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
 	 * @throws ExtractionException
@@ -81,9 +82,9 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, Logger logger)
+			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor, Logger logger)
 			throws ExtractionException {
-		super(protocol, server, user, password, container, folder, destRootPath, destName, options, logger);
+		super(protocol, server, user, password, container, folder, destRootPath, destName, options, rootStoreExtractor, logger);
 
 		String url = "";
 
@@ -114,10 +115,16 @@ public class JMStoreExtractor extends StoreExtractor {
 			props.setProperty("mail.imap.ssl.trust", "*");
 			setSessionProperties(props);
 			Session session = Session.getDefaultInstance(props, null);
-			// add thundermbox provider
-			session.addProvider(new Provider(Provider.Type.STORE, "thundermbox",
-					fr.gouv.vitam.tools.mailextract.lib.javamail.thundermbox.ThunderMboxStore.class.getName(),
+			
+			// add thunderbird provider
+			session.addProvider(new Provider(Provider.Type.STORE, "thunderbird",
+					fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird.ThunderbirdStore.class.getName(),
 					"fr.gouv.vitam", getClass().getPackage().getImplementationVersion()));
+			// add eml provider
+			session.addProvider(new Provider(Provider.Type.STORE, "eml",
+					fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml.EmlStore.class.getName(),
+					"fr.gouv.vitam", getClass().getPackage().getImplementationVersion()));
+
 
 			URLName urlName = new URLName(url);
 			store = session.getStore(urlName);
@@ -128,14 +135,14 @@ public class JMStoreExtractor extends StoreExtractor {
 		}
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		JMMailBoxFolder jMRootMailBoxFolder;
+		JMStoreFolder jMRootMailBoxFolder;
 
 		try {
 			if ((folder == null) || folder.isEmpty())
 
-				jMRootMailBoxFolder = JMMailBoxFolder.createRootFolder(this, store.getDefaultFolder(), rootNode);
+				jMRootMailBoxFolder = JMStoreFolder.createRootFolder(this, store.getDefaultFolder(), rootNode);
 			else
-				jMRootMailBoxFolder = JMMailBoxFolder.createRootFolder(this, store.getFolder(folder), rootNode);
+				jMRootMailBoxFolder = JMStoreFolder.createRootFolder(this, store.getFolder(folder), rootNode);
 
 			if (!jMRootMailBoxFolder.folder.exists()) {
 				throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
@@ -146,62 +153,62 @@ public class JMStoreExtractor extends StoreExtractor {
 		}
 	}
 
-	/**
-	 * Instantiates a new JavaMail StoreExtractor for single mail container.
-	 *
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
-	 * @param options
-	 *            Options (flag composition of CONST_)
-	 * @param user
-	 *            User name
-	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @throws ExtractionException
-	 *             Any unrecoverable extraction exception (access trouble, major
-	 *             format problems...)
-	 */
-	public JMStoreExtractor(byte[] rawContent, String destRootPath, String destName, int options,
-			String user, Logger logger) throws ExtractionException {
-		super("rfc822", "", user, "", "", "", destRootPath, destName, options, logger);
-
-		String url = "rfc822://localhost";
-
-		try {
-			// Connect to the store
-			Properties props = System.getProperties();
-			setSessionProperties(props);
-			Session session = Session.getDefaultInstance(props, null);
-			// add rfc822 provider
-			session.addProvider(new Provider(Provider.Type.STORE, "rfc822",
-					fr.gouv.vitam.tools.mailextract.lib.javamail.rfc822.RFC822Store.class.getName(),
-					"fr.gouv.vitam", getClass().getPackage().getImplementationVersion()));
-
-			URLName urlName = new URLName(url);
-			store = session.getStore(urlName);
-			store.connect();
-			((RFC822Store)store).setRawContent(rawContent);
-		} catch (MessagingException e) {
-			throw new ExtractionException("mailextract.javamail: can't get store for " + getDecodedURL(url)
-					+ System.lineSeparator() + e.getMessage());
-		}
-
-		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		JMMailBoxFolder jMRootMailBoxFolder;
-
-		try {
-			jMRootMailBoxFolder = JMMailBoxFolder.createRootFolder(this, store.getDefaultFolder(), rootNode);
-
-			if (!jMRootMailBoxFolder.folder.exists()) {
-				throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
-			}
-			rootAnalysisMBFolder = jMRootMailBoxFolder;
-		} catch (MessagingException e) {
-			throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
-		}
-	}
+//	/**
+//	 * Instantiates a new JavaMail StoreExtractor for single mail container.
+//	 *
+//	 * @param destRootPath
+//	 *            Root path of the extraction directory
+//	 * @param destName
+//	 *            Name of the extraction directory
+//	 * @param options
+//	 *            Options (flag composition of CONST_)
+//	 * @param user
+//	 *            User name
+//	 * @param logger
+//	 *            Logger used (from {@link java.util.logging.Logger})
+//	 * @throws ExtractionException
+//	 *             Any unrecoverable extraction exception (access trouble, major
+//	 *             format problems...)
+//	 */
+//	public JMStoreExtractor(byte[] rawContent, String destRootPath, String destName, int options,
+//			String user, int depth, Logger logger) throws ExtractionException {
+//		super("rfc822", "", user, "", "", "", destRootPath, destName, options, depth, logger);
+//
+//		String url = "rfc822://localhost";
+//
+//		try {
+//			// Connect to the store
+//			Properties props = System.getProperties();
+//			setSessionProperties(props);
+//			Session session = Session.getDefaultInstance(props, null);
+//			// add rfc822 provider
+//			session.addProvider(new Provider(Provider.Type.STORE, "rfc822",
+//					fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml.EmlStore.class.getName(),
+//					"fr.gouv.vitam", getClass().getPackage().getImplementationVersion()));
+//
+//			URLName urlName = new URLName(url);
+//			store = session.getStore(urlName);
+//			store.connect();
+//			((EmlStore)store).setRawContent(rawContent);
+//		} catch (MessagingException e) {
+//			throw new ExtractionException("mailextract.javamail: can't get store for " + getDecodedURL(url)
+//					+ System.lineSeparator() + e.getMessage());
+//		}
+//
+//		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
+//		JMStoreFolder jMRootMailBoxFolder;
+//
+//		try {
+//			jMRootMailBoxFolder = JMStoreFolder.createRootFolder(this, store.getDefaultFolder(), rootNode);
+//
+//			if (!jMRootMailBoxFolder.folder.exists()) {
+//				throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
+//			}
+//			rootAnalysisMBFolder = jMRootMailBoxFolder;
+//		} catch (MessagingException e) {
+//			throw new ExtractionException("mailextract.javamail: Can't find extraction root folder " + folder);
+//		}
+//	}
 
 	// decode URL encoding to UTF-8
 	static private String getDecodedURL(String url) {

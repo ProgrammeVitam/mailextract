@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.thundermbox;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,12 +37,12 @@ import javax.mail.internet.MimeMessage;
  * JavaMail Message for Thunderbird mbox directory/file structure.
  * <p>
  * This class as the only action to use the general parse method of MimeMessage
- * on the InputStream constructed in ThunderMboxFolder
+ * on the InputStream constructed in ThunderbirdFolder
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class ThunderMboxMessage extends MimeMessage {
+public class ThunderbirdMessage extends MimeMessage {
 
 	/**
 	 * Instantiates a new thunder mbox message.
@@ -58,7 +58,7 @@ public class ThunderMboxMessage extends MimeMessage {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public ThunderMboxMessage(ThunderMboxFolder folder, InputStream is, int msgno)
+	public ThunderbirdMessage(ThunderbirdFolder folder, InputStream is, int msgno)
 			throws MessagingException, IOException {
 		super(folder, is, msgno);
 	}

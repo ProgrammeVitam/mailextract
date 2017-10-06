@@ -50,12 +50,12 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
  * defined as RecordGrp.
  * </ul>
  */
-public abstract class MailBoxFolder {
+public abstract class StoreFolder {
 
 	/**
 	 * Operation store extractor.
 	 * <p>
-	 * Context for operation on a defined mailbox.
+	 * Context for operation on a defined store.
 	 **/
 	protected StoreExtractor storeExtractor;
 
@@ -80,19 +80,19 @@ public abstract class MailBoxFolder {
 	private long folderMessagesRawSize;
 
 	/**
-	 * Instantiates a new mail box folder.
+	 * Instantiates a new store folder.
 	 *
 	 * @param storeExtractor
 	 *            the store extractor
 	 */
-	protected MailBoxFolder(StoreExtractor storeExtractor) {
+	protected StoreFolder(StoreExtractor storeExtractor) {
 		this.storeExtractor = storeExtractor;
 		this.folderArchiveUnit = null;
 		this.dateRange = new DateRange();
 	}
 
 	/**
-	 * Finalize mail box folder.
+	 * Finalize store folder.
 	 * <p>
 	 * Called at the end of the subclass MailBoxFolder construction to add the
 	 * folder {@link ArchiveUnit} with the name depending on father and on the
@@ -101,7 +101,7 @@ public abstract class MailBoxFolder {
 	 * @param father
 	 *            the father
 	 */
-	protected void finalizeMailBoxFolder(MailBoxFolder father) {
+	protected void finalizeMailBoxFolder(StoreFolder father) {
 		folderArchiveUnit = new ArchiveUnit(storeExtractor, father.folderArchiveUnit, "Folder", getName());
 
 	}
@@ -118,6 +118,14 @@ public abstract class MailBoxFolder {
 	 */
 	public Logger getLogger() {
 		return storeExtractor.getLogger();
+	}
+
+	// log at the folder level considering storeExtractor depth
+	private void logFolder(String msg) {
+		if (storeExtractor.isRoot())
+			storeExtractor.getLogger().fine(msg);
+		else 
+			storeExtractor.getLogger().finer(msg);			
 	}
 
 	/**
@@ -255,7 +263,7 @@ public abstract class MailBoxFolder {
 	 */
 	public void extractFolderAsRoot(boolean writeFlag) throws ExtractionException {
 		// log process on folder
-		storeExtractor.getLogger().fine("mailextract: Extract folder [root]");
+		logFolder("mailextract: Extract folder /");
 		// extract all messages in the folder to the unit directory
 		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
@@ -270,7 +278,7 @@ public abstract class MailBoxFolder {
 	 * Extract all messages and subfolders.
 	 * <p>
 	 * This is a method where the extraction structure and content is partially
-	 * defined (see also {@link MailBoxMessage#extractMessage extractMessage}
+	 * defined (see also {@link StoreMessage#extractMessage extractMessage}
 	 * and {@link StoreExtractor#extractAllFolders extractAllFolders})
 	 * <p>
 	 * It writes on the disk, recursively, all the messages and subfolders in
@@ -288,7 +296,7 @@ public abstract class MailBoxFolder {
 		boolean result = false;
 
 		// log process on folder
-		storeExtractor.getLogger().fine("mailextract: Extract folder " + getFullName());
+		logFolder("mailextract: Extract folder /" + getFullName());
 
 		// extract all messages in the folder to the unit directory
 		extractFolderMessages(writeFlag);
@@ -302,7 +310,8 @@ public abstract class MailBoxFolder {
 			// metadata
 			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
 			folderArchiveUnit.addMetadata("Title", getName(), true);
-			//folderArchiveUnit.addMetadata("Description", "Dossier de messagerie :" + getFullName(), true);
+			// folderArchiveUnit.addMetadata("Description", "Dossier de
+			// messagerie :" + getFullName(), true);
 			if (dateRange.isDefined()) {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
@@ -311,7 +320,7 @@ public abstract class MailBoxFolder {
 				folderArchiveUnit.write();
 			result = true;
 		} else
-			storeExtractor.getLogger().fine("mailextract: Empty folder " + getFullName() + " is droped");
+			logFolder("mailextract: Empty folder " + getFullName() + " is droped");
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
 		storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
@@ -380,24 +389,24 @@ public abstract class MailBoxFolder {
 	 *             format problems...)
 	 */
 	public void listFolder(boolean stats) throws ExtractionException {
-		// define a specific name "[root]" for the root folder
-		String fullName,tmp;
-		
+		// define a specific name "/" for the root folder
+		String fullName, tmp;
+
 		fullName = getFullName();
 		if (fullName == null || fullName.isEmpty())
-			fullName = "[root]";
+			fullName = "";
 		// log process on folder
-		storeExtractor.getLogger().fine("mailextract: List folder " + fullName);
+		logFolder("mailextract: List folder /" + fullName);
 		if (stats) {
 			// inspect all messages in the folder for statistics
 			listFolderMessages(stats);
 			// expose this folder statistics
-			tmp= String.format("%5d messages   %7.2f MBytes    %s", folderMessagesCount,
-					((double) folderMessagesRawSize)/ (1024.0 * 1024.0), fullName);
+			tmp = String.format("%5d messages   %7.2f MBytes    /%s", folderMessagesCount,
+					((double) folderMessagesRawSize) / (1024.0 * 1024.0), fullName);
 			System.out.println(tmp);
-			getLogger().fine("mailextract: " + tmp);
+			logFolder("mailextract: " + tmp);
 		} else {
-			System.out.println(fullName);
+			System.out.println("/"+fullName);
 		}
 		// extract all subfolders in the folder to the unit directory
 		listSubFolders(stats);

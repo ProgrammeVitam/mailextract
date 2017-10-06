@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.rfc822;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird;
 
 import java.io.*;
 import java.net.URLDecoder;
@@ -33,27 +33,48 @@ import java.net.URLDecoder;
 import javax.mail.*;
 import javax.mail.Folder;
 
-// TODO: Auto-generated Javadoc
 /**
- * JavaMail Store for RFC822 uniq message file.
+ * JavaMail Store for Thunderbird mbox directory/file structure.
  * <p><b>Warning:</b>Only for reading and without file locking or new messages management.
  */
-public class RFC822Store extends Store {
+public class ThunderbirdStore extends Store {
 
-	/** Raw content of the uniq message file **/
-	private byte[] rawContent;
+	/** Path to the target Thunderbird mbox directory/file structure **/
+	private String container;
 
 	/**
-	 * Constructor, used by the JavaMail library.
+	 * Gets the container.
+	 *
+	 * @return the container
+	 */
+	public String getContainer() {
+		return container;
+	}
+
+	/**
+	 * Constructor.
 	 *
 	 * @param session
 	 *            the session
 	 * @param url
-	 *            the url supposed to be formed as rfc822://localhost
+	 *            the url formed as protocol://user@host/container
+	 *            <ul>
+	 *            <li>user is the user (declarative only, not mandatory and not
+	 *            used in processing)</li>
+	 *            <li>host for now only localhost
+	 *            <li>container is the directory where is the thunderbird mbox
+	 *            hierarchy (default current directory)</li> ex:
+	 *            /home/me/.thunderbird/hag0y625.default/ImapMail/localhost
+	 *            </ul>
 	 */
-	public RFC822Store(Session session, URLName url) {
+	public ThunderbirdStore(Session session, URLName url) {
 		super(session, url);
-		rawContent=null;
+
+		try {
+			container = URLDecoder.decode(url.getFile(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// not possible
+		}
 	}
 
 	/**
@@ -61,14 +82,15 @@ public class RFC822Store extends Store {
 	 * and defined directory availability (not in params)
 	 * 
 	 * <p>
-	 * Here control the params coherence RFC822 single mail rfc822://localhost.
-	 *
+	 * Here control the params coherence in ThunderMBox context and that the
+	 * container directory exists
+	 * 
 	 * @param host
-	 *            only localhost
+	 *            for now only localhost
 	 * @param port
 	 *            not used
 	 * @param user
-	 *            not used
+	 *            the user declarative only, not used in processing
 	 * @param passwd
 	 *            not used
 	 * @return true, if successful
@@ -78,43 +100,17 @@ public class RFC822Store extends Store {
 	@Override
 	protected boolean protocolConnect(String host, int port, String user, String passwd) throws MessagingException {
 		// verify params significance in ThunderMBox context
-		if (!host.equals("localhost"))
-			throw new MessagingException("RFC822: only support localhost");
 		if (!((passwd == null) || (passwd.isEmpty())))
-			throw new MessagingException("RFC822: does not allow passwords");
+			throw new MessagingException("ThunderMBox: does not allow passwords");
 		if (port != -1)
-			throw new MessagingException("RFC822: does not allow port selection");
+			throw new MessagingException("ThunderMBox: does not allow port selection");
+
+		// verify declared directory for thunderbird mbox hierarchy availability
+		File test = new File(container);
+		if (!test.isDirectory()) {
+			throw new MessagingException("ThunderMBox: " + container + " is not an existing directory");
+		}
 		return true;
-	}
-
-	/**
-	 * Sets the raw binary content.
-	 *
-	 * @param rawContent
-	 *            the binary in memory mail content
-	 *            
-	 */
-	public void setRawContent(byte[] rawContent) {
-		this.rawContent = rawContent;
-	}
-
-	/**
-	 * Gets the raw binary content.
-	 *
-	 * @return the raw content
-	 *            the binary in memory mail content
-	 */
-	public byte[] getRawContent() {
-		return rawContent;
-	}
-
-	/**
-	 * Verify if a raw binary content exists.
-	 *
-	 * @return true, if successful
-	 */
-	public boolean hasRawContent() {
-		return !((rawContent==null) || (rawContent.length==0));
 	}
 
 	/*
@@ -124,7 +120,7 @@ public class RFC822Store extends Store {
 	 */
 	@Override
 	public Folder getDefaultFolder() throws MessagingException {
-		return new RFC822Folder(this);
+		return new ThunderbirdFolder(this, null, Folder.HOLDS_FOLDERS);
 	}
 
 	/*
@@ -134,10 +130,11 @@ public class RFC822Store extends Store {
 	 */
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
-		if ((name==null) || (name.isEmpty()))
-			return new RFC822Folder(this);
-		else 
-			throw new MessagingException("RFC822: only one root simulated folder, no "+name+" folder");
+		if (name.equals(container))
+			name = null;
+		else if (name.startsWith(container))
+			name = name.substring(container.length() + 1);
+		return new ThunderbirdFolder(this, name);
 	}
 
 	/*
@@ -148,16 +145,15 @@ public class RFC822Store extends Store {
 	@Override
 	public Folder getFolder(URLName url) throws MessagingException {
 		// verify that the root directory in store is respected
-		String name = "";
+		String filename = "";
 		try {
-			name = URLDecoder.decode(url.getFile(), "UTF-8");
+			filename = URLDecoder.decode(url.getFile(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// not possible
 		}
-		if ((name==null) || (name.isEmpty()))
-			return new RFC822Folder(this);
-		else 
-			throw new MessagingException("RFC822: only one root simulated folder, no "+name+" folder");
+		if (!filename.startsWith(container))
+			throw new MessagingException("ThunderMBox: folder must be in directory declared for the store");
+		return getFolder(url.getFile().substring(container.length()));
 	}
 
 }

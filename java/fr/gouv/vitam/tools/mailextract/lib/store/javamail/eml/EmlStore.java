@@ -25,19 +25,19 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.thundermbox;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
 
 import java.io.*;
 import java.net.URLDecoder;
 
 import javax.mail.*;
-import javax.mail.Folder;
 
+// TODO: Auto-generated Javadoc
 /**
- * JavaMail Store for Thunderbird mbox directory/file structure.
+ * JavaMail Store for eml uniq message file.
  * <p><b>Warning:</b>Only for reading and without file locking or new messages management.
  */
-public class ThunderMboxStore extends Store {
+public class EmlStore extends Store {
 
 	/** Path to the target Thunderbird mbox directory/file structure **/
 	private String container;
@@ -52,22 +52,14 @@ public class ThunderMboxStore extends Store {
 	}
 
 	/**
-	 * Constructor.
+	 * Constructor, used by the JavaMail library.
 	 *
 	 * @param session
 	 *            the session
 	 * @param url
-	 *            the url formed as protocol://user@host/container
-	 *            <ul>
-	 *            <li>user is the user (declarative only, not mandatory and not
-	 *            used in processing)</li>
-	 *            <li>host for now only localhost
-	 *            <li>container is the directory where is the thunderbird mbox
-	 *            hierarchy (default current directory)</li> ex:
-	 *            /home/me/.thunderbird/hag0y625.default/ImapMail/localhost
-	 *            </ul>
+	 *            the url supposed to be formed as eml://localhost
 	 */
-	public ThunderMboxStore(Session session, URLName url) {
+	public EmlStore(Session session, URLName url) {
 		super(session, url);
 
 		try {
@@ -82,15 +74,14 @@ public class ThunderMboxStore extends Store {
 	 * and defined directory availability (not in params)
 	 * 
 	 * <p>
-	 * Here control the params coherence in ThunderMBox context and that the
-	 * container directory exists
-	 * 
+	 * Here control the params coherence eml single mail eml://localhost.
+	 *
 	 * @param host
-	 *            for now only localhost
+	 *            only localhost
 	 * @param port
 	 *            not used
 	 * @param user
-	 *            the user declarative only, not used in processing
+	 *            not used
 	 * @param passwd
 	 *            not used
 	 * @return true, if successful
@@ -100,18 +91,51 @@ public class ThunderMboxStore extends Store {
 	@Override
 	protected boolean protocolConnect(String host, int port, String user, String passwd) throws MessagingException {
 		// verify params significance in ThunderMBox context
+		if (!host.equals("localhost"))
+			throw new MessagingException("eml: only support localhost");
 		if (!((passwd == null) || (passwd.isEmpty())))
-			throw new MessagingException("ThunderMBox: does not allow passwords");
+			throw new MessagingException("eml: does not allow passwords");
 		if (port != -1)
-			throw new MessagingException("ThunderMBox: does not allow port selection");
+			throw new MessagingException("eml: does not allow port selection");
 
-		// verify declared directory for thunderbird mbox hierarchy availability
+		// verify declared file for eml availability
 		File test = new File(container);
-		if (!test.isDirectory()) {
-			throw new MessagingException("ThunderMBox: " + container + " is not an existing directory");
+		if (!test.isFile()) {
+			throw new MessagingException("Eml: " + container + " is not an existing file");
 		}
 		return true;
 	}
+
+
+//	/**
+//	 * Sets the raw binary content.
+//	 *
+//	 * @param rawContent
+//	 *            the binary in memory mail content
+//	 *            
+//	 */
+//	public void setRawContent(byte[] rawContent) {
+//		this.rawContent = rawContent;
+//	}
+//
+//	/**
+//	 * Gets the raw binary content.
+//	 *
+//	 * @return the raw content
+//	 *            the binary in memory mail content
+//	 */
+//	public byte[] getRawContent() {
+//		return rawContent;
+//	}
+//
+//	/**
+//	 * Verify if a raw binary content exists.
+//	 *
+//	 * @return true, if successful
+//	 */
+//	public boolean hasRawContent() {
+//		return !((rawContent==null) || (rawContent.length==0));
+//	}
 
 	/*
 	 * (non-Javadoc)
@@ -120,7 +144,7 @@ public class ThunderMboxStore extends Store {
 	 */
 	@Override
 	public Folder getDefaultFolder() throws MessagingException {
-		return new ThunderMboxFolder(this, null, Folder.HOLDS_FOLDERS);
+		return new EmlFolder(this);
 	}
 
 	/*
@@ -130,11 +154,10 @@ public class ThunderMboxStore extends Store {
 	 */
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
-		if (name.equals(container))
-			name = null;
-		else if (name.startsWith(container))
-			name = name.substring(container.length() + 1);
-		return new ThunderMboxFolder(this, name);
+		if ((name==null) || (name.isEmpty()))
+			return new EmlFolder(this);
+		else 
+			throw new MessagingException("eml: only one root simulated folder, no "+name+" folder");
 	}
 
 	/*
@@ -145,15 +168,16 @@ public class ThunderMboxStore extends Store {
 	@Override
 	public Folder getFolder(URLName url) throws MessagingException {
 		// verify that the root directory in store is respected
-		String filename = "";
+		String name = "";
 		try {
-			filename = URLDecoder.decode(url.getFile(), "UTF-8");
+			name = URLDecoder.decode(url.getFile(), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			// not possible
 		}
-		if (!filename.startsWith(container))
-			throw new MessagingException("ThunderMBox: folder must be in directory declared for the store");
-		return getFolder(url.getFile().substring(container.length()));
+		if ((name==null) || (name.isEmpty()))
+			return new EmlFolder(this);
+		else 
+			throw new MessagingException("eml: only one root simulated folder, no "+name+" folder");
 	}
 
 }

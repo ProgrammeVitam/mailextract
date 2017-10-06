@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.javamail.rfc822;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -42,7 +42,7 @@ import javax.mail.internet.MimeMessage;
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class RFC822Message extends MimeMessage {
+public class EmlMessage extends MimeMessage {
 
 	/**
 	 * Instantiates a new thunder mbox message.
@@ -58,7 +58,7 @@ public class RFC822Message extends MimeMessage {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public RFC822Message(RFC822Folder folder, InputStream is, int msgno)
+	public EmlMessage(EmlFolder folder, InputStream is, int msgno)
 			throws MessagingException{
 		super(folder, is, msgno);
 	}

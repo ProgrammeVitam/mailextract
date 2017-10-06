@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.libpst;
+package fr.gouv.vitam.tools.mailextract.lib.store.libpst;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -46,11 +46,11 @@ import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxFolder;
-import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxMessage;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 
 /**
- * MailBoxMessage sub-class for mail boxes extracted through libpst library.
+ * StoreMessage sub-class for mail boxes extracted through libpst library.
  * <p>
  * The java-libpst is a pure java library for the reading of Outlook PST and OST
  * files.
@@ -63,7 +63,7 @@ import fr.gouv.vitam.tools.mailextract.lib.core.MailBoxMessage;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPMailBoxMessage extends MailBoxMessage {
+public class LPStoreMessage extends StoreMessage {
 
 	/** Native libpst message. */
 	protected PSTMessage message;
@@ -72,7 +72,7 @@ public class LPMailBoxMessage extends MailBoxMessage {
 	LinkedHashMap<CaseUnsensString, String> headers;
 
 	/**
-	 * Instantiates a new LP mail box message.
+	 * Instantiates a new LP store message.
 	 *
 	 * @param mBFolder
 	 *            Containing MailBoxFolder
@@ -82,7 +82,7 @@ public class LPMailBoxMessage extends MailBoxMessage {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public LPMailBoxMessage(MailBoxFolder mBFolder, PSTMessage message) throws ExtractionException {
+	public LPStoreMessage(StoreFolder mBFolder, PSTMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
 	}
@@ -378,7 +378,7 @@ public class LPMailBoxMessage extends MailBoxMessage {
 				pstA = message.getAttachment(i);
 				if (pstA.getAttachMethod() == 5) {
 					attachment = new Attachment(pstA.getLongFilename(), "Embedded Message - to be done".getBytes(),
-							pstA.getCreationTime(), pstA.getModificationTime(), NO_ATTACHED_MESSAGE);
+							pstA.getCreationTime(), pstA.getModificationTime(), STORE_ATTACHMENT+MSG_STORE_ATTACHMENT);
 				} else {
 					InputStream is = pstA.getFileInputStream();
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -388,7 +388,7 @@ public class LPMailBoxMessage extends MailBoxMessage {
 						baos.write(buf, 0, bytesRead);
 					}
 					attachment = new Attachment(pstA.getLongFilename(), baos.toByteArray(), pstA.getCreationTime(),
-							pstA.getModificationTime(), NO_ATTACHED_MESSAGE);
+							pstA.getModificationTime(), FILE_ATTACHMENT);
 				}
 				lAttachment.add(attachment);
 			} catch (Exception e) {
