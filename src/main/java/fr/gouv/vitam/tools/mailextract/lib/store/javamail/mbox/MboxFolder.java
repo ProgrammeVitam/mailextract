@@ -25,34 +25,62 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
-import javax.mail.util.SharedFileInputStream;
 
 /**
- * JavaMail Folder simulated for Eml uniq message file.
+ * JavaMail Folder for mbox file structure.
  * <p>
  * This is the main class for folder analysis and message slicing.
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class EmlFolder extends Folder {
+public class MboxFolder extends Folder {
 
 	private volatile boolean opened = false;
-	private EmlStore emlstore;
-	private SharedFileInputStream emlfileinputstream;
+	private MboxStore mboxstore;
+	private MboxFileReader mboxfilereader;
+	private Logger logger = Logger.getGlobal();
+	private List<MessageFork> messages;
+	private int total; // total number of messages in mailbox
+
+	private class MessageFork {
+		long beg, end;
+
+		MessageFork(long beg, long end) {
+			this.beg = beg;
+			this.end = end;
+		}
+	}
 
 	/**
-	 * Instantiates a new Eml simulated folder.
+	 * Sets the logger
+	 * <p>
+	 * This method is directly called from MailExtract library to enable this
+	 * class to log
+	 *
+	 * @param logger
+	 *            Store extractor logger
+	 */
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+
+	/**
+	 * Instantiates a new mbox simulated folder.
 	 *
 	 * @param store
 	 *            Store
@@ -60,9 +88,9 @@ public class EmlFolder extends Folder {
 	 *             Messaging exception from inner JavaMail calls
 	 */
 	// constructors
-	public EmlFolder(EmlStore store) throws MessagingException {
+	public MboxFolder(MboxStore store) throws MessagingException {
 		super(store);
-		this.emlstore = store;
+		this.mboxstore = store;
 	}
 
 	/*
@@ -101,7 +129,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public Folder[] list(String pattern) throws MessagingException {
-		throw new MethodNotSupportedException("eml: list with pattern not supported");
+		throw new MethodNotSupportedException("mbox: list with pattern not supported");
 	}
 
 	/*
@@ -111,7 +139,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public Folder[] list() throws MessagingException {
-		Folder[] result = new EmlFolder[0];
+		Folder[] result = new MboxFolder[0];
 
 		return result;
 	}
@@ -163,7 +191,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public boolean hasNewMessages() {
-		// a simulated folder in memory with one rfc822 mail never changed
+		// only read static mbox file
 		return false;
 	}
 
@@ -175,9 +203,9 @@ public class EmlFolder extends Folder {
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
 		if ((name == null) || (name.isEmpty()))
-			return new EmlFolder(emlstore);
+			return new MboxFolder(mboxstore);
 		else
-			throw new MethodNotSupportedException("eml: no folder supported");
+			throw new MethodNotSupportedException("mbox: no folder supported");
 	}
 
 	/*
@@ -185,7 +213,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public boolean create(int type) throws MessagingException {
-		throw new MethodNotSupportedException("eml: no writing supported");
+		throw new MethodNotSupportedException("mbox: no writing supported");
 	}
 
 	/*
@@ -193,7 +221,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public boolean delete(boolean recurse) throws MessagingException {
-		throw new MethodNotSupportedException("eml: no writing supported");
+		throw new MethodNotSupportedException("mbox: no writing supported");
 	}
 
 	/*
@@ -201,7 +229,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public boolean renameTo(Folder f) throws MessagingException {
-		throw new MethodNotSupportedException("eml: no writing supported");
+		throw new MethodNotSupportedException("mbox: no writing supported");
 	}
 
 	/*
@@ -222,24 +250,38 @@ public class EmlFolder extends Folder {
 	@Override
 	public void open(int mode) throws MessagingException {
 		if (opened)
-			throw new IllegalStateException("eml: simulated folder is already open");
+			throw new IllegalStateException("mbox: file " + mboxstore.getContainer() + " is already open");
 
 		this.mode = mode;
 		switch (mode) {
 		case READ_WRITE:
-			throw new MethodNotSupportedException("eml: no writing supported");
+			throw new MethodNotSupportedException("mbox: no writing supported");
 		case READ_ONLY:
 		default:
 			break;
 		}
 
+		messages = new ArrayList<MessageFork>();
+		MessageFork mf;
+
 		try {
-			emlfileinputstream = new SharedFileInputStream(new File(emlstore.getContainer()));
+			mboxfilereader = new MboxFileReader(logger,  new File(mboxstore.getContainer()));
+			opened = true; // now really opened
+			long beg, end;
+
+			mboxfilereader.getNextFromLineBeg();
+			beg = mboxfilereader.getLastFromLineEnd();
+			while (beg != -1) {
+				end = mboxfilereader.getNextFromLineBeg();
+				mf = new MessageFork(beg, end);
+				messages.add(mf);
+				beg = mboxfilereader.getLastFromLineEnd();
+			}
 		} catch (IOException e) {
-			throw new MessagingException("eml: open failure, can't read: " + emlstore.getContainer());
+			throw new MessagingException("mbox: open failure, can't read: " + mboxstore.getContainer() + " file");
 		}
 
-		opened = true;
+		total = messages.size();
 	}
 
 	/*
@@ -250,10 +292,11 @@ public class EmlFolder extends Folder {
 	@Override
 	public void close(boolean expunge) throws MessagingException {
 		if (!opened)
-			throw new IllegalStateException("eml: simulated folder is not open");
+			throw new IllegalStateException("mbox: file " + mboxstore.getContainer() + " is not open");
+		messages = null;
 		opened = false;
 		try {
-			emlfileinputstream.close();
+			mboxfilereader.close();
 		} catch (IOException e) {
 			// forget it
 		}
@@ -266,7 +309,10 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public int getMessageCount() throws MessagingException {
-		return 1;
+		if (!opened)
+			return -1;
+
+		return total;
 	}
 
 	/*
@@ -276,12 +322,20 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public Message getMessage(int msgno) throws MessagingException {
-		if (msgno != 1)
-			throw new IndexOutOfBoundsException("Eml: only message 1, no message number " + msgno);
+		if (msgno < 1) // message-numbers start at 1
+			throw new IndexOutOfBoundsException("message number " + msgno + " < 1");
+		else if (msgno > total) // Still out of range ? Throw up ...
+			throw new IndexOutOfBoundsException("message number " + msgno + " > " + total);
 		Message m;
-
-		m = new EmlMessage(this, emlfileinputstream, msgno);
-
+		// each get regenerate a message with no strong link so that it can be
+		// GC
+		// optimal for the extraction usage with only one get by message
+		try {
+			m = new MboxMessage(this,
+					mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
+		} catch (IOException e) {
+			throw new MessagingException("mbox: open Failure, can't read: " + mboxstore.getContainer());
+		}
 		return m;
 	}
 
@@ -290,7 +344,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public void appendMessages(Message[] msgs) throws MessagingException {
-		throw new MethodNotSupportedException("Eml: no writing supported");
+		throw new MethodNotSupportedException("mbox: no writing supported");
 	}
 
 	/*
@@ -298,7 +352,7 @@ public class EmlFolder extends Folder {
 	 */
 	@Override
 	public Message[] expunge() throws MessagingException {
-		throw new MethodNotSupportedException("Eml: no writing supported");
+		throw new MethodNotSupportedException("mbox: no writing supported");
 	}
 
 	/*
@@ -311,7 +365,7 @@ public class EmlFolder extends Folder {
 		URLName storeURL = getStore().getURLName();
 
 		return new URLName(storeURL.getProtocol(), storeURL.getHost(), storeURL.getPort(),
-				emlstore.getContainer(), storeURL.getUsername(),
+				mboxstore.getContainer(), storeURL.getUsername(),
 				null /* no password */);
 	}
 }

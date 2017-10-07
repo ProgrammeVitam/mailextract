@@ -84,16 +84,9 @@ import joptsimple.OptionSet;
  * <td>help</td>
  * </tr>
  * <tr>
- * <td>--mailprotocol</td>
- * <td>mail protocol for server access (imap|imaps...)</td>
- * </tr>
- * <tr>
- * <td>--thunderbird</td>
- * <td>thunderbird mbox directory</td>
- * </tr>
- * <tr>
- * <td>--outlook</td>
- * <td>outlook pst file</td>
+ * <td>--type</td>
+ * <td>type of local container to extract (thunderbird|outlook|eml|mbox) or protocol for
+ * server access (imap|imaps|pop3...)</td>
  * </tr>
  * <tr>
  * <td>--user</td>
@@ -133,7 +126,7 @@ import joptsimple.OptionSet;
  * <td>keep only empty folders not at root level</td>
  * </tr>
  * <tr>
- * <td>--loglevel</td>
+ * <td>--verbatim</td>
  * <td>event level to log</td>
  * </tr>
  * <tr>
@@ -184,13 +177,13 @@ public class MailExtractApp {
 
 		parser = new OptionParser();
 		parser.accepts("help").forHelp();
-		parser.accepts("mailprotocol", "mail protocol for server access (imap|imaps...)").withRequiredArg();
-		parser.accepts("thunderbird", "thunderbird mbox directory");
-		parser.accepts("outlook", "outlook pst file");
+		parser.accepts("type",
+				"type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)")
+				.withRequiredArg();
 		parser.accepts("user", "user account name (also used for destination extraction naming)").withRequiredArg();
 		parser.accepts("password", "password").withRequiredArg();
 		parser.accepts("server", "mail server [HostName|IP](:port)").withRequiredArg();
-		parser.accepts("container", "mail container directory for mbox or file for pst").withRequiredArg();
+		parser.accepts("container", "local container directory or file to extract").withRequiredArg();
 		parser.accepts("folder", "specific mail folder").withRequiredArg();
 		parser.accepts("rootdir", "root (default current directory) for output to root/username directory")
 				.withRequiredArg();
@@ -268,7 +261,10 @@ public class MailExtractApp {
 			System.err.println("unknown log level");
 			System.exit(1);
 		}
+		if (options.has("type"))
+			protocol = (String) options.valueOf("type");
 
+		// get store extractor options
 		if (options.has("keeponlydeep")) {
 			storeExtractorOptions |= StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS;
 		}
@@ -282,48 +278,36 @@ public class MailExtractApp {
 			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
 		}
 
-		// specific option parsing for imap protocol extraction
-		if (options.has("mailprotocol")) {
+		// specific option parsing for local type extraction
+		switch (protocol) {
+		case "thunderbird":
+		case "pst":
+		case "eml":
+		case "mbox":
+			if (!options.has("container")) {
+				System.out.println("local " + protocol + " extraction need a container path");
+				System.exit(1);
+			}
+			if (options.has("server")) {
+				System.err.println("no need a server for local " + protocol + " extraction");
+				System.exit(1);
+			}
+			local = true;
+			break;
+		default:
 			if (!options.has("user")) {
 				System.err.println("need a username for distant access protocol");
 				System.exit(1);
 			}
 			if (!options.has("server")) {
-				System.err.println("need a server (hostname or ip) for distant access protocol");
+				System.err.println("need a server (hostname or ip) for " + protocol + " access protocol");
 				System.exit(1);
 			}
 			if (options.has("container")) {
-				System.err.println("no container for distant access protocol");
+				System.err.println("no container for " + protocol + " access protocol");
 				System.exit(1);
 			}
-			protocol = (String) options.valueOf("mailprotocol");
-			local = false;
-		}
-		// specific option parsing for thunderbird mbox directory extraction
-		else if (options.has("thunderbird")) {
-			if (options.has("password")) {
-				System.out.println("no password for thunderbird mbox directory");
-				System.exit(1);
-			}
-			if (!options.has("container")) {
-				System.out.println("need a container pointing to thunderbird mbox directory");
-				System.exit(1);
-			}
-			protocol = "thunderbird";
-			local = true;
-		}
-		// specific option parsing for outlook pst file extraction
-		else if (options.has("outlook")) {
-			if (options.has("server")) {
-				System.err.println("no server for outlook pst file extraction");
-				System.exit(1);
-			}
-			if (!options.has("container")) {
-				System.out.println("need a container pointing to outlook pst file");
-				System.exit(1);
-			}
-			protocol = "libpst";
-			local = true;
+
 		}
 
 		// collect or construct all store extractor variables

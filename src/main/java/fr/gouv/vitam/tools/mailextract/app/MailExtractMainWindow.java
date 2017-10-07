@@ -45,6 +45,7 @@ import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 import java.awt.Font;
+import javax.swing.SwingConstants;
 
 /**
  * MailExtractMainWindow class for the main window with all parameters field and
@@ -69,7 +70,13 @@ public class MailExtractMainWindow extends JFrame {
 	JRadioButton thunderbirdRadioButton;
 
 	/** The outlook radio button. */
-	JRadioButton outlookRadioButton;
+	JRadioButton pstRadioButton;
+
+	/** The mbox radio button. */
+	JRadioButton mboxRadioButton;
+
+	/** The eml radio button. */
+	JRadioButton emlRadioButton;
 
 	/** The name label. */
 	JLabel nameLabel;
@@ -171,7 +178,7 @@ public class MailExtractMainWindow extends JFrame {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0 };
-		gridBagLayout.columnWeights = new double[] { 1, 1, 1, 1 };
+		gridBagLayout.columnWeights = new double[] { 1, 1, 1, 1};
 		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 20, 20, 0, 0 };
 		getContentPane().setLayout(gridBagLayout);
 
@@ -449,33 +456,35 @@ public class MailExtractMainWindow extends JFrame {
 		JPanel localPanel = new JPanel();
 		localPanel.setBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		GridBagConstraints gbc_localPanel = new GridBagConstraints();
+		gbc_localPanel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_localPanel.gridwidth = 4;
 		gbc_localPanel.insets = new Insets(0, 10, 10, 10);
 		gbc_localPanel.weightx = 0.5;
 		gbc_localPanel.anchor = GridBagConstraints.NORTHWEST;
-		gbc_localPanel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_localPanel.gridx = 0;
 		gbc_localPanel.gridy = 1;
 		getContentPane().add(localPanel, gbc_localPanel);
 		GridBagLayout gbl_containerPanel = new GridBagLayout();
 		localPanel.setLayout(gbl_containerPanel);
 
+		pstRadioButton = new JRadioButton("Outlook Pst");
+		pstRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
+		pstRadioButton.setSelected(true);
+		GridBagConstraints gbc_pstRadioButton = new GridBagConstraints();
+		gbc_pstRadioButton.insets = new Insets(0, 0, 5, 5);
+		gbc_pstRadioButton.gridx = 0;
+		gbc_pstRadioButton.gridy = 0;
+		localPanel.add(pstRadioButton, gbc_pstRadioButton);
+
 		thunderbirdRadioButton = new JRadioButton("ThunderBird");
-		thunderbirdRadioButton.setSelected(true);
+		thunderbirdRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
 		GridBagConstraints gbc_thunderbirdRadioButton = new GridBagConstraints();
-		gbc_thunderbirdRadioButton.gridwidth = 2;
+		gbc_thunderbirdRadioButton.weightx = 0.5;
+		gbc_thunderbirdRadioButton.fill = GridBagConstraints.HORIZONTAL;
 		gbc_thunderbirdRadioButton.insets = new Insets(0, 0, 5, 5);
-		gbc_thunderbirdRadioButton.gridx = 0;
+		gbc_thunderbirdRadioButton.gridx = 1;
 		gbc_thunderbirdRadioButton.gridy = 0;
 		localPanel.add(thunderbirdRadioButton, gbc_thunderbirdRadioButton);
-
-		outlookRadioButton = new JRadioButton("Outlook");
-		GridBagConstraints gbc_outlookRadioButton = new GridBagConstraints();
-		gbc_outlookRadioButton.weightx = 0.5;
-		gbc_outlookRadioButton.insets = new Insets(0, 0, 5, 5);
-		gbc_outlookRadioButton.gridx = 2;
-		gbc_outlookRadioButton.gridy = 0;
-		localPanel.add(outlookRadioButton, gbc_outlookRadioButton);
 
 		nameLabel = new JLabel("Nom de l'extraction");
 		GridBagConstraints gbc_nameLabel = new GridBagConstraints();
@@ -497,6 +506,25 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_nameField.gridy = 7;
 		getContentPane().add(nameField, gbc_nameField);
 		nameField.setColumns(128);
+		
+		mboxRadioButton = new JRadioButton("Mbox");
+		mboxRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
+		GridBagConstraints gbc_mboxRadioButton = new GridBagConstraints();
+		gbc_mboxRadioButton.weightx = 0.5;
+		gbc_mboxRadioButton.fill = GridBagConstraints.HORIZONTAL;
+		gbc_mboxRadioButton.insets = new Insets(0, 0, 5, 5);
+		gbc_mboxRadioButton.gridx = 2;
+		gbc_mboxRadioButton.gridy = 0;
+		localPanel.add(mboxRadioButton, gbc_mboxRadioButton);
+		
+		emlRadioButton = new JRadioButton("Eml");
+		emlRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
+		GridBagConstraints gbc_emlRadioButton = new GridBagConstraints();
+		gbc_emlRadioButton.fill = GridBagConstraints.HORIZONTAL;
+		gbc_emlRadioButton.insets = new Insets(0, 0, 5, 0);
+		gbc_emlRadioButton.gridx = 3;
+		gbc_emlRadioButton.gridy = 0;
+		localPanel.add(emlRadioButton, gbc_emlRadioButton);
 
 		containerLabel = new JLabel("Chemin");
 		GridBagConstraints gbc_containerLabel = new GridBagConstraints();
@@ -521,7 +549,6 @@ public class MailExtractMainWindow extends JFrame {
 
 		containerButton = new JButton("Chemin...");
 		GridBagConstraints gbc_containerButton = new GridBagConstraints();
-		gbc_containerButton.insets = new Insets(0, 0, 0, 5);
 		gbc_containerButton.gridx = 3;
 		gbc_containerButton.gridy = 1;
 		localPanel.add(containerButton, gbc_containerButton);
@@ -535,7 +562,9 @@ public class MailExtractMainWindow extends JFrame {
 
 		ButtonGroup groupLocal = new ButtonGroup();
 		groupLocal.add(thunderbirdRadioButton);
-		groupLocal.add(outlookRadioButton);
+		groupLocal.add(pstRadioButton);
+		groupLocal.add(emlRadioButton);
+		groupLocal.add(mboxRadioButton);
 
 		ButtonGroup groupProtocol = new ButtonGroup();
 		groupProtocol.add(imapRadioButton);

@@ -48,6 +48,8 @@ import javax.mail.URLName;
 
 import com.sun.mail.imap.protocol.BASE64MailboxDecoder;
 
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxFileReader;
+
 /**
  * JavaMail Folder for Thunderbird mbox directory/file structure.
  * <p>
@@ -65,7 +67,7 @@ public class ThunderbirdFolder extends Folder {
 	private List<MessageFork> messages;
 	private ThunderbirdStore mstore;
 	private File folderFile;
-	private ThunderbirdFileReader tmfilereader;
+	private MboxFileReader mboxfilereader;
 	private Logger logger = Logger.getGlobal();
 
 	private class MessageFork {
@@ -220,7 +222,7 @@ public class ThunderbirdFolder extends Folder {
 		return true;
 	}
 
-	private boolean isThunderMBoxFile(File test) {
+	private boolean isThundebirdMboxFile(File test) {
 		// first is it a file
 		if (!test.exists() || !test.isFile())
 			return false;
@@ -265,7 +267,7 @@ public class ThunderbirdFolder extends Folder {
 		if (folderFullName == null)
 			return false;
 		else
-			return isThunderMBoxFile(new File(getFilePathFromFolderFullName(folderFullName)));
+			return isThundebirdMboxFile(new File(getFilePathFromFolderFullName(folderFullName)));
 	}
 
 	private boolean isBoxHoldingFolders(String folderFullName) {
@@ -276,7 +278,7 @@ public class ThunderbirdFolder extends Folder {
 	}
 
 	private boolean isBox(String folderPath) {
-		if (isThunderMBoxFile(new File(getFilePathFromFolderFullName(folderPath))))
+		if (isThundebirdMboxFile(new File(getFilePathFromFolderFullName(folderPath))))
 			return true;
 		else if (isSubFoldersDirectory(new File(getSubFolderDirectoryPathFromFolderFullName(folderPath))))
 			return true;
@@ -339,7 +341,7 @@ public class ThunderbirdFolder extends Folder {
 				continue;
 			}
 			// second case thunder mbox file
-			if (isThunderMBoxFile(listOfFiles[i])) {
+			if (isThundebirdMboxFile(listOfFiles[i])) {
 				addFlagHashMap(boxes, getFolderNameFromFileName(listOfFiles[i].getName()), HOLDS_MESSAGES);
 				continue;
 			}
@@ -497,17 +499,17 @@ public class ThunderbirdFolder extends Folder {
 		MessageFork mf;
 
 		try {
-			tmfilereader = new ThunderbirdFileReader(logger, folderFile);
+			mboxfilereader = new MboxFileReader(logger, folderFile);
 			opened = true; // now really opened
 			long beg, end;
 
-			tmfilereader.getNextFromLineBeg();
-			beg = tmfilereader.getLastFromLineEnd();
+			mboxfilereader.getNextFromLineBeg();
+			beg = mboxfilereader.getLastFromLineEnd();
 			while (beg != -1) {
-				end = tmfilereader.getNextFromLineBeg();
+				end = mboxfilereader.getNextFromLineBeg();
 				mf = new MessageFork(beg, end);
 				messages.add(mf);
-				beg = tmfilereader.getLastFromLineEnd();
+				beg = mboxfilereader.getLastFromLineEnd();
 			}
 		} catch (IOException e) {
 			throw new MessagingException("ThunderMBox: open failure, can't read: " + folderFile.getPath());
@@ -528,7 +530,7 @@ public class ThunderbirdFolder extends Folder {
 		messages = null;
 		opened = false;
 		try {
-			tmfilereader.close();
+			mboxfilereader.close();
 		} catch (IOException e) {
 			// forget it
 		}
@@ -564,7 +566,7 @@ public class ThunderbirdFolder extends Folder {
 		// optimal for the extraction usage with only one get by message
 		try {
 			m = new ThunderbirdMessage(this,
-					tmfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
+					mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
 		} catch (IOException e) {
 			throw new MessagingException("ThunderMBox: Open Failure, can't read: " + folderFile.getPath());
 		}

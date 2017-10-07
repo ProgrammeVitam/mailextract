@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
 
 import java.io.File;
 import java.io.IOException;
@@ -41,7 +41,7 @@ import javax.mail.util.SharedFileInputStream;
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class ThunderbirdFileReader {
+public class MboxFileReader {
 
 	private Logger logger;
 
@@ -68,7 +68,7 @@ public class ThunderbirdFileReader {
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
-	ThunderbirdFileReader(Logger logger, File file) throws IOException {
+	public MboxFileReader(Logger logger, File file) throws IOException {
 		this.logger = logger;
 		this.filePath = file.getPath();
 		raf = new RandomAccessFile(file, "r");
@@ -174,7 +174,7 @@ public class ThunderbirdFileReader {
 				return true;
 			else if (line.startsWith("From - "))
 				return true;
-			getLogger().finest("mailextract.thunderbird: Misleading '" + line + "' line in file " + filePath
+			getLogger().finest("mailextract.mbox|thunderbird: Misleading '" + line + "' line in file " + filePath
 					+ " at line " + Integer.toString(lineNum) + " is not considered as a message delimiter");
 			return false;
 		}

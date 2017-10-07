@@ -40,9 +40,7 @@ The default level of log is INFO for extracting and OFF for listing.
 The arguments syntax is:
 
 --help              help
---mailprotocol      mail protocol for server access (imap|imaps...)
---thunderbird       thunderbird mbox directory
---outlook           outlook pst file
+--type				type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
 --user              user account name (also used for destination extraction naming)
 --password          password
 --server            mail server [HostName|IP](:port)

@@ -37,6 +37,7 @@ import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxFolder;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird.ThunderbirdFolder;
 
 /**
@@ -52,10 +53,7 @@ public class JMStoreFolder extends StoreFolder {
 
 	// for the root folder
 	private JMStoreFolder(StoreExtractor storeExtractor, final Folder folder) {
-		super(storeExtractor);
-		this.folder = folder;
-		if (folder instanceof ThunderbirdFolder)
-			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
+		this(storeExtractor, folder, null);
 	}
 
 	// for a folder with a father
@@ -64,7 +62,10 @@ public class JMStoreFolder extends StoreFolder {
 		this.folder = folder;
 		if (folder instanceof ThunderbirdFolder)
 			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
-		finalizeMailBoxFolder(father);
+		else if (folder instanceof MboxFolder)
+			((MboxFolder) folder).setLogger(storeExtractor.getLogger());
+		if (father!=null)
+			finalizeMailBoxFolder(father);
 	}
 
 	/**

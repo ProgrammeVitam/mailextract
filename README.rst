@@ -56,9 +56,7 @@ Le niveau par défaut de log est INFO pour l'extraction et OFF pour l'édition d
 La syntaxe des arguments est:
 
 --help              aide
---mailprotocol      sur protocole d'accès distant (imap\|imaps... potentiellement pop3\|gimap non testé)
---thunderbird       sur répertoire thunderbird
---outlook           sur fichier outlook pst
+--type				type de conteneur local à extraire (thunderbird|pst|eml|mbox) ou protocole d'accès distant (imap|imaps|pop3...)
 --user              nom d'utilisateur de la boite (aussi utilisé pour générer le nom de l'extraction)
 --password          mot de passe
 --server            serveur de messagerie [HostName|IP](:port)

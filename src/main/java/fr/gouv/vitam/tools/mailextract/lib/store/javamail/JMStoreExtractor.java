@@ -126,6 +126,10 @@ public class JMStoreExtractor extends StoreExtractor {
 			session.addProvider(new Provider(Provider.Type.STORE, "eml",
 					fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml.EmlStore.class.getName(), "fr.gouv.vitam",
 					getClass().getPackage().getImplementationVersion()));
+			// add mbox provider
+			session.addProvider(new Provider(Provider.Type.STORE, "mbox",
+					fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxStore.class.getName(), "fr.gouv.vitam",
+					getClass().getPackage().getImplementationVersion()));
 
 			URLName urlName = new URLName(url);
 			store = session.getStore(urlName);
@@ -192,7 +196,7 @@ public class JMStoreExtractor extends StoreExtractor {
 	// URLName urlName = new URLName(url);
 	// store = session.getStore(urlName);
 	// store.connect();
-	// ((EmlStore)store).setRawContent(rawContent);
+	// ((MboxStore)store).setRawContent(rawContent);
 	// } catch (MessagingException e) {
 	// throw new ExtractionException("mailextract.javamail: can't get store for
 	// " + getDecodedURL(url)

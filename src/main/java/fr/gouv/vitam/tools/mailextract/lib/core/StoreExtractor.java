@@ -117,7 +117,7 @@ import java.util.logging.Logger;
  */
 public abstract class StoreExtractor {
 
-	/** Protocol used for extraction (imap| thunderbird| pstfile) */
+	/** Protocol used for extraction (imap| thunderbird| pst) */
 	protected String protocol;
 	/** Server of target account ((hostname|ip)[:port]) **/
 	protected String server;
@@ -163,7 +163,7 @@ public abstract class StoreExtractor {
 	 * Instantiates a new store extractor.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (imap| thunderbird| pstfile)
+	 *            Type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
@@ -440,8 +440,7 @@ public abstract class StoreExtractor {
 	 * Create a store extractor as a factory creator.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (thunderbird| pstfiles| imap|
-	 *            imaps[not tested gimap| pop3])
+	 *            Type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
@@ -478,8 +477,7 @@ public abstract class StoreExtractor {
 	 * Create an internal depth store extractor as a factory creator.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (thunderbird| pstfiles| imap|
-	 *            imaps[not tested gimap| pop3])
+	 *            type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
@@ -517,7 +515,7 @@ public abstract class StoreExtractor {
 		if ((folder != null) && (!folder.isEmpty()) && (folder.substring(0, 1) == File.separator))
 			folder = folder.substring(1);
 
-		if (protocol.equals("libpst"))
+		if (protocol.equals("pst"))
 			store = new LPStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
 					options, rootStoreExtractor, logger);
 		else

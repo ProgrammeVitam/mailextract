@@ -121,9 +121,13 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	private void insertOptions() {
 		if (local) {
 			mainWindow.localRadioButton.doClick();
-			if (protocol.equals("libpst"))
-				mainWindow.outlookRadioButton.doClick();
-			else
+			if (protocol.equals("pst"))
+				mainWindow.pstRadioButton.doClick();
+			else if (protocol.equals("mbox"))
+				mainWindow.mboxRadioButton.doClick();
+			else if (protocol.equals("eml"))
+				mainWindow.emlRadioButton.doClick();
+			else if (protocol.equals("thunderbird"))
 				mainWindow.thunderbirdRadioButton.doClick();
 			mainWindow.containerField.setText(container);
 		} else {
@@ -175,7 +179,9 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		// global panel local or protocole enable/disable
 		if (command.equals("local")) {
 			mainWindow.thunderbirdRadioButton.setEnabled(true);
-			mainWindow.outlookRadioButton.setEnabled(true);
+			mainWindow.pstRadioButton.setEnabled(true);
+			mainWindow.mboxRadioButton.setEnabled(true);
+			mainWindow.emlRadioButton.setEnabled(true);
 			mainWindow.containerLabel.setEnabled(true);
 			mainWindow.containerField.setEnabled(true);
 			mainWindow.containerButton.setEnabled(true);
@@ -189,7 +195,9 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.passwordField.setEnabled(false);
 		} else if (command.equals("protocole")) {
 			mainWindow.thunderbirdRadioButton.setEnabled(false);
-			mainWindow.outlookRadioButton.setEnabled(false);
+			mainWindow.pstRadioButton.setEnabled(false);
+			mainWindow.mboxRadioButton.setEnabled(false);
+			mainWindow.emlRadioButton.setEnabled(false);
 			mainWindow.containerLabel.setEnabled(false);
 			mainWindow.containerField.setEnabled(false);
 			mainWindow.containerButton.setEnabled(false);
@@ -282,8 +290,12 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (mainWindow.localRadioButton.isSelected()) {
 			if (mainWindow.thunderbirdRadioButton.isSelected())
 				protocol = "thunderbird";
-			else
-				protocol = "libpst";
+			else if (mainWindow.emlRadioButton.isSelected())
+				protocol = "eml";
+			else if (mainWindow.mboxRadioButton.isSelected())
+				protocol = "mbox";
+			else if (mainWindow.pstRadioButton.isSelected())
+				protocol = "pst";
 			container = mainWindow.containerField.getText();
 		}
 		// server

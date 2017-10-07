@@ -25,23 +25,22 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
 
 import java.io.*;
 import java.net.URLDecoder;
 
 import javax.mail.*;
 
-// TODO: Auto-generated Javadoc
 /**
- * JavaMail Store for eml uniq message file.
+ * JavaMail Store for mbox messages file.
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class EmlStore extends Store {
+public class MboxStore extends Store {
 
-	/** Path to the target eml file **/
+	/** Path to the target mbox file */
 	private String container;
 
 	/**
@@ -59,9 +58,9 @@ public class EmlStore extends Store {
 	 * @param session
 	 *            the session
 	 * @param url
-	 *            the url supposed to be formed as eml://localhost
+	 *            the url supposed to be formed as mbox://localhost
 	 */
-	public EmlStore(Session session, URLName url) {
+	public MboxStore(Session session, URLName url) {
 		super(session, url);
 
 		try {
@@ -76,7 +75,7 @@ public class EmlStore extends Store {
 	 * and defined directory availability (not in params)
 	 * 
 	 * <p>
-	 * Here control the params coherence eml single mail eml://localhost.
+	 * Here control the params coherence mbox mail file mbox://localhost.
 	 *
 	 * @param host
 	 *            only localhost
@@ -94,16 +93,16 @@ public class EmlStore extends Store {
 	protected boolean protocolConnect(String host, int port, String user, String passwd) throws MessagingException {
 		// verify params significance in ThunderMBox context
 		if (!host.equals("localhost"))
-			throw new MessagingException("eml: only support localhost");
+			throw new MessagingException("mbox: only support localhost");
 		if (!((passwd == null) || (passwd.isEmpty())))
-			throw new MessagingException("eml: does not allow passwords");
+			throw new MessagingException("mbox: does not allow passwords");
 		if (port != -1)
-			throw new MessagingException("eml: does not allow port selection");
+			throw new MessagingException("mbox: does not allow port selection");
 
-		// verify declared file for eml availability
+		// verify declared file for mbox availability
 		File test = new File(container);
 		if (!test.isFile()) {
-			throw new MessagingException("Eml: " + container + " is not an existing file");
+			throw new MessagingException("mbox: " + container + " is not an existing file");
 		}
 		return true;
 	}
@@ -115,7 +114,7 @@ public class EmlStore extends Store {
 	 */
 	@Override
 	public Folder getDefaultFolder() throws MessagingException {
-		return new EmlFolder(this);
+		return new MboxFolder(this);
 	}
 
 	/*
@@ -126,9 +125,9 @@ public class EmlStore extends Store {
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
 		if ((name == null) || (name.isEmpty()))
-			return new EmlFolder(this);
+			return new MboxFolder(this);
 		else
-			throw new MessagingException("eml: only one root simulated folder, no " + name + " folder");
+			throw new MessagingException("mbox: only one root simulated folder, no " + name + " folder");
 	}
 
 	/*
@@ -146,9 +145,9 @@ public class EmlStore extends Store {
 			// not possible
 		}
 		if ((name == null) || (name.isEmpty()))
-			return new EmlFolder(this);
+			return new MboxFolder(this);
 		else
-			throw new MessagingException("eml: only one root simulated folder, no " + name + " folder");
+			throw new MessagingException("mbox: only one root simulated folder, no " + name + " folder");
 	}
 
 }
