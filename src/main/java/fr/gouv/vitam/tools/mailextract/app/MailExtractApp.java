@@ -85,8 +85,8 @@ import joptsimple.OptionSet;
  * </tr>
  * <tr>
  * <td>--type</td>
- * <td>type of local container to extract (thunderbird|outlook|eml|mbox) or protocol for
- * server access (imap|imaps|pop3...)</td>
+ * <td>type of local container to extract (thunderbird|outlook|eml|mbox) or
+ * protocol for server access (imap|imaps|pop3...)</td>
  * </tr>
  * <tr>
  * <td>--user</td>
@@ -222,10 +222,11 @@ public class MailExtractApp {
 		String destRootPath = "", destName = "";
 		String protocol = "", server = "localhost", user = "", password = "", container = "", folder = "";
 		int storeExtractorOptions = 0;
-		boolean local = true;
+		boolean local = false;
 
 		String logLevel;
 
+		// FIXME vérification des paramètres
 		// prepare parsing with jopt
 		OptionParser parser = createOptionParser();
 		OptionSet options = null;
@@ -263,6 +264,8 @@ public class MailExtractApp {
 		}
 		if (options.has("type"))
 			protocol = (String) options.valueOf("type");
+		else 
+			protocol = "";
 
 		// get store extractor options
 		if (options.has("keeponlydeep")) {
@@ -293,6 +296,7 @@ public class MailExtractApp {
 				System.err.println("no need a server for local " + protocol + " extraction");
 				System.exit(1);
 			}
+		case "":
 			local = true;
 			break;
 		default:
@@ -308,7 +312,7 @@ public class MailExtractApp {
 				System.err.println("no container for " + protocol + " access protocol");
 				System.exit(1);
 			}
-
+			break;
 		}
 
 		// collect or construct all store extractor variables

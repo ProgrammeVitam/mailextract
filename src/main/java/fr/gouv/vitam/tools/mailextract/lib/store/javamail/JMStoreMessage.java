@@ -478,7 +478,7 @@ public class JMStoreMessage extends StoreMessage {
 					
 					// get contentId for inline attachment
 					headers = bodyPart.getHeader("Content-ID");
-					if (headers.length != 0) {
+					if ((headers!=null) && (headers.length != 0)) {
 						contentID=headers[0];
 					}
 

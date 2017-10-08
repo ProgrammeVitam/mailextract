@@ -520,7 +520,7 @@ public abstract class StoreExtractor {
 		if (protocol.equals("pst"))
 			store = new LPStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
 					options, rootStoreExtractor, logger);
-		if (protocol.equals("msg"))
+		else if (protocol.equals("msg"))
 			store = new MsgStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
 					options, rootStoreExtractor, logger);
 		else
