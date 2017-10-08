@@ -26,8 +26,10 @@
  */
 package fr.gouv.vitam.tools.mailextract.app;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -162,7 +164,7 @@ public class MailExtractThread extends Thread {
 
 			}
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			System.out.println(getPrintStackTrace(e));
 		} finally {
 			if (logger != null) {
 				Handler[] handler = logger.getHandlers();
@@ -174,5 +176,17 @@ public class MailExtractThread extends Thread {
 			}
 		}
 	}
+	
+	// make a String from the stack trace
+	private final static String getPrintStackTrace(Exception e) {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		PrintWriter p = new PrintWriter(baos);
+
+		e.printStackTrace(p);
+		p.close();
+		return baos.toString();
+	}
+
+
 
 }

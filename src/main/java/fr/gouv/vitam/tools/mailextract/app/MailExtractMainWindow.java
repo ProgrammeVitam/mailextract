@@ -121,6 +121,7 @@ public class MailExtractMainWindow extends JFrame {
 	JTextField passwordField;
 
 	/** The loglevel combo box. */
+	@SuppressWarnings("rawtypes")
 	JComboBox loglevelComboBox;
 
 	/** The warning check box. */
@@ -165,6 +166,7 @@ public class MailExtractMainWindow extends JFrame {
 	}
 
 	// Initialize the contents of the frame.
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private void initialize() {
 		java.net.URL imageURL = getClass().getClassLoader().getResource("Logo96.png");
 		if (imageURL != null) {

@@ -83,12 +83,12 @@ public class JMStoreMessage extends StoreMessage {
 		// geMessageSize of JavaMail is quite approximative...
 		long result;
 
-		if (rawContent != null)
-			result = rawContent.length;
+		if (mimeContent != null)
+			result = mimeContent.length;
 		else {
 			try {
-				rawContent = getRawContent();
-				result = rawContent.length;
+				mimeContent = getMimeContent();
+				result = mimeContent.length;
 			} catch (ExtractionException e) {
 				result = 0;
 			}
@@ -191,6 +191,40 @@ public class JMStoreMessage extends StoreMessage {
 		return addressList;
 	}
 
+	// get specific from address in header
+	private String getFrom() throws MessagingException {
+		List<String> aList = getAddressHeader("From");
+		String from;
+
+		if (aList.size() == 0) {
+			logWarning("mailextract.javamail: No From address in header of message " + subject);
+			from = "";
+		} else {
+			if (aList.size() > 1)
+				logWarning("mailextract.javamail: Multiple From addresses in header of message " + subject
+						+ ", keep the first one");
+			from = aList.get(0);
+		}
+		return from;
+	}
+
+	// get specific from address in header
+	private String getReturnPath() throws MessagingException {
+		List<String> aList = getAddressHeader("Return-Path");
+		String returnPath;
+
+		if (aList.size() == 0) {
+			logWarning("mailextract.javamail: No Return-Path address in header of message " + subject);
+			returnPath = "";
+		} else {
+			if (aList.size() > 1)
+				logWarning("mailextract.javamail: Multiple Return-Path addresses in header of message " + subject
+						+ ", keep the first one");
+			returnPath = aList.get(0);
+		}
+		return returnPath;
+	}
+
 	// get the messageID list of messages in same thread from References
 	private List<String> getReferences() throws MessagingException {
 		List<String> refList = new ArrayList<String>();
@@ -256,80 +290,125 @@ public class JMStoreMessage extends StoreMessage {
 	// Content analysis methods
 
 	// get the binary raw content as from smtp downloading
-	private byte[] getRawContent() throws ExtractionException {
+	private byte[] getMimeContent() throws ExtractionException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			message.writeTo(baos);
 		} catch (Exception e) {
-			logWarning("mailextract.javamail: Can't extract raw content from message " + subject);
+			logWarning("mailextract.javamail: Can't extract raw mime content from message " + subject);
 		}
 		return baos.toByteArray();
 	}
 
-	// methods to extract text content
-	private String getStringFromInputStream(InputStream inputStream) throws IOException {
-		final int bufferSize = 1024;
-		final char[] buffer = new char[bufferSize];
-		final StringBuilder out = new StringBuilder();
+	// // methods to extract text content
+	// private String getStringFromInputStream(InputStream inputStream) throws
+	// IOException {
+	// final int bufferSize = 1024;
+	// final char[] buffer = new char[bufferSize];
+	// final StringBuilder out = new StringBuilder();
+	//
+	// Reader in = new InputStreamReader(inputStream, "UTF-8");
+	// while (true) {
+	// int rsz = in.read(buffer, 0, buffer.length);
+	// if (rsz < 0)
+	// break;
+	// out.append(buffer, 0, rsz);
+	// }
+	// return out.toString();
+	// }
 
-		Reader in = new InputStreamReader(inputStream, "UTF-8");
-		while (true) {
-			int rsz = in.read(buffer, 0, buffer.length);
-			if (rsz < 0)
-				break;
-			out.append(buffer, 0, rsz);
-		}
-		return out.toString();
-	}
-
-	private String getPartTextContent(Part p) throws MessagingException, IOException {
-		String result = null;
-
+	// private String getPartTextContent(Part p) throws MessagingException,
+	// IOException {
+	// String result = null;
+	//
+	// if (p.isMimeType("text/*")) {
+	// if (p.isMimeType("text/plain"))
+	// result = (String) p.getContent();
+	// else if (p.isMimeType("text/html"))
+	// result =
+	// HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String)
+	// p.getContent()));
+	// else // other text dump
+	// result = getStringFromInputStream((InputStream) p.getContent());
+	// } else if (p.isMimeType("multipart/alternative")) {
+	// Multipart mp = (Multipart) p.getContent();
+	// for (int i = 0; i < mp.getCount(); i++) {
+	// Part bp = mp.getBodyPart(i);
+	// if (bp.isMimeType("text/plain")) {
+	// String s = getPartTextContent(bp);
+	// if (s != null) {
+	// result = s;
+	// break;
+	// }
+	// } else if (bp.isMimeType("text/html")) {
+	// result =
+	// HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String)
+	// p.getContent()));
+	// break;
+	// }
+	// }
+	// } else if (p.isMimeType("multipart/*")) {
+	// Multipart mp = (Multipart) p.getContent();
+	// for (int i = 0; i < mp.getCount(); i++) {
+	// String s = getPartTextContent(mp.getBodyPart(i));
+	// if (s != null) {
+	// result = s;
+	// break;
+	// }
+	// }
+	// }
+	//
+	// // to force HTML unescape even for wrongly typed (not html) parts
+	// result = Parser.unescapeEntities(result, true);
+	//
+	// return result;
+	// }
+	//
+	private void getPartBodyContents(Part p) throws MessagingException, IOException {
 		if (p.isMimeType("text/*")) {
-			if (p.isMimeType("text/plain"))
-				result = (String) p.getContent();
-			else if (p.isMimeType("text/html"))
-				result = HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String) p.getContent()));
-			else // other text dump
-				result = getStringFromInputStream((InputStream) p.getContent());
+			if (p.isMimeType("text/plain") && ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()))
+				bodyContent[TEXT_BODY] = (String) p.getContent();
+			else if (p.isMimeType("text/html")
+					&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].isEmpty()))
+				bodyContent[HTML_BODY] = (String) p.getContent();
+			else if (p.isMimeType("text/rtf") && ((bodyContent[RTF_BODY] == null) || bodyContent[RTF_BODY].isEmpty()))
+				bodyContent[RTF_BODY] = (String) p.getContent();
 		} else if (p.isMimeType("multipart/alternative")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); i++) {
 				Part bp = mp.getBodyPart(i);
-				if (bp.isMimeType("text/plain")) {
-					String s = getPartTextContent(bp);
-					if (s != null) {
-						result = s;
-						break;
-					}
-				} else if (bp.isMimeType("text/html")) {
-					result = HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String) p.getContent()));
-					break;
-				}
+				getPartBodyContents(bp);
 			}
 		} else if (p.isMimeType("multipart/*")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); i++) {
-				String s = getPartTextContent(mp.getBodyPart(i));
-				if (s != null) {
-					result = s;
-					break;
-				}
+				getPartBodyContents(mp.getBodyPart(i));
 			}
 		}
-
-		// to force HTML unescape even for wrongly typed (not html) parts
-		result = Parser.unescapeEntities(result, true);
-
-		return result;
 	}
 
-	private String getTextContent() {
+	// private String getTextContent() {
+	// try {
+	// return getPartTextContent(message);
+	// } catch (Exception e) {
+	// logWarning("mailextract.javamail: Badly formatted mime message, can't
+	// extract text content " + subject);
+	// return null;
+	// }
+	// }
+	private void getBodyContents() {
 		try {
-			return getPartTextContent(message);
+			getPartBodyContents(message);
+			if (((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty())
+					&& (bodyContent[HTML_BODY] != null))
+				bodyContent[TEXT_BODY] = HTMLTextExtractor.getInstance()
+						.getPlainText(Jsoup.parse(bodyContent[HTML_BODY]));
+
+			// to force HTML unescape even for wrongly typed (not html) parts
+			if (bodyContent[TEXT_BODY] != null)
+				bodyContent[TEXT_BODY] = Parser.unescapeEntities(bodyContent[TEXT_BODY], true);
 		} catch (Exception e) {
-			logWarning("mailextract.javamail: Badly formatted mime message, can't extract text content " + subject);
-			return null;
+			logWarning("mailextract.javamail: Badly formatted mime message, can't extract body contents " + subject);
 		}
 	}
 
@@ -365,8 +444,10 @@ public class JMStoreMessage extends StoreMessage {
 					// search for file dates if any
 					Date creationDate = null;
 					Date modificationDate = null;
+					String mimeType = null;
 					String[] headers;
 					ContentDisposition disposition;
+					String contentID=null;
 					String date;
 
 					headers = bodyPart.getHeader("Content-Disposition");
@@ -385,6 +466,7 @@ public class JMStoreMessage extends StoreMessage {
 						date = disposition.getParameter("modification-date");
 						if ((date != null) && (!date.isEmpty()))
 							modificationDate = mailDateFormat.parse(date);
+						mimeType = disposition.getParameter("content-type");
 					}
 
 					// detect if declared attached message
@@ -393,9 +475,15 @@ public class JMStoreMessage extends StoreMessage {
 						if (headers[0].indexOf("rfc822") > 0)
 							attachmentType = EML_STORE_ATTACHMENT + STORE_ATTACHMENT;
 					}
+					
+					// get contentId for inline attachment
+					headers = bodyPart.getHeader("Content-ID");
+					if (headers.length != 0) {
+						contentID=headers[0];
+					}
 
 					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(), creationDate,
-							modificationDate, attachmentType));
+							modificationDate, mimeType, contentID, attachmentType));
 				}
 			}
 		} catch (Exception e) {
@@ -416,8 +504,6 @@ public class JMStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#doAnalyzeMessage()
 	 */
 	public void doAnalyzeMessage() throws ExtractionException {
-		List<String> cc, bcc;
-
 		// header metadata extraction
 		// * special global
 		subject = getSubject();
@@ -425,20 +511,12 @@ public class JMStoreMessage extends StoreMessage {
 		mailHeader = getDecodedHeader();
 		// * recipients and co
 		try {
-			from = getAddressHeader("From");
-			replyTo = getAddressHeader("ReplyTo");
+			from = getFrom();
+			replyTo = getAddressHeader("Reply-To");
 			recipientTo = getAddressHeader("To");
-			cc = getAddressHeader("Cc");
-			bcc = getAddressHeader("Bcc");
-			if (cc == null)
-				recipientCcAndBcc = bcc;
-			else {
-				if (bcc != null)
-					cc.addAll(bcc);
-				recipientCcAndBcc = cc;
-
-			}
-			returnPath = getAddressHeader("Return-Path");
+			recipientCc = getAddressHeader("Cc");
+			recipientBcc = getAddressHeader("Bcc");
+			returnPath = getReturnPath();
 		} catch (AddressException e) {
 			try {
 				logWarning("mailextract.javamail: Can't extract addres " + MimeUtility.decodeText(e.getRef())
@@ -449,7 +527,7 @@ public class JMStoreMessage extends StoreMessage {
 			logWarning("mailextract.javamail: Can't extract addresses from message " + subject);
 		}
 
-		// * dates
+		// dates
 		try {
 			sentDate = message.getSentDate();
 			receivedDate = getReceivedDate();
@@ -457,11 +535,14 @@ public class JMStoreMessage extends StoreMessage {
 			logWarning("mailextract.javamail: Can't extract dates from message " + subject);
 		}
 
+		// message-id
 		try {
 			messageUID = message.getMessageID();
 		} catch (MessagingException e) {
 			logWarning("mailextract.javamail: Can't extract message uniqID from message " + subject);
 		}
+		
+		// in-reply-to
 		try {
 			String[] l = message.getHeader("In-Reply-To");
 			if (l != null && l.length > 0)
@@ -471,31 +552,24 @@ public class JMStoreMessage extends StoreMessage {
 		} catch (MessagingException e) {
 			logWarning("mailextract.javamail: Can't extract in-reply-to uniqID from message " + subject);
 		}
+		
+		// references
 		try {
 			references = getReferences();
 		} catch (MessagingException e) {
-			logWarning("mailextract.javamail: Can't extract message UnioID references from message " + subject);
+			logWarning("mailextract.javamail: Can't extract message UniqID references from message " + subject);
 		}
+		
+		// sender
 		try {
 			sender = getAddressHeader("Sender");
 		} catch (MessagingException e) {
-			try {
-				BufferedOutputStream output = new BufferedOutputStream(
-						new FileOutputStream("H:\\Partage\\extract\\rawContent"));
-				output.write(rawContent);
-				output.close();
-			} catch (Exception e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			} finally {
-			}
-
-			logWarning("mailextract.javamail: Can't extract addresses from message " + subject);
+			logWarning("mailextract.javamail: Can't extract sender addresses from message " + subject);
 		}
 
 		// global content extraction
-		rawContent = getRawContent();
-		textContent = getTextContent();
+		mimeContent = getMimeContent();
+		getBodyContents();
 		attachments = getAttachments();
 
 	}

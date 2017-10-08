@@ -33,8 +33,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.mail.internet.AddressException;
@@ -42,8 +45,11 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeUtility;
 
 import com.pff.PSTAttachment;
+import com.pff.PSTConversationIndex;
+import com.pff.PSTException;
 import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
+import com.pff.PSTConversationIndex.ResponseLevel;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
@@ -87,13 +93,6 @@ public class LPStoreMessage extends StoreMessage {
 		this.message = message;
 	}
 
-	// utility method to generate a List<String> containing only one String
-	private static final List<String> listString(String value) {
-		List<String> ls = new ArrayList<String>();
-		ls.add(value);
-		return ls;
-	}
-
 	// Header analysis methods
 
 	// direct headers analysis to complement libpst when useful
@@ -133,7 +132,9 @@ public class LPStoreMessage extends StoreMessage {
 		CaseUnsensString key;
 
 		try {
-			ByteArrayInputStream bais = new ByteArrayInputStream(message.toString().getBytes());
+			// ByteArrayInputStream bais = new
+			// ByteArrayInputStream(message.toString().getBytes());
+			ByteArrayInputStream bais = new ByteArrayInputStream(message.getTransportMessageHeaders().getBytes());
 			BufferedReader br = new BufferedReader(new InputStreamReader(bais));
 
 			line = br.readLine();
@@ -283,8 +284,9 @@ public class LPStoreMessage extends StoreMessage {
 	// get recipients with both values in Microsoft Format from pst file
 	// and in smtp format from header if any
 	private void getRecipients() {
-		LinkedHashSet<String> toSet = new LinkedHashSet<String>();
-		LinkedHashSet<String> ccAndBccSet = new LinkedHashSet<String>();
+		recipientTo = new ArrayList<String>();
+		recipientCc = new ArrayList<String>();
+		recipientBcc = new ArrayList<String>();
 		// pst file values
 		int recipientNumber;
 		PSTRecipient pstR;
@@ -298,69 +300,98 @@ public class LPStoreMessage extends StoreMessage {
 		for (int i = 0; i < recipientNumber; i++) {
 			try {
 				pstR = message.getRecipient(i);
-				String emailAddress = pstR.getEmailAddress();
+				// prefer smtp address
+				String emailAddress = pstR.getSmtpAddress();
+				if (emailAddress.isEmpty())
+					emailAddress = pstR.getEmailAddress();
 				normAddress = pstR.getDisplayName() + " <" + emailAddress + ">";
-				if (pstR.getRecipientType() == PSTRecipient.MAPI_TO)
-					toSet.add(normAddress);
-				else
-					ccAndBccSet.add(normAddress);
-
+				switch (pstR.getRecipientType()) {
+				case PSTRecipient.MAPI_TO:
+					recipientTo.add(normAddress);
+					break;
+				case PSTRecipient.MAPI_CC:
+					recipientCc.add(normAddress);
+					break;
+				case PSTRecipient.MAPI_BCC:
+					recipientBcc.add(normAddress);
+					break;
+				}
 			} catch (Exception e) {
 				logWarning("mailextract.libpst: Can't get recipient number " + Integer.toString(i) + " in message "
 						+ subject);
 			}
 		}
+	}
 
-		// completed with header values
-		List<String> toList = getAddressHeader("To");
-		if (toList != null && !toList.isEmpty())
-			for (String s : toList)
-				toSet.add(s);
-		List<String> ccList = getAddressHeader("Cc");
-		if (ccList != null && !ccList.isEmpty())
-			for (String s : ccList)
-				ccAndBccSet.add(s);
-		List<String> bccList = getAddressHeader("Bcc");
-		if (bccList != null && !bccList.isEmpty())
-			for (String s : bccList)
-				ccAndBccSet.add(s);
+	// get sender name using all possible sources
+	private String getSenderName() {
+		String name;
 
-		recipientTo = new ArrayList<String>();
-		recipientCcAndBcc = new ArrayList<String>();
+		name = message.getSenderName();
+		if ((name == null) || name.isEmpty())
+			name = message.getSentRepresentingName();
+		return name;
+	}
 
-		for (String s : toSet)
-			recipientTo.add(s);
-		for (String s : ccAndBccSet)
-			recipientCcAndBcc.add(s);
+	// get sender email address using all possible sources (sender and
+	// SentRepresenting field), and using SMTP first
+	private String getSenderEmailAddress() {
+		String name = "";
 
+		if (message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
+			name = message.getSenderEmailAddress().trim();
+		if (name.isEmpty() && message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
+			name = message.getSentRepresentingEmailAddress().trim();
+		if (name.isEmpty())
+			name = message.getSenderEmailAddress().trim();
+		if (name.isEmpty())
+			name = message.getSentRepresentingEmailAddress().trim();
+
+		return name;
 	}
 
 	// get from with both values in Microsoft Format from pst file
 	// and in smtp format from header if any
-	private List<String> getFrom() {
-		List<String> from = new ArrayList<String>();
-
+	private String getFrom() {
 		// pst file value
-		String pstFrom = message.getSentRepresentingEmailAddress();
-		if (pstFrom != null && !pstFrom.isEmpty()) {
-			pstFrom = message.getSentRepresentingName() + " <" + pstFrom + ">";
-			from.add(pstFrom);
+		String from = getSenderEmailAddress();
+		if (from != null && !from.isEmpty()) {
+			from = getSenderName() + " <" + from + ">";
 		}
 
-		// completed with header values
-		List<String> headerFrom = getAddressHeader("From");
-		if (headerFrom != null && !headerFrom.isEmpty())
-			for (String s : headerFrom) {
-				if (!s.equals(pstFrom))
-					from.add(s);
+		// if no result let's try with header values
+		if (from == null || from.isEmpty()) {
+			List<String> headerFrom = getAddressHeader("From");
+			if (headerFrom.size() == 0) {
+				logWarning("mailextract.javamail: No From address in header of message " + subject);
+				from = "";
+			} else {
+				if (headerFrom.size() > 1)
+					logWarning("mailextract.javamail: Multiple From addresses in header of message " + subject
+							+ ", keep the first one");
+				from = headerFrom.get(0);
 			}
+		}
 		return from;
+	}
+
+	// get from with both values in Microsoft Format from pst file
+	// and in smtp format from header if any
+	private List<String> getReplyTo() {
+		// FIXME pst file value
+		List<String> replyTo = null;
+
+		// if no result let's try with header values
+		if (replyTo == null || replyTo.isEmpty()) {
+			replyTo = getAddressHeader("Reply-To");
+		}
+
+		return replyTo;
 	}
 
 	// Content analysis methods
 
-	// get attachments with raw content and filename
-	// TODO may be can get more metadata...
+	// get attachments with raw content and filename, mimetype... when possible
 	private List<Attachment> getAttachments() {
 		List<Attachment> lAttachment = new ArrayList<Attachment>();
 		int attachmentNumber;
@@ -376,11 +407,12 @@ public class LPStoreMessage extends StoreMessage {
 				Attachment attachment;
 
 				pstA = message.getAttachment(i);
-				if (pstA.getAttachMethod() == 5) {
-					attachment = new Attachment(pstA.getLongFilename(), "Embedded Message - to be done".getBytes(),
-							pstA.getCreationTime(), pstA.getModificationTime(),
-							STORE_ATTACHMENT + MSG_STORE_ATTACHMENT);
-				} else {
+				switch (pstA.getAttachMethod()) {
+				case PSTAttachment.ATTACHMENT_METHOD_NONE:
+					break;
+				case PSTAttachment.ATTACHMENT_METHOD_BY_VALUE:
+					// TODO insure OLE case is the same
+				case PSTAttachment.ATTACHMENT_METHOD_OLE:
 					InputStream is = pstA.getFileInputStream();
 					ByteArrayOutputStream baos = new ByteArrayOutputStream();
 					byte[] buf = new byte[4096];
@@ -389,9 +421,21 @@ public class LPStoreMessage extends StoreMessage {
 						baos.write(buf, 0, bytesRead);
 					}
 					attachment = new Attachment(pstA.getLongFilename(), baos.toByteArray(), pstA.getCreationTime(),
-							pstA.getModificationTime(), FILE_ATTACHMENT);
+							pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(), INLINE_ATTACHMENT);
+					lAttachment.add(attachment);
+					break;
+				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE:
+				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE:
+				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_ONLY:
+					// TODO treat reference cases
+					logWarning("mailextract.libpst: Can't extract reference attachment " + subject);
+					break;
+				case PSTAttachment.ATTACHMENT_METHOD_EMBEDDED:
+					attachment = new Attachment(pstA.getLongFilename(), "Embedded Message - to be done".getBytes(),
+							pstA.getCreationTime(), pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(),
+							STORE_ATTACHMENT + MSG_STORE_ATTACHMENT);
+					break;
 				}
-				lAttachment.add(attachment);
 			} catch (Exception e) {
 				logWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i) + " in message "
 						+ subject);
@@ -401,161 +445,76 @@ public class LPStoreMessage extends StoreMessage {
 
 	}
 
-	// encode a String in quoted-printable, default MIME encoding
-	private static String encodeQP(String s) {
+	// get message ID from SMTP or the conversation index for PST
+	private String getMessageUId() {
 		String result;
 
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
-		try {
-			OutputStream encodedOut = MimeUtility.encode(baos, "quoted-printable");
-			encodedOut.write(s.getBytes());
-		} catch (Exception e) {
-		}
-		result = baos.toString();
+		result = message.getInternetMessageId();
+		if ((result == null) || result.isEmpty()) {
+			PSTConversationIndex pstCI = message.getConversationIndex();
 
+			Instant inst = pstCI.getDeliveryTime().toInstant();
+			ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
+			result = "<" + pstCI.getGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
+			List<ResponseLevel> rlList = pstCI.getResponseLevels();
+			for (ResponseLevel rl : rlList) {
+				result += "+" + Integer.toHexString(rl.getDeltaCode());
+				result += Long.toHexString(rl.getTimeDelta());
+				result += Integer.toHexString(rl.getRandom());
+			}
+			result += ">";
+		}
 		return result;
 	}
 
-	// get the inner representation of message in MIME format but without
-	// attachments
-	// a small summary is added at the end to describe attachments
-	private byte[] getRawContent() {
-		String s, boundary;
-		int i, j;
+	// get in-reply-to ID from SMTP or from the messageUId which is a
+	// conversation index for PST
+	private String getInReplyToId() {
+		String result;
 
-		// Get the Header and keep only the part before "\n\n"
-		s = message.getTransportMessageHeaders();
-		if (s.indexOf("\r\n\r\n") > 0)
-			s = s.substring(0, s.indexOf("\r\n\r\n") + 1); // +1 added to have a
-															// CRLF
-		if (s.indexOf("\n\n") > 0) // Different kind of CRLF ;=)
-			s = s.substring(0, s.indexOf("\n\n") + 1);
-
-		// Remove multipart headers to avoid conflicts
-
-		// Remove 'Content-Type'
-		i = s.indexOf("Content-Type");
-		if (i > 0) {
-			j = s.indexOf("\n", i);
-			if (j > 0)
-				s = s.substring(0, i) + s.substring(j + 1);
-			else
-				s = s.substring(0, i);
-		}
-
-		// Remove 'Content-Transfer-Encoding'
-		i = s.indexOf("Content-Transfer-Encoding");
-		if (i > 0) {
-			j = s.indexOf("\n", i);
-			if (j > 0)
-				s = s.substring(0, i) + s.substring(j + 1);
-			else
-				s = s.substring(0, i);
-		}
-
-		// Remove 'MIME-Version'
-		i = s.indexOf("MIME-Version");
-		if (i > 0) {
-			i = s.lastIndexOf('\n', i) + 1;
-			j = s.indexOf("\n", i);
-			if (j > 0)
-				s = s.substring(0, i) + s.substring(j + 1);
-			else
-				s = s.substring(0, i);
-		}
-
-		// Remove 'boundary'
-		i = s.indexOf("boundary");
-		if (i > 0) {
-			i = s.lastIndexOf('\n', i) + 1;
-			j = s.indexOf("\n", i);
-			if (j > 0)
-				s = s.substring(0, i) + s.substring(j + 1);
-			else
-				s = s.substring(0, i);
-		}
-
-		// Get attachment description strings for different formats
-		String line, sAttach, sAttachHTML, sAttachRTF;
-		sAttach = "";
-		sAttachHTML = "";
-		sAttachRTF = "";
-
-		if (!this.attachments.isEmpty()) {
-			line = "================================================";
-			sAttach = "\r\n" + line + "\r\n";
-			sAttachHTML = "<BR>" + line + "<BR>\r\n";
-			line = "Le message extrait contient " + this.attachments.size() + " fichier(s) attaché(s) ";
-			sAttach += line + "\r\n";
-			sAttachHTML += line + "<BR>\r\n";
-			for (Attachment a : attachments) {
-				sAttach += "\r\n - " + a.getFilename() + "" + a.getRawContent().length + " octets";
-				sAttachHTML += "<br> - " + a.getFilename() + "" + a.getRawContent().length + " octets";
+		result = message.getInReplyToId();
+		if ((result == null) || result.isEmpty()) {
+			if ((messageUID != null) || messageUID.startsWith("PST:")) {
+				if (messageUID.lastIndexOf('+') > messageUID.lastIndexOf('@')) {
+					result = messageUID.substring(0, messageUID.lastIndexOf('+')) + ">";
+				}
 			}
-			line = "================================================";
-			sAttach += "\r\n" + line + "\r\n";
-			sAttachHTML += "<BR>" + line + "<BR>\r\n";
-			sAttachRTF = "{\\rtf1\\ansi\\deff0\\r\\n" + sAttach + "}";
 		}
-
-		// Add all the body form plain, HTML and RTF
-		String part;
-
-		boundary = "Part01234546789876543210123456789mailextract";
-		s += "MIME-Version: 1.0\r\nContent-Type: multipart/alternative;charset=\"UTF-8\";\r\n\tboundary=\"" + boundary
-				+ "\"\r\n";
-
-		// plain part
-		part = message.getBody();
-		if (part.length() > 0) {
-			s += "\r\n--" + boundary + "\r\n";
-			part += sAttach;
-			part = encodeQP(part);
-			s = s + "Content-Type: text/plain; charset=\"UTF-8\"; format-flowed\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
-					+ part + "\r\n";
-		}
-
-		// RTF part
-		try {
-			part = message.getRTFBody();
-			if (part.length() > 0) {
-				s += "\r\n--" + boundary + "\r\n";
-				part += sAttachRTF;
-				part = encodeQP(part);
-				s = s + "Content-Type: text/rtf; charset=\"UTF-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
-						+ part + "\r\n";
-			}
-		} catch (Exception e) {
-		}
-
-		// HTML part
-		part = message.getBodyHTML();
-		if (part.length() > 0) {
-			s += "\r\n--" + boundary + "\r\n";
-			part += sAttachHTML;
-			part = encodeQP(part);
-			s = s + "Content-Type: text/html; charset=\"UTF-8\"\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n"
-					+ part + "\r\n";
-		}
-
-		s += "\r\n--" + boundary + "--\r\n\r\n";
-
-		return s.getBytes();
+		return result;
 	}
 
-	// main analyze method
+	// get return-Path from SMTP or generate a fake one
+	private String getReturnPath() {
+		// pst file value
+		String returnPath = message.getReturnPath();
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#analyzeMessage()
-	 */
+		// if no result let's try with header values
+		if (returnPath == null || returnPath.isEmpty()) {
+			List<String> headerRP = getAddressHeader("Return-Path");
+			if (!headerRP.isEmpty()) {
+				if (headerRP.size() > 1)
+					logWarning("mailextract.javamail: Multiple Return-Path addresses in header of message " + subject
+							+ ", keep the first one");
+				returnPath = headerRP.get(0);
+			}
+		}
+
+		// may be a local mail, then generate a fake return-path
+		if ((!message.isUnsent()) && returnPath.isEmpty())
+			returnPath = "pst@localhost";
+
+		return returnPath;
+
+	}
+
 	public void doAnalyzeMessage() throws ExtractionException {
 		// List<String> cc, bcc;
 
 		// header metadata extraction
 		// * special global
 		subject = message.getSubject();
+		if (subject.equals("Vitam - livraison de documentation (version provisoire) de la part de Édouard VASSEUR"))
+			System.out.println("Message trouvé");
 
 		// header content extraction
 		headers = getHeaders();
@@ -563,24 +522,31 @@ public class LPStoreMessage extends StoreMessage {
 
 		// * recipients and co
 		from = getFrom();
-		replyTo = getAddressHeader("Reply-To");
+		replyTo = getReplyTo();
+
 		getRecipients();
-		returnPath = listString(message.getReturnPath());
+		returnPath = getReturnPath();
 
 		// * dates
 		receivedDate = message.getMessageDeliveryTime();
 		sentDate = message.getClientSubmitTime();
 
-		textContent = message.getBody();
+		bodyContent[TEXT_BODY] = message.getBody();
+		bodyContent[HTML_BODY] = message.getBodyHTML();
+		try {
+			bodyContent[RTF_BODY] = message.getRTFBody();
+		} catch (PSTException | IOException e) {
+			bodyContent[RTF_BODY] = null;
+			// forget it
+		}
 		attachments = getAttachments();
 
-		// finally reconstruct an eml form after attachments extraction
-		rawContent = getRawContent();
+		// no raw content, will be constructed at StoreMessage level
+		mimeContent = null;
 
-		messageUID = message.getInternetMessageId();
-		inReplyToUID = message.getInReplyToId();
+		messageUID = getMessageUId();
+		inReplyToUID = getInReplyToId();
 		references = getReferences();
-		sender = listString(message.getSenderName() + " <" + message.getSenderEmailAddress() + ">");
 	}
 
 	/*

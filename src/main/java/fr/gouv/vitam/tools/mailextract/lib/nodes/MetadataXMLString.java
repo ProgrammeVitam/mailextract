@@ -27,10 +27,7 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
-import org.jsoup.Jsoup;
 import org.jsoup.parser.Parser;
-
-import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 
 /**
  * Class for a XML string value in metadata

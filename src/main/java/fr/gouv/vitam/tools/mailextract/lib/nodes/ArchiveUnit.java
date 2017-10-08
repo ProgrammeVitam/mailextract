@@ -262,6 +262,45 @@ public class ArchiveUnit {
 	}
 
 	/**
+	 * Adds for the key metadata a person value
+	 * <p>
+	 * This is a utility method, used first for the writer. For example the due
+	 * structure for "TOTO<toto@sample.fr>" Writer metadata in XML is:
+	 * <p>
+	 * <Writer> <FirstName></FirstName> <BirthName>TOTO</BirthName>
+	 * <Identifier>toto@sample.fr</Identifier></Writer>
+	 * <p>
+	 * If mandatory flag is true and value is null or empty, the metadata lack
+	 * is logged
+	 *
+	 * @param key
+	 *            Metadata key
+	 * @param value
+	 *            Person value
+	 * @param mandatory
+	 *            Mandatory flag
+	 */
+	public void addPersonMetadata(String key, String value, boolean mandatory) {
+		Person p;
+		MetadataXMLNode mvMetaData;
+		MetadataXMLList mlMetaData;
+
+		if ((value != null) && !value.isEmpty()) {
+			p = extractPersonFromAddress(value);
+			mlMetaData = new MetadataXMLList();
+			mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
+			mlMetaData.addMetadataXMLNode(mvMetaData);
+			mvMetaData = new MetadataXMLNode("BirthName", p.birthName);
+			mlMetaData.addMetadataXMLNode(mvMetaData);
+			mvMetaData = new MetadataXMLNode("Identifier", p.identifier);
+			mlMetaData.addMetadataXMLNode(mvMetaData);
+			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
+		} else if (mandatory)
+			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+					+ rootPath + "'");
+	}
+
+	/**
 	 * Adds for the key metadata an array of person values, with values in
 	 * valuesList
 	 * <p>
@@ -326,22 +365,31 @@ public class ArchiveUnit {
 			p.identifier = "[Vide]";
 			p.birthName = "[Vide]";
 			p.firstName = "[Vide]";
+			return p;
 		}
+
 		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
 			p.identifier = s.substring(beg + 1, end).trim();
+			if (p.identifier.isEmpty())
+				p.identifier = "[Vide]";			
 			name = s.substring(0, beg).trim();
-		} else {
+			if (!name.isEmpty()) {
+				p.birthName = name;
+				p.firstName = name;
+				return p;
+			}
+		} else
 			p.identifier = s.trim();
-			if ((end = p.identifier.indexOf('@')) != -1)
-				name = p.identifier.substring(0, end);
-			else
-				name = "[Vide]";
-		}
+
+		if ((end = p.identifier.indexOf('@')) != -1)
+			name = p.identifier.substring(0, end);
+		else
+			name = "[Vide]";
 
 		p.firstName = name;
 		p.birthName = name;
-
 		return p;
+
 	}
 
 	/**
