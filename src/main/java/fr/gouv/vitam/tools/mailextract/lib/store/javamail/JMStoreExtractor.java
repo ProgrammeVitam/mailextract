@@ -158,69 +158,6 @@ public class JMStoreExtractor extends StoreExtractor {
 		}
 	}
 
-	// /**
-	// * Instantiates a new JavaMail StoreExtractor for single mail container.
-	// *
-	// * @param destRootPath
-	// * Root path of the extraction directory
-	// * @param destName
-	// * Name of the extraction directory
-	// * @param options
-	// * Options (flag composition of CONST_)
-	// * @param user
-	// * User name
-	// * @param logger
-	// * Logger used (from {@link java.util.logging.Logger})
-	// * @throws ExtractionException
-	// * Any unrecoverable extraction exception (access trouble, major
-	// * format problems...)
-	// */
-	// public JMStoreExtractor(byte[] rawContent, String destRootPath, String
-	// destName, int options,
-	// String user, int depth, Logger logger) throws ExtractionException {
-	// super("rfc822", "", user, "", "", "", destRootPath, destName, options,
-	// depth, logger);
-	//
-	// String url = "rfc822://localhost";
-	//
-	// try {
-	// // Connect to the store
-	// Properties props = System.getProperties();
-	// setSessionProperties(props);
-	// Session session = Session.getDefaultInstance(props, null);
-	// // add rfc822 provider
-	// session.addProvider(new Provider(Provider.Type.STORE, "rfc822",
-	// fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml.EmlStore.class.getName(),
-	// "fr.gouv.vitam", getClass().getPackage().getImplementationVersion()));
-	//
-	// URLName urlName = new URLName(url);
-	// store = session.getStore(urlName);
-	// store.connect();
-	// ((MboxStore)store).setRawContent(rawContent);
-	// } catch (MessagingException e) {
-	// throw new ExtractionException("mailextract.javamail: can't get store for
-	// " + getDecodedURL(url)
-	// + System.lineSeparator() + e.getMessage());
-	// }
-	//
-	// ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-	// JMStoreFolder jMRootMailBoxFolder;
-	//
-	// try {
-	// jMRootMailBoxFolder = JMStoreFolder.createRootFolder(this,
-	// store.getDefaultFolder(), rootNode);
-	//
-	// if (!jMRootMailBoxFolder.folder.exists()) {
-	// throw new ExtractionException("mailextract.javamail: Can't find
-	// extraction root folder " + folder);
-	// }
-	// rootAnalysisMBFolder = jMRootMailBoxFolder;
-	// } catch (MessagingException e) {
-	// throw new ExtractionException("mailextract.javamail: Can't find
-	// extraction root folder " + folder);
-	// }
-	// }
-
 	// decode URL encoding to UTF-8
 	static private String getDecodedURL(String url) {
 		String decodedUrl = "";

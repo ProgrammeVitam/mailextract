@@ -626,7 +626,7 @@ public abstract class StoreMessage extends StoreFile {
 
 	private static void setAddressList(MimeMessage mime, String tag, List<String> addressList)
 			throws MessagingException {
-		if (!addressList.isEmpty()) {
+		if ((addressList!=null) && (!addressList.isEmpty())) {
 			String value = "";
 			for (String tmp : addressList) {
 				value += tmp + ",";

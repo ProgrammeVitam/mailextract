@@ -101,7 +101,7 @@ public abstract class StoreFolder {
 	 * @param father
 	 *            the father
 	 */
-	protected void finalizeMailBoxFolder(StoreFolder father) {
+	protected void finalizeStoreFolder(StoreFolder father) {
 		folderArchiveUnit = new ArchiveUnit(storeExtractor, father.folderArchiveUnit, "Folder", getName());
 
 	}

@@ -284,6 +284,7 @@ public class MailExtractApp {
 		case "pst":
 		case "eml":
 		case "mbox":
+		case "msg":
 			if (!options.has("container")) {
 				System.out.println("local " + protocol + " extraction need a container path");
 				System.exit(1);

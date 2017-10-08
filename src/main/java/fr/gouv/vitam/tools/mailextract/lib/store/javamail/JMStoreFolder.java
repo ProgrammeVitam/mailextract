@@ -65,7 +65,7 @@ public class JMStoreFolder extends StoreFolder {
 		else if (folder instanceof MboxFolder)
 			((MboxFolder) folder).setLogger(storeExtractor.getLogger());
 		if (father!=null)
-			finalizeMailBoxFolder(father);
+			finalizeStoreFolder(father);
 	}
 
 	/**

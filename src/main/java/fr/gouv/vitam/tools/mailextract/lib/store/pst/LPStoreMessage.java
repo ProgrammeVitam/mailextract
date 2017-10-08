@@ -508,8 +508,6 @@ public class LPStoreMessage extends StoreMessage {
 	}
 
 	public void doAnalyzeMessage() throws ExtractionException {
-		// List<String> cc, bcc;
-
 		// header metadata extraction
 		// * special global
 		subject = message.getSubject();

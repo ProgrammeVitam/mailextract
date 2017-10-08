@@ -82,7 +82,7 @@ public class LPStoreFolder extends StoreFolder {
 			this.fullName = this.name;
 		else
 			this.fullName = father.fullName + File.separator + this.name;
-		finalizeMailBoxFolder(father);
+		finalizeStoreFolder(father);
 	}
 
 	/**
