@@ -41,6 +41,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+import javax.activation.MimeType;
+import javax.activation.MimeTypeParseException;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
@@ -345,6 +347,7 @@ public abstract class StoreMessage extends StoreFile {
 	 * specific).
 	 * 
 	 * <p>
+	 * /home/js/Partage/TestMailExtract/test@programmevitam.fr.pst/home/js/Partage/TestMailExtract/test@programmevitam.fr.pst
 	 * This is the main method for sub classes, where all metadata and
 	 * information has to be extracted in standard representation out of the
 	 * inner representation of the message.
@@ -358,6 +361,10 @@ public abstract class StoreMessage extends StoreFile {
 	 */
 	public void analyzeMessage() throws ExtractionException {
 		doAnalyzeMessage();
+//		if (subject.equals(
+//				"Re: CR - Atelier sur les besoins"))
+//			System.out.println("Message Trouvé");
+
 		// generate mime fake if needed and associated mimeContent
 		if (mimeContent == null) {
 			mimeFake = getMimeFake();
@@ -425,8 +432,11 @@ public abstract class StoreMessage extends StoreFile {
 		if (bodyContent[TEXT_BODY] != null) {
 			content = bodyContent[TEXT_BODY].trim();
 			if (!content.isEmpty()) {
-				messageNode.addMetadata("TextContent", content, true);
 				messageNode.addObject(content, messageUID + ".txt", "TextContent", 1);
+				// break HTML tags in metadata if any
+				content = content.replace("<","< ");
+				content = content.replace("&lt;","&lt; ");
+				messageNode.addMetadata("TextContent", content, true);
 			}
 		}
 		// add object binary master
@@ -626,7 +636,7 @@ public abstract class StoreMessage extends StoreFile {
 
 	private static void setAddressList(MimeMessage mime, String tag, List<String> addressList)
 			throws MessagingException {
-		if ((addressList!=null) && (!addressList.isEmpty())) {
+		if ((addressList != null) && (!addressList.isEmpty())) {
 			String value = "";
 			for (String tmp : addressList) {
 				value += tmp + ",";
@@ -702,8 +712,25 @@ public abstract class StoreMessage extends StoreFile {
 					if ((a.mimeType == null) || (a.mimeType.isEmpty()))
 						attachPart.setContent(a.rawContent,
 								"application/octet-stream; name=\"" + attachmentName + "\"");
-					else
-						attachPart.setContent(a.rawContent, a.mimeType + "; name=\"" + attachmentName + "\"");
+					else {
+						if (a.mimeType.startsWith("text")) {
+							String s;
+							s = new String(a.rawContent, "UTF-8");
+							attachPart.setContent(s, a.mimeType + "; name=\"" + attachmentName + "\"");
+						} else {
+							// verify valid MimeType and replace if not
+							try {
+								MimeType mt=new MimeType(a.mimeType);
+							} catch (MimeTypeParseException e) {
+								int i=a.mimeType.lastIndexOf('/');
+								if ((i!=-1) && (i<a.mimeType.length()))
+									a.mimeType="application/"+a.mimeType.substring(i+1);
+								else
+									a.mimeType="application/octet-stream";
+							}
+							attachPart.setContent(a.rawContent, a.mimeType + "; name=\"" + attachmentName + "\"");
+						}
+					}
 					// set Content-Disposition
 					if ((a.attachmentType & MACRO_ATTACHMENT_TYPE_FILTER) == INLINE_ATTACHMENT)
 						attachPart.setDisposition("inline; filename=\"" + attachmentName + "\"");
@@ -712,7 +739,7 @@ public abstract class StoreMessage extends StoreFile {
 					root.addBodyPart(attachPart);
 				}
 			}
-		} catch (MessagingException e) {
+		} catch (MessagingException | UnsupportedEncodingException e) {
 			throw new ExtractionException(
 					"Unable to generate " + (isInline ? "inlines" : "attachments") + " of message " + subject);
 		}

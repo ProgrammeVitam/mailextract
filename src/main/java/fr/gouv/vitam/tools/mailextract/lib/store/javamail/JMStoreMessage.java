@@ -447,7 +447,7 @@ public class JMStoreMessage extends StoreMessage {
 					String mimeType = null;
 					String[] headers;
 					ContentDisposition disposition;
-					String contentID=null;
+					String contentID = null;
 					String date;
 
 					headers = bodyPart.getHeader("Content-Disposition");
@@ -475,11 +475,11 @@ public class JMStoreMessage extends StoreMessage {
 						if (headers[0].indexOf("rfc822") > 0)
 							attachmentType = EML_STORE_ATTACHMENT + STORE_ATTACHMENT;
 					}
-					
+
 					// get contentId for inline attachment
 					headers = bodyPart.getHeader("Content-ID");
-					if ((headers!=null) && (headers.length != 0)) {
-						contentID=headers[0];
+					if ((headers != null) && (headers.length != 0)) {
+						contentID = headers[0];
 					}
 
 					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(), creationDate,
@@ -541,7 +541,7 @@ public class JMStoreMessage extends StoreMessage {
 		} catch (MessagingException e) {
 			logWarning("mailextract.javamail: Can't extract message uniqID from message " + subject);
 		}
-		
+
 		// in-reply-to
 		try {
 			String[] l = message.getHeader("In-Reply-To");
@@ -552,14 +552,14 @@ public class JMStoreMessage extends StoreMessage {
 		} catch (MessagingException e) {
 			logWarning("mailextract.javamail: Can't extract in-reply-to uniqID from message " + subject);
 		}
-		
+
 		// references
 		try {
 			references = getReferences();
 		} catch (MessagingException e) {
 			logWarning("mailextract.javamail: Can't extract message UniqID references from message " + subject);
 		}
-		
+
 		// sender
 		try {
 			sender = getAddressHeader("Sender");
