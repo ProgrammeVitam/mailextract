@@ -16,8 +16,9 @@ import org.apache.poi.hsmf.datatypes.PropertyValue.LongPropertyValue;
 import org.apache.poi.hsmf.datatypes.RecipientChunks;
 import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 public class MsgStoreMessage extends StoreMessage {
 
@@ -334,7 +335,7 @@ public class MsgStoreMessage extends StoreMessage {
 			bodyContent[RTF_BODY] = null;
 		}
 
-		attachments = new ArrayList<Attachment>();
+		attachments = new ArrayList<StoreMessageAttachment>();
 
 		// // header content extraction
 		// headers = getHeaders();

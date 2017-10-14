@@ -28,9 +28,9 @@ package fr.gouv.vitam.tools.mailextract.lib.store.msg;
 
 import org.apache.poi.hsmf.MAPIMessage;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 // TODO: Auto-generated Javadoc
 /**

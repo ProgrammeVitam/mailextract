@@ -37,10 +37,11 @@ import javax.mail.internet.*;
 import org.jsoup.*;
 import org.jsoup.parser.Parser;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * StoreMessage sub-class for mail boxes extracted through JavaMail library.
@@ -87,7 +88,7 @@ public class JMStoreMessage extends StoreMessage {
 			result = mimeContent.length;
 		else {
 			try {
-				mimeContent = getMimeContent();
+				mimeContent = getMessageContent();
 				result = mimeContent.length;
 			} catch (ExtractionException e) {
 				result = 0;
@@ -148,7 +149,7 @@ public class JMStoreMessage extends StoreMessage {
 	// Header analysis methods
 
 	// get the subject
-	private String getSubject() throws ExtractionException {
+	private String analyzeSubject() throws ExtractionException {
 		String result;
 
 		try {
@@ -290,7 +291,7 @@ public class JMStoreMessage extends StoreMessage {
 	// Content analysis methods
 
 	// get the binary raw content as from smtp downloading
-	private byte[] getMimeContent() throws ExtractionException {
+	private byte[] getMessageContent() throws ExtractionException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			message.writeTo(baos);
@@ -300,70 +301,6 @@ public class JMStoreMessage extends StoreMessage {
 		return baos.toByteArray();
 	}
 
-	// // methods to extract text content
-	// private String getStringFromInputStream(InputStream inputStream) throws
-	// IOException {
-	// final int bufferSize = 1024;
-	// final char[] buffer = new char[bufferSize];
-	// final StringBuilder out = new StringBuilder();
-	//
-	// Reader in = new InputStreamReader(inputStream, "UTF-8");
-	// while (true) {
-	// int rsz = in.read(buffer, 0, buffer.length);
-	// if (rsz < 0)
-	// break;
-	// out.append(buffer, 0, rsz);
-	// }
-	// return out.toString();
-	// }
-
-	// private String getPartTextContent(Part p) throws MessagingException,
-	// IOException {
-	// String result = null;
-	//
-	// if (p.isMimeType("text/*")) {
-	// if (p.isMimeType("text/plain"))
-	// result = (String) p.getContent();
-	// else if (p.isMimeType("text/html"))
-	// result =
-	// HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String)
-	// p.getContent()));
-	// else // other text dump
-	// result = getStringFromInputStream((InputStream) p.getContent());
-	// } else if (p.isMimeType("multipart/alternative")) {
-	// Multipart mp = (Multipart) p.getContent();
-	// for (int i = 0; i < mp.getCount(); i++) {
-	// Part bp = mp.getBodyPart(i);
-	// if (bp.isMimeType("text/plain")) {
-	// String s = getPartTextContent(bp);
-	// if (s != null) {
-	// result = s;
-	// break;
-	// }
-	// } else if (bp.isMimeType("text/html")) {
-	// result =
-	// HTMLTextExtractor.getInstance().getPlainText(Jsoup.parse((String)
-	// p.getContent()));
-	// break;
-	// }
-	// }
-	// } else if (p.isMimeType("multipart/*")) {
-	// Multipart mp = (Multipart) p.getContent();
-	// for (int i = 0; i < mp.getCount(); i++) {
-	// String s = getPartTextContent(mp.getBodyPart(i));
-	// if (s != null) {
-	// result = s;
-	// break;
-	// }
-	// }
-	// }
-	//
-	// // to force HTML unescape even for wrongly typed (not html) parts
-	// result = Parser.unescapeEntities(result, true);
-	//
-	// return result;
-	// }
-	//
 	private void getPartBodyContents(Part p) throws MessagingException, IOException {
 		if (p.isMimeType("text/*")) {
 			if (p.isMimeType("text/plain") && ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()))
@@ -387,15 +324,6 @@ public class JMStoreMessage extends StoreMessage {
 		}
 	}
 
-	// private String getTextContent() {
-	// try {
-	// return getPartTextContent(message);
-	// } catch (Exception e) {
-	// logWarning("mailextract.javamail: Badly formatted mime message, can't
-	// extract text content " + subject);
-	// return null;
-	// }
-	// }
 	private void getBodyContents() {
 		try {
 			getPartBodyContents(message);
@@ -413,8 +341,8 @@ public class JMStoreMessage extends StoreMessage {
 	}
 
 	// get mime attachments with raw content and filename
-	private List<Attachment> getAttachments() throws ExtractionException {
-		List<Attachment> attachments = new ArrayList<Attachment>();
+	private List<StoreMessageAttachment> getAttachments() throws ExtractionException {
+		List<StoreMessageAttachment> attachments = new ArrayList<StoreMessageAttachment>();
 		String filename;
 		int attachmentType;
 
@@ -466,14 +394,37 @@ public class JMStoreMessage extends StoreMessage {
 						date = disposition.getParameter("modification-date");
 						if ((date != null) && (!date.isEmpty()))
 							modificationDate = mailDateFormat.parse(date);
-						mimeType = disposition.getParameter("content-type");
 					}
 
-					// detect if declared attached message
+					headers = bodyPart.getHeader("Content-Type");
+					// if no content type header consider as attached file
+					if ((headers == null) || (headers.length == 0)) {
+						attachmentType = FILE_ATTACHMENT;
+					}
+
+					// detect mimetype and if declared attached message
 					headers = bodyPart.getHeader("Content-type");
-					if (headers.length != 0) {
-						if (headers[0].indexOf("rfc822") > 0)
-							attachmentType = EML_STORE_ATTACHMENT + STORE_ATTACHMENT;
+					// if no mimetype force to general case
+					if ((headers == null) || (headers.length == 0)) {
+						mimeType = "application/octet-stream";
+					} else {
+						// some kind of mimeType normalization
+						try {
+							ContentType contenttype = new ContentType(headers[0]);
+							if (contenttype.getSubType().equalsIgnoreCase("RFC822"))
+								attachmentType = EML_STORE_ATTACHMENT + STORE_ATTACHMENT;
+							mimeType = contenttype.getBaseType();
+						} catch (Exception e) {
+							mimeType=headers[0];
+							if (mimeType.indexOf(';')!=-1)
+								mimeType=mimeType.substring(0, mimeType.indexOf(';'));
+							int j = mimeType.lastIndexOf('/');
+							if ((j != -1) && (j < mimeType.length()))
+								mimeType = "application/" + mimeType.substring(j + 1);
+							else
+								mimeType = "application/octet-stream";
+
+						}
 					}
 
 					// get contentId for inline attachment
@@ -482,8 +433,8 @@ public class JMStoreMessage extends StoreMessage {
 						contentID = headers[0];
 					}
 
-					attachments.add(new Attachment(MimeUtility.decodeText(filename), baos.toByteArray(), creationDate,
-							modificationDate, mimeType, contentID, attachmentType));
+					attachments.add(new StoreMessageAttachment(MimeUtility.decodeText(filename), baos.toByteArray(),
+							creationDate, modificationDate, mimeType, contentID, attachmentType));
 				}
 			}
 		} catch (Exception e) {
@@ -506,7 +457,7 @@ public class JMStoreMessage extends StoreMessage {
 	public void doAnalyzeMessage() throws ExtractionException {
 		// header metadata extraction
 		// * special global
-		subject = getSubject();
+		subject = analyzeSubject();
 
 		mailHeader = getDecodedHeader();
 		// * recipients and co
@@ -568,7 +519,7 @@ public class JMStoreMessage extends StoreMessage {
 		}
 
 		// global content extraction
-		mimeContent = getMimeContent();
+		mimeContent = getMessageContent();
 		getBodyContents();
 		attachments = getAttachments();
 

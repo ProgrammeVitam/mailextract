@@ -25,7 +25,7 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.core;
+package fr.gouv.vitam.tools.mailextract.lib.utils;
 
 import java.text.SimpleDateFormat;
 import java.util.*;

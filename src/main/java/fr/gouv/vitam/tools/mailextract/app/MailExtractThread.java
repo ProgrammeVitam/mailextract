@@ -38,8 +38,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * MailExtractThread class for the real extraction command

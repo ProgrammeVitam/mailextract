@@ -31,6 +31,8 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.msg.MsgStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.pst.LPStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.File;
 //import java.io.IOException;

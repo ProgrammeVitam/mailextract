@@ -36,8 +36,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * Class for SEDA Archive Unit managing metadata, objects, if any, and on disk

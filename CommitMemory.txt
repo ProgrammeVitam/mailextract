@@ -1,0 +1,10 @@
+
+
+- Création d'un store pour les messages embarqués dans un pst
+- Extraction des messages en attachement quelque soit le Store source (thunderbird, pst...)
+- Génération des fake mime après extraction des Attachments pour récupérer les messages imbriqués
+- Filtrage des MimeType pour mettre un "application/*" voire "application/octet-stream" si non connu
+- Correction de l'encodage et de la longueur des lignes du header du fake mime
+- Suppresion des Body vide dans le fake mime
+- Création d'une classe générique pour les Attachments soit binaire soit objet (à ce stade embedded message)
+- Création d'une classe utilitaire RawDataSource pour intégrer des attachements dans le fake mime sans aucun réencodage par un DataHandler

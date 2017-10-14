@@ -31,6 +31,8 @@ import java.util.logging.Logger;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * Abstract class for a mail box folder.

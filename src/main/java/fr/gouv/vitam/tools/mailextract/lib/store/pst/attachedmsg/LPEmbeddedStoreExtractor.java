@@ -24,23 +24,17 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
-package fr.gouv.vitam.tools.mailextract.lib.store.pst;
+package fr.gouv.vitam.tools.mailextract.lib.store.pst.attachedmsg;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Vector;
 import java.util.logging.Logger;
 
-import com.pff.PSTFile;
-import com.pff.PSTFolder;
-import com.pff.PSTException;
-
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
- * StoreExtractor sub-class for mail boxes extracted through libpst library.
+ * StoreExtractor sub-class for embedded messages extracted through libpst library.
  * <p>
  * The java-libpst is a pure java library for the reading of Outlook PST and OST
  * files.
@@ -53,15 +47,13 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPStoreExtractor extends StoreExtractor {
-
-	private PSTFile pstFile;
+public class LPEmbeddedStoreExtractor extends StoreExtractor {
 
 	/**
-	 * Instantiates a new LP store extractor.
+	 * Instantiates a new LP embedded message store extractor.
 	 *
 	 * @param protocol
-	 *            Protocol used for extraction (pstfile)
+	 *            Protocol used for extraction (embeddedmsg)
 	 * @param server
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
@@ -90,73 +82,12 @@ public class LPStoreExtractor extends StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public LPStoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
-			Logger logger) throws ExtractionException {
-		super(protocol, null, null, null, container, folder, destRootPath, destName, options, rootStoreExtractor,
+	public LPEmbeddedStoreExtractor(String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
+			Logger logger, StoreMessageAttachment a) throws ExtractionException {
+		super("embeddedpstmsg", null, null, null, null, null, destRootPath, destName, options, rootStoreExtractor,
 				logger);
 
-		try {
-			pstFile = new PSTFile(container);
-		} catch (Exception e) {
-			throw new ExtractionException(
-					"mailExtract.libpst: can't open " + container + ", doesn't exist or is not a pst file");
-		}
-
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		LPStoreFolder lPRootMailBoxFolder;
-
-		try {
-			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), folder);
-
-			if (pstFolder == null)
-				throw new ExtractionException(
-						"mailExtract.libpst: Can't find the root folder " + folder + " in pst file");
-
-			lPRootMailBoxFolder = LPStoreFolder.createRootFolder(this, pstFolder, rootNode);
-
-			rootAnalysisMBFolder = lPRootMailBoxFolder;
-		} catch (IOException e) {
-			throw new ExtractionException("mailExtract.libpst: Can't use " + container + " pst file");
-		} catch (PSTException e) {
-			throw new ExtractionException("mailExtract.libpst: Can't find extraction root folder " + folder);
+		rootAnalysisMBFolder= LPEmbeddedStoreFolder.createRootFolder(this, a, rootNode);
 		}
-	}
-
-	private PSTFolder getNamedSubFolder(PSTFolder father, String folderName) throws PSTException, IOException {
-		PSTFolder result = null;
-		Vector<PSTFolder> pstFolderChilds = father.getSubFolders();
-
-		for (PSTFolder p : pstFolderChilds) {
-			if (p.getDisplayName().equals(folderName)) {
-				result = p;
-				break;
-			}
-		}
-
-		return result;
-	}
-
-	private PSTFolder findChildFolder(PSTFolder father, String folderFullName) throws PSTException, IOException {
-		String regex;
-		PSTFolder result = father;
-
-		if ((folderFullName == null) || (folderFullName.isEmpty()))
-			return result;
-		else {
-			regex = File.separator;
-			if (regex.equals("\\"))
-				regex = "\\\\";
-			String[] folderHierarchy = folderFullName.split(regex);
-			for (int i = 0; i < folderHierarchy.length; i++) {
-				if (!folderHierarchy[i].isEmpty()) {
-					result = getNamedSubFolder(result, folderHierarchy[i]);
-					if (result == null)
-						break;
-				}
-			}
-			return result;
-		}
-	}
-
 }

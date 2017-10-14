@@ -31,9 +31,10 @@ import java.nio.file.Files;
 import java.util.logging.Logger;
 
 import org.apache.poi.hsmf.MAPIMessage;
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
+
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * StoreExtractor sub-class for message file extracted through POI library.

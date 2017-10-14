@@ -34,7 +34,7 @@ import java.util.logging.Logger;
 import org.apache.tika.Tika;
 import org.apache.tika.exception.TikaException;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
  * Class for the text extraction tool. It uses Tika library.

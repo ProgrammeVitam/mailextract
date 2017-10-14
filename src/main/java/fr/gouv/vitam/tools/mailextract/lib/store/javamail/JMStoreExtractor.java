@@ -29,10 +29,10 @@ package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
 import javax.mail.*;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreFolder;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;

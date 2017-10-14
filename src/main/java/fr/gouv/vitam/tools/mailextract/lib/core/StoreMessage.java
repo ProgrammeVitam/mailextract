@@ -41,8 +41,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-import javax.activation.MimeType;
-import javax.activation.MimeTypeParseException;
+import javax.activation.DataHandler;
 import javax.mail.MessagingException;
 import javax.mail.Session;
 import javax.mail.internet.MimeBodyPart;
@@ -52,6 +51,10 @@ import javax.mail.internet.MimeUtility;
 
 import fr.gouv.vitam.tools.mailextract.lib.formattools.FileTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.pst.attachedmsg.LPEmbeddedStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
 
 /**
  * Abstract class for store file which is a mail box message.
@@ -125,7 +128,7 @@ public abstract class StoreMessage extends StoreFile {
 	protected List<String> mailHeader;
 
 	/** Attachments list. */
-	protected List<Attachment> attachments;
+	protected List<StoreMessageAttachment> attachments;
 
 	/**
 	 * Subject.
@@ -188,72 +191,8 @@ public abstract class StoreMessage extends StoreFile {
 	/** Specific store types of attachment */
 	public static final int SPECIFIC_ATTACHMENT_TYPE_FILTER = 0XF0;
 	public static final int EML_STORE_ATTACHMENT = 0x10;
-	public static final int MSG_STORE_ATTACHMENT = 0x20;
+	public static final int EMBEDDEDPST_STORE_ATTACHMENT = 0x20;
 	public static final int MBOX_STORE_ATTACHMENT = 0x30;
-
-	/**
-	 * Utility class to encapsulate an attachment file with content and metadata
-	 * (for now only filename) size and filename.
-	 */
-	protected class Attachment {
-
-		/** Binary raw content. */
-		byte[] rawContent;
-
-		/** Filename. */
-		String filename;
-
-		/** File dates. */
-		Date creationDate, modificationDate;
-
-		/** Type of attachment **/
-		String mimeType;
-
-		/** Content-ID **/
-		String contentID;
-
-		/** Attachment type. */
-		int attachmentType;
-
-		/**
-		 * Instantiates a new attachment.
-		 *
-		 * @param filename
-		 *            Filename
-		 * @param rawContent
-		 *            Binary raw content
-		 * @param creationDate
-		 *            Creation Date
-		 * @param modificationDate
-		 *            Last modification Date
-		 * @param mimeType
-		 *            MimeType
-		 * @param contentID
-		 *            Mime multipart content ID usefull for inline
-		 * @param attachmentType
-		 *            Type of attachment (inline, simple file, another store...)
-		 */
-
-		public Attachment(String filename, byte[] rawContent, Date creationDate, Date modificationDate, String mimeType,
-				String contentID, int attachmentType) {
-			this.filename = filename;
-			this.rawContent = rawContent;
-			this.creationDate = creationDate;
-			this.modificationDate = modificationDate;
-			this.mimeType = mimeType;
-			this.contentID = contentID;
-			this.attachmentType = attachmentType;
-		}
-
-		public String getFilename() {
-			return filename;
-		}
-
-		public byte[] getRawContent() {
-			return rawContent;
-		}
-
-	}
 
 	/**
 	 * Instantiates a new mail box message.
@@ -287,6 +226,30 @@ public abstract class StoreMessage extends StoreFile {
 	 * @return the message size
 	 */
 	public abstract long getMessageSize();
+
+	/**
+	 * Gets the message subject.
+	 * 
+	 * @return the message subject
+	 */
+	public String getSubject() {
+		return subject;
+	}
+
+	/**
+	 * Gets the message rfc822 form
+	 * 
+	 * <p>
+	 * Either the original content if mime message or a fake mime message
+	 * generated form, generated during analyze operation.
+	 * <p>
+	 * <b>Important:</b> this is computed during message extraction
+	 *
+	 * @return the mime content
+	 */
+	public byte[] getMimeContent() {
+		return mimeContent;
+	}
 
 	/**
 	 * Gets the logger created during the store extractor construction, and used
@@ -361,25 +324,6 @@ public abstract class StoreMessage extends StoreFile {
 	 */
 	public void analyzeMessage() throws ExtractionException {
 		doAnalyzeMessage();
-//		if (subject.equals(
-//				"Re: CR - Atelier sur les besoins"))
-//			System.out.println("Message Trouvé");
-
-		// generate mime fake if needed and associated mimeContent
-		if (mimeContent == null) {
-			mimeFake = getMimeFake();
-			try {
-				ByteArrayOutputStream baos = new ByteArrayOutputStream();
-				mimeFake.writeTo(baos);
-				mimeContent = baos.toByteArray();
-			} catch (Exception e) {
-				logWarning("mailextract.javamail: Can't extract raw content from message " + subject);
-			}
-		}
-		if (mimeContent == null)
-			mimeContent = "".getBytes();
-		getLogger().finer("mailextract.javamail: Extracted message " + (subject == null ? "Unknown title" : subject));
-		getLogger().finest("with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
 	}
 
 	/**
@@ -434,36 +378,55 @@ public abstract class StoreMessage extends StoreFile {
 			if (!content.isEmpty()) {
 				messageNode.addObject(content, messageUID + ".txt", "TextContent", 1);
 				// break HTML tags in metadata if any
-				content = content.replace("<","< ");
-				content = content.replace("&lt;","&lt; ");
+				content = content.replace("<", "< ");
+				content = content.replace("&lt;", "&lt; ");
 				messageNode.addMetadata("TextContent", content, true);
 			}
 		}
-		// add object binary master
-		messageNode.addObject(mimeContent, messageUID + ".eml", "BinaryMaster", 1);
 
-		if (writeFlag)
-			messageNode.write();
-
+		// extract all attachment and generate mimecontent of theese attachments
+		// if needed
 		if (attachments != null && !attachments.isEmpty()) {
 			// create all attachments subunits/object groups
 			extractMessageAttachments(messageNode, writeFlag);
 		}
+
+		// generate mime fake if needed and associated mimeContent
+		if (mimeContent == null) {
+			mimeFake = getMimeFake();
+			try {
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				mimeFake.writeTo(baos);
+				mimeContent = baos.toByteArray();
+			} catch (Exception e) {
+				logWarning("mailextract.javamail: Can't extract raw content from message " + subject);
+			}
+		}
+		if (mimeContent == null)
+			mimeContent = "".getBytes();
+
+		// add object binary master
+		messageNode.addObject(mimeContent, messageUID + ".eml", "BinaryMaster", 1);
+		if (writeFlag)
+			messageNode.write();
+
+		getLogger().finer("mailextract.javamail: Extracted message " + (subject == null ? "Unknown title" : subject));
+		getLogger().finest("with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
 	}
 
 	/** Extract a file or inline message attachment. */
-	private final void extractFileOrInlineAttachment(ArchiveUnit messageNode, Attachment attachment, boolean writeFlag)
-			throws ExtractionException {
+	private final void extractFileOrInlineAttachment(ArchiveUnit messageNode, StoreMessageAttachment attachment,
+			boolean writeFlag) throws ExtractionException {
 		ArchiveUnit attachmentNode;
 		String textExtract;
 
-		if ((attachment.filename == null) || attachment.filename.isEmpty())
-			attachment.filename = "[Vide]";
-		attachmentNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Attachment", attachment.filename);
+		if ((attachment.name == null) || attachment.name.isEmpty())
+			attachment.name = "[Vide]";
+		attachmentNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Attachment", attachment.name);
 		attachmentNode.addMetadata("DescriptionLevel", "Item", true);
-		attachmentNode.addMetadata("Title", attachment.filename, true);
-		attachmentNode.addMetadata("Description",
-				"Document \"" + attachment.filename + "\" joint au message " + messageUID, true);
+		attachmentNode.addMetadata("Title", attachment.name, true);
+		attachmentNode.addMetadata("Description", "Document \"" + attachment.name + "\" joint au message " + messageUID,
+				true);
 
 		// get the max of creation and modification date which define the
 		// creation date of the present file
@@ -481,15 +444,15 @@ public abstract class StoreMessage extends StoreFile {
 			attachmentNode.addMetadata("CreatedDate", DateRange.getISODateString(attachment.creationDate), true);
 
 		// Raw object extraction
-		attachmentNode.addObject(attachment.rawContent, attachment.filename, "BinaryMaster", 1);
+		attachmentNode.addObject(attachment.rawContent, attachment.name, "BinaryMaster", 1);
 
 		// Text object extraction
 		try {
 			textExtract = FileTextExtractor.getInstance().getText(attachment.rawContent);
 			if (!((textExtract == null) || textExtract.isEmpty()))
-				attachmentNode.addObject(textExtract.getBytes(), attachment.filename + ".txt", "TextContent", 1);
+				attachmentNode.addObject(textExtract.getBytes(), attachment.name + ".txt", "TextContent", 1);
 		} catch (ExtractionException ee) {
-			logWarning("mailextract: Can't extract text content from attachment " + attachment.filename + " in message "
+			logWarning("mailextract: Can't extract text content from attachment " + attachment.name + " in message "
 					+ subject);
 		}
 		if (writeFlag)
@@ -535,33 +498,40 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	/** Extract a store attachment */
-	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange, String filename,
-			byte[] rawContent, int attachedType, String tag, boolean writeFlag) throws ExtractionException {
-		String protocol;
+	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
+			StoreMessageAttachment a,
+			// String filename, byte[] rawContent, int attachedType,
+			String tag, boolean writeFlag) throws ExtractionException {
+		StoreExtractor extractor;
 
-		switch (attachedType & SPECIFIC_ATTACHMENT_TYPE_FILTER) {
+		switch (a.attachmentType & SPECIFIC_ATTACHMENT_TYPE_FILTER) {
 		case EML_STORE_ATTACHMENT:
-			protocol = "eml";
-			break;
-		default:
-			logWarning("mailextract: Unknown embedded store type=" + attachedType + " , extracting unit in path "
-					+ rootNode.getFullName());
-			return;
-		}
-
-		File storeFile = writeStoreFile(rootNode.getFullName(), rawContent);
-		try {
-			StoreExtractor extractor = StoreExtractor.createInternalStoreExtractor(protocol, "", "", "",
-					storeFile.getAbsolutePath(), "", rootNode.getRootPath(), rootNode.getName(),
-					getStoreExtractor().options, getStoreExtractor(), getLogger());
+			File storeFile = writeStoreFile(rootNode.getFullName(), a.rawContent);
+			extractor = StoreExtractor.createInternalStoreExtractor("eml", "", "", "", storeFile.getAbsolutePath(), "",
+					rootNode.getRootPath(), rootNode.getName(), getStoreExtractor().options, getStoreExtractor(),
+					getLogger());
 			extractor.writeTargetLog();
 			extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
 			getStoreExtractor().addTotalAttachedMessagesCount(
 					extractor.getTotalMessagesCount() + extractor.getTotalAttachedMessagesCount());
 			attachedMessagedateRange.extendRange(extractor.rootAnalysisMBFolder.getDateRange());
-		} finally {
+			clearStoreFile(storeFile);
+			break;
+		case EMBEDDEDPST_STORE_ATTACHMENT:
+			extractor = new LPEmbeddedStoreExtractor(rootNode.getRootPath(), rootNode.getName(),
+					getStoreExtractor().options, getStoreExtractor(), getLogger(), a);
+			extractor.writeTargetLog();
+			extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);
+			getStoreExtractor().addTotalAttachedMessagesCount(
+					extractor.getTotalMessagesCount() + extractor.getTotalAttachedMessagesCount());
+			attachedMessagedateRange.extendRange(extractor.rootAnalysisMBFolder.getDateRange());
+			break;
+		default:
+			logWarning("mailextract: Unknown embedded store type=" + a.attachmentType + " , extracting unit in path "
+					+ rootNode.getFullName());
+			break;
 		}
-		clearStoreFile(storeFile);
+
 	}
 
 	/** Extract all message attachments. */
@@ -580,13 +550,12 @@ public abstract class StoreMessage extends StoreFile {
 		rootNode.addMetadata("Description", "Ensemble des messages attachés joint au message " + messageUID, true);
 		attachedMessagedateRange = new DateRange();
 
-		for (Attachment a : attachments) {
+		for (StoreMessageAttachment a : attachments) {
 			// message identification
 			if ((a.attachmentType & MACRO_ATTACHMENT_TYPE_FILTER) == STORE_ATTACHMENT) {
 				// recursive extraction of a message in attachment...
 				logWarning("mailextract: Attached message extraction from message " + subject);
-				extractStoreAttachment(rootNode, attachedMessagedateRange, a.filename, a.rawContent, a.attachmentType,
-						"At#" + count, writeFlag);
+				extractStoreAttachment(rootNode, attachedMessagedateRange, a, "At#" + count, writeFlag);
 				count++;
 				attachedFlag = true;
 			} else if (writeFlag) {
@@ -635,11 +604,19 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	private static void setAddressList(MimeMessage mime, String tag, List<String> addressList)
-			throws MessagingException {
+			throws MessagingException, UnsupportedEncodingException {
 		if ((addressList != null) && (!addressList.isEmpty())) {
 			String value = "";
+			int countline = 0;
 			for (String tmp : addressList) {
-				value += tmp + ",";
+				// 80 characters lines
+				tmp = MimeUtility.encodeText(tmp);
+				if (countline + tmp.length() > 80) {
+					value += "\n\t";
+					countline = 1;
+				} else
+					countline += tmp.length();
+				value += MimeUtility.encodeText(tmp) + ",";
 			}
 			value = value.substring(0, value.length() - 1);
 			mime.setHeader(tag, value);
@@ -661,28 +638,37 @@ public abstract class StoreMessage extends StoreFile {
 			}
 
 			// Return-Path
-			mime.setHeader("Return-Path", returnPath);
+			if (returnPath != null)
+				mime.setHeader("Return-Path", MimeUtility.encodeText(returnPath));
 			// From
-			mime.setHeader("From", from);
+			if (from != null)
+				mime.setHeader("From", MimeUtility.encodeText(from));
 			// To
-			setAddressList(mime, "To", recipientTo);
+			if (recipientTo != null)
+				setAddressList(mime, "To", recipientTo);
 			// cc
-			setAddressList(mime, "cc", recipientCc);
+			if (recipientCc != null)
+				setAddressList(mime, "cc", recipientCc);
 			// bcc
-			setAddressList(mime, "bcc", recipientBcc);
+			if (recipientBcc != null)
+				setAddressList(mime, "bcc", recipientBcc);
 			// Reply-To
-			setAddressList(mime, "Reply-To", replyTo);
+			if (replyTo != null)
+				setAddressList(mime, "Reply-To", replyTo);
 			// Date
-			mime.setSentDate(sentDate);
+			if (sentDate != null)
+				mime.setSentDate(sentDate);
 			// Subject
-			mime.setSubject(subject);
+			if (subject != null)
+				mime.setSubject(MimeUtility.encodeText(subject));
 			// Message-ID
-			mime.setHeader("Message-ID", messageUID);
+			if (messageUID != null)
+				mime.setHeader("Message-ID", MimeUtility.encodeText(messageUID));
 			// In-Reply-To
 			if ((inReplyToUID != null) && (!inReplyToUID.isEmpty()))
-				mime.setHeader("In-Reply-To", inReplyToUID);
+				mime.setHeader("In-Reply-To", MimeUtility.encodeText(inReplyToUID));
 
-		} catch (MessagingException e) {
+		} catch (MessagingException | UnsupportedEncodingException e) {
 			throw new ExtractionException("Unable to generate mime header of message " + subject);
 		}
 	}
@@ -690,7 +676,7 @@ public abstract class StoreMessage extends StoreFile {
 	private void addAttachmentPart(MimeMultipart root, boolean isInline) throws ExtractionException {
 		try {
 			// build attach part
-			for (Attachment a : attachments) {
+			for (StoreMessageAttachment a : attachments) {
 				boolean thisIsInline = ((a.attachmentType & MACRO_ATTACHMENT_TYPE_FILTER) == INLINE_ATTACHMENT);
 
 				if ((thisIsInline && isInline) || ((!thisIsInline) && (!isInline))) {
@@ -698,7 +684,7 @@ public abstract class StoreMessage extends StoreFile {
 
 					// set Content-ID
 					String cidName = null;
-					if (a.contentID != null) {
+					if ((a.contentID != null) && !a.contentID.trim().isEmpty()) {
 						attachPart.setContentID("<" + a.contentID.trim() + ">");
 						if (a.contentID.indexOf('@') < 0)
 							cidName = a.contentID;
@@ -708,7 +694,7 @@ public abstract class StoreMessage extends StoreFile {
 						cidName = "unknown";
 
 					// set object and Content-Type
-					String attachmentName = encodedFilename(a.filename, cidName);
+					String attachmentName = encodedFilename(a.name, cidName);
 					if ((a.mimeType == null) || (a.mimeType.isEmpty()))
 						attachPart.setContent(a.rawContent,
 								"application/octet-stream; name=\"" + attachmentName + "\"");
@@ -717,17 +703,12 @@ public abstract class StoreMessage extends StoreFile {
 							String s;
 							s = new String(a.rawContent, "UTF-8");
 							attachPart.setContent(s, a.mimeType + "; name=\"" + attachmentName + "\"");
+						} else if (a.mimeType.startsWith("message")) {
+							// bypass datahandler as the rfc822 form is provided
+							RawDataSource rds = new RawDataSource(a.rawContent, a.mimeType, attachmentName);
+							DataHandler dh = new DataHandler(rds);
+							attachPart.setDataHandler(dh);
 						} else {
-							// verify valid MimeType and replace if not
-							try {
-								MimeType mt=new MimeType(a.mimeType);
-							} catch (MimeTypeParseException e) {
-								int i=a.mimeType.lastIndexOf('/');
-								if ((i!=-1) && (i<a.mimeType.length()))
-									a.mimeType="application/"+a.mimeType.substring(i+1);
-								else
-									a.mimeType="application/octet-stream";
-							}
 							attachPart.setContent(a.rawContent, a.mimeType + "; name=\"" + attachmentName + "\"");
 						}
 					}
@@ -761,7 +742,7 @@ public abstract class StoreMessage extends StoreFile {
 		{
 			try {
 				// search if there are inlines
-				for (Attachment a : attachments) {
+				for (StoreMessageAttachment a : attachments) {
 					if ((a.attachmentType & MACRO_ATTACHMENT_TYPE_FILTER) == INLINE_ATTACHMENT) {
 						hasInline = true;
 						break;
@@ -770,12 +751,12 @@ public abstract class StoreMessage extends StoreFile {
 				// build message part
 				MimeMultipart msgMp = newChild(rootMp, "alternative");
 				{
-					if (bodyContent[TEXT_BODY] != null) {
+					if ((bodyContent[TEXT_BODY] != null) && !bodyContent[TEXT_BODY].trim().isEmpty()) {
 						MimeBodyPart part = new MimeBodyPart();
 						part.setContent(bodyContent[TEXT_BODY], "text/plain; charset=utf-8");
 						msgMp.addBodyPart(part);
 					}
-					if (bodyContent[HTML_BODY] != null) {
+					if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].trim().isEmpty()) {
 						MimeMultipart upperpart;
 						if (hasInline)
 							upperpart = newChild(msgMp, "related");
@@ -791,7 +772,7 @@ public abstract class StoreMessage extends StoreFile {
 						}
 
 					}
-					if (bodyContent[RTF_BODY] != null) {
+					if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].trim().isEmpty()) {
 						MimeBodyPart part = new MimeBodyPart();
 						part.setContent(bodyContent[RTF_BODY], "text/rtf; charset=utf-8");
 						msgMp.addBodyPart(part);
@@ -802,7 +783,7 @@ public abstract class StoreMessage extends StoreFile {
 			}
 
 			// add inline part of attachments if not added to HTML body
-			if (bodyContent[HTML_BODY] == null)
+			if ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].trim().isEmpty())
 				addAttachmentPart(rootMp, true);
 			addAttachmentPart(rootMp, false);
 
