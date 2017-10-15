@@ -471,7 +471,7 @@ public abstract class StoreMessage extends StoreFile {
 
 		// extract textContent and put in metadata
 		if ((textContent != null) && (!textContent.isEmpty())) {
-			messageNode.addObject(Canonicalizator.getInstance().toXML(textContent), messageID + ".txt",
+			messageNode.addObject(Canonicalizator.getInstance().toSimpleText(textContent), messageID + ".txt",
 					"TextContent", 1);
 			// break HTML tags in metadata if any
 			textContent = textContent.replace("<", "< ");

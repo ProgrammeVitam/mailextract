@@ -1,10 +1,7 @@
 package fr.gouv.vitam.tools.mailextract.lib.formattools;
 
-import java.io.PrintStream;
-import java.io.OutputStream;
 
-import org.owasp.esapi.ESAPI;
-import org.owasp.esapi.Logger;
+import org.jsoup.parser.Parser;
 
 public class Canonicalizator {
 	/** Singleton instance **/
@@ -12,28 +9,6 @@ public class Canonicalizator {
 
 	/** Private constructor */
 	private Canonicalizator() {
-		Logger logger;
-
-		// get rid of all the search properties and so on initialization
-		// messages of ESAPI
-		try {
-			PrintStream originalOut = System.out;
-			PrintStream originalErr = System.err;
-			PrintStream out = new PrintStream(new OutputStream() {
-				public void write(int b) {
-					// Do nothing
-				}
-			});
-			System.setOut(out);
-			System.setErr(out);
-			ESAPI.encoder();
-			logger = ESAPI.getLogger("Encoder");
-			logger.setLevel(Logger.OFF);
-			System.setOut(originalOut);
-			System.setErr(originalErr);
-		} catch (Exception e) {
-			// Do nothing
-		}
 	}
 
 	/**
@@ -59,17 +34,19 @@ public class Canonicalizator {
 		if (in == null)
 			result = "";
 		else {
-			// unescape all HTML entities with no exception if complex coding
-			// found
-			result = ESAPI.encoder().canonicalize(in, false);
+			// unescape all HTML entities, multiple times if needed
+			result = in;
+			do {
+				in = result;
+				result = Parser.unescapeEntities(in, true);
+			} while (!result.equals(in));
+
 			// then xml encoding at minimal level with UTF8 coding
 			result = result.replace("&", "&amp;");
 			result = result.replace("\"", "&quot;");
 			result = result.replace("'", "&apos;");
 			result = result.replace("<", "&lt;");
 			result = result.replace(">", "&gt;");
-			// other solution with ESAPI but encode even the UTF8
-//			 result = ESAPI.encoder().encodeForXML(result); 
 		}
 
 		return result;
@@ -88,11 +65,15 @@ public class Canonicalizator {
 
 		if (in == null)
 			result = "";
-		else
-			// unescape all HTML entities with no exception if complex coding
-			// found
-			result = ESAPI.encoder().canonicalize(in, false);
+		else {
+			// unescape all HTML entities, multiple times if needed
+			result = in;
+			do {
+				in = result;
+				result = Parser.unescapeEntities(in, true);
+			} while (!result.equals(in));
 
+		}
 		return result;
 	}
 }
