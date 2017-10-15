@@ -78,7 +78,7 @@ public class FileTextExtractor {
 	 * @throws ExtractionException
 	 *             if text extract was not possible
 	 */
-	public String getText(byte[] rawContent) throws ExtractionException {
+	public String act(byte[] rawContent) throws ExtractionException {
 		String s = null;
 		Level memLevel;
 		Logger logger;

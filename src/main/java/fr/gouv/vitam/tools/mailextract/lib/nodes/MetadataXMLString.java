@@ -27,7 +27,7 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
-import org.jsoup.parser.Parser;
+import fr.gouv.vitam.tools.mailextract.lib.formattools.Canonicalizator;
 
 /**
  * Class for a XML string value in metadata
@@ -63,7 +63,7 @@ public class MetadataXMLString extends MetadataXML {
 	 * Write the value in XML format.
 	 * <p>
 	 * The String is UTF-8 encoded with \r,\n,\t escaped and <,&,>,' and " XML
-	 * encoded
+	 * encoded, and with no other entity encoding
 	 * 
 	 * @param depth
 	 *            Depth used for tabulation (no use for this tree Metadata
@@ -71,21 +71,6 @@ public class MetadataXMLString extends MetadataXML {
 	 * @return the string
 	 */
 	public String writeXML(int depth) {
-		return encodeXMLString(value);
-	}
-
-	// TODO préciser l'encodage des métadonnées dans le XML
-	// escape some problematic characters in JSON
-	private static String encodeXMLString(String in) {
-		// unescape HTML strings
-		in = Parser.unescapeEntities(in, true);
-		// xml encoding
-		in = in.replace("&", "&amp;");
-		in = in.replace("\"", "&quot;");
-		in = in.replace("'", "&apos;");
-		in = in.replace("<", "&lt;");
-		in = in.replace(">", "&gt;");
-
-		return in;
+		return Canonicalizator.getInstance().toXML(value);
 	}
 }

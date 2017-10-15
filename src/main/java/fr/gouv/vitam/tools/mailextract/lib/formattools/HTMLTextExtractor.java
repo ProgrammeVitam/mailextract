@@ -27,11 +27,11 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.formattools;
 
+import org.jsoup.Jsoup;
 import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
-import org.jsoup.parser.Parser;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
@@ -68,23 +68,29 @@ public class HTMLTextExtractor {
 	}
 
 	/**
-	 * Format an Element to plain-text
+	 * Format an HTML String to plain-text
 	 * 
-	 * @param element
-	 *            the root element to format
-	 * @return formatted text
+	 * @param html
+	 *            the html content string
+	 * @return formatted text, or empty string if none
 	 */
-	public String getPlainText(Element element) {
+	public String act(String html) {
 		String result;
-
+		Element element;
+		
+		if (html==null)
+			return "";
+		
+		element=Jsoup.parse(html);
+		
 		FormattingVisitor formatter = new FormattingVisitor();
 		NodeTraversor traversor = new NodeTraversor(formatter);
 		traversor.traverse(element); // walk the DOM, and call .head() and
 										// .tail() for each node
 		// strip html tags
 		result = formatter.toString();
-		// unescape html characters
-		return Parser.unescapeEntities(result, true);
+		
+		return result;
 	}
 }
 
@@ -116,7 +122,7 @@ final class FormattingVisitor implements NodeVisitor {
 		if (StringUtil.in(name, "br", "dd", "dt", "p", "h1", "h2", "h3", "h4", "h5"))
 			append("\n");
 		else if (name.equals("a"))
-			append(String.format(" <%s>", node.absUrl("href")));
+			append(String.format("<%s>", node.absUrl("href")));
 	}
 
 	// appends text to the string builder with a simple word wrap method

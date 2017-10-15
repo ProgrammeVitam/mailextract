@@ -32,6 +32,30 @@ public class StoreMessageAttachment {
 	/** Attachment type. */
 	int attachmentType;
 
+	/** Macro types of attachment. */
+	public static final int MACRO_ATTACHMENT_TYPE_FILTER = 0xF;
+
+	/** The Constant FILE_ATTACHMENT. */
+	public static final int FILE_ATTACHMENT = 0x00;
+
+	/** The Constant INLINE_ATTACHMENT. */
+	public static final int INLINE_ATTACHMENT = 0x01;
+
+	/** The Constant STORE_ATTACHMENT. */
+	public static final int STORE_ATTACHMENT = 0x02;
+
+	/** Specific store types of attachment. */
+	public static final int SPECIFIC_ATTACHMENT_TYPE_FILTER = 0XF0;
+
+	/** The Constant EML_STORE_ATTACHMENT. */
+	public static final int EML_STORE_ATTACHMENT = 0x10;
+
+	/** The Constant EMBEDDEDPST_STORE_ATTACHMENT. */
+	public static final int EMBEDDEDPST_STORE_ATTACHMENT = 0x20;
+
+	/** The Constant MBOX_STORE_ATTACHMENT. */
+	public static final int MBOX_STORE_ATTACHMENT = 0x30;
+
 	/**
 	 * Instantiates a new attachment with binary content.
 	 * 

@@ -30,6 +30,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Formatter;
@@ -72,6 +74,7 @@ public class MailExtractThread extends Thread {
 			simpleFormatter = new SimpleFormatter();
 
 			if (logLevel != Level.OFF) {
+				Files.createDirectories(Paths.get(fileName).getParent());
 				Handler fileHandler = new FileHandler(fileName);
 				fileHandler.setFormatter(simpleFormatter);
 				fileHandler.setLevel(logLevel);

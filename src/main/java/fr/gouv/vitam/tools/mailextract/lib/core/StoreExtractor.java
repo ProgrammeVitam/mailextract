@@ -35,13 +35,9 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.File;
-//import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
-
-//import org.apache.tika.Tika;
-//import org.apache.tika.exception.TikaException;
 
 /**
  * Abstract factory class for operation context on a defined mailbox.

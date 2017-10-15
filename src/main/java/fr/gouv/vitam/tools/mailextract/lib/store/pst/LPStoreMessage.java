@@ -27,13 +27,9 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.pst;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -41,10 +37,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeUtility;
-
 import com.pff.PSTAttachment;
 import com.pff.PSTConversationIndex;
 import com.pff.PSTException;
@@ -77,10 +69,6 @@ public class LPStoreMessage extends StoreMessage {
 	/** Native libpst message. */
 	protected PSTMessage message;
 
-	// /** The headers. */
-	// LinkedHashMap<CaseUnsensString, String> headers;
-	//
-
 	/** The RFC822 headers if any. */
 	RFC822Headers rfc822Headers;
 
@@ -98,47 +86,224 @@ public class LPStoreMessage extends StoreMessage {
 	public LPStoreMessage(StoreFolder mBFolder, PSTMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
-		this.rfc822Headers=null;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#getMessageSize()
+	 */
+	@Override
+	public long getMessageSize() {
+		return message.getMessageSize();
+	}
+
+	// General Headers function
+
+	// test if there's a convenient analyzed rfc822Headers
 	private boolean hasRFC822Headers() {
 		return (rfc822Headers != null);
 	}
-	
-	private void analyzeHeaders(){
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#prepareHeaders()
+	 */
+	// get the smtp transport header if any
+	protected void prepareHeaders() {
 		String headerString;
-		
-		headerString=message.getTransportMessageHeaders();
-		
-		if ((headerString!=null)&&(!headerString.isEmpty()))
-			try {
-				rfc822Headers=new RFC822Headers(message.getTransportMessageHeaders());
-			} catch (MessagingException e) {
-				logWarning("mailextract.libpst: Can't decode smtp header in message " + subject);
-			}
+
+		if (!hasRFC822Headers()) {
+			headerString = message.getTransportMessageHeaders();
+			if ((headerString != null) && (!headerString.isEmpty()))
+				try {
+					rfc822Headers = new RFC822Headers(message.getTransportMessageHeaders(), this);
+					mailHeader = Collections.list(rfc822Headers.getAllHeaderLines());
+					return;
+				} catch (MessagingException e) {
+					logMessageWarning("mailextract.libpst: Can't decode smtp header");
+				}
+		}
+		rfc822Headers = null;
+		mailHeader = null;
+
 	}
 
-	// get recipients from smtp header
-	// or if empty from Microsoft Format in pst file
-	private void getRecipients() {
-		// smtp header value
+	// Subject specific functions
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeSubject()
+	 */
+	protected void analyzeSubject() {
+		String result = null;
+
 		if (hasRFC822Headers()) {
+			// smtp header value
+			String[] sList = rfc822Headers.getHeader("Subject");
+			if (sList != null) {
+				if (sList.length > 1)
+					logMessageWarning(
+							"mailextract.pst: Multiple subjects, keep the first one in header");
+				result = RFC822Headers.getHeaderValue(sList[0]);
+			}
+		} else {
+			// pst file value
+			result = message.getSubject();
+			if (result.isEmpty())
+				result = null;
+
+		}
+
+		if (result == null)
+			logMessageWarning("mailextract.pst: No subject in header");
+
+		subject = result;
+	}
+
+	// MessageID specific functions
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeMessageID()
+	 */
+	protected void analyzeMessageID() {
+		String result = null;
+
+		if (hasRFC822Headers()) {
+			// smtp header value
+			String[] mList = rfc822Headers.getHeader("message-ID");
+			if (mList != null) {
+				if (mList.length > 1)
+					logMessageWarning("mailextract.pst: Multiple message ID, keep the first one in header");
+				result = RFC822Headers.getHeaderValue(mList[0]);
+			}
+		} else {
+			// pst file value
+			// generate a messageID from the conversationIndex
+			result = message.getInternetMessageId();
+			if (result.isEmpty()) {
+				PSTConversationIndex pstCI = message.getConversationIndex();
+
+				Instant inst = pstCI.getDeliveryTime().toInstant();
+				ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
+				result = "<PST:" + pstCI.getGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
+				List<ResponseLevel> rlList = pstCI.getResponseLevels();
+				for (ResponseLevel rl : rlList) {
+					result += "+" + Integer.toHexString(rl.getDeltaCode());
+					result += Long.toHexString(rl.getTimeDelta());
+					result += Integer.toHexString(rl.getRandom());
+				}
+				result += ">";
+			}
+		}
+
+		if (result == null)
+			logMessageWarning("mailextract.pst: No Message ID address in header");
+		messageID = result;
+	}
+
+	// From specific functions
+
+	// get sender name using all possible sources
+	private String getSenderName() {
+		String result;
+
+		result = message.getSenderName().trim();
+		if ((result == null) || result.isEmpty())
+			result = message.getSentRepresentingName().trim();
+
+		if (result.isEmpty())
+			result = null;
+		return result;
+	}
+
+	// get sender email address using all possible sources (sender and
+	// SentRepresenting field), and using SMTP first
+	private String getSenderEmailAddress() {
+		String result = "";
+
+		if (message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
+			result = message.getSenderEmailAddress().trim();
+		if (result.isEmpty() && message.getSentRepresentingAddressType().equalsIgnoreCase("SMTP"))
+			result = message.getSentRepresentingEmailAddress().trim();
+		if (result.isEmpty())
+			result = message.getSenderEmailAddress().trim();
+		if (result.isEmpty())
+			result = message.getSentRepresentingEmailAddress().trim();
+
+		if (result.isEmpty())
+			result = null;
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeFrom()
+	 */
+	protected void analyzeFrom() {
+		String result = null;
+
+		if (hasRFC822Headers()) {
+			// smtp header value
+			String[] fromList = rfc822Headers.getHeader("From");
+			if (fromList != null) {
+				if (fromList.length > 1)
+					logMessageWarning("mailextract.pst: Multiple From addresses, keep the first one in header");
+				result = RFC822Headers.getHeaderValue(fromList[0]);
+			}
+		} else {
+			// pst file value
+			String fromAddr = getSenderEmailAddress();
+			if (fromAddr != null) {
+				String fromName = getSenderName();
+				if (fromName != null)
+					result = fromName + " <" + fromAddr + ">";
+				else
+					result = fromAddr;
+			}
+		}
+
+		if (result == null)
+			logMessageWarning("mailextract.pst: No From address in header");
+
+		from = result;
+	}
+
+	// Recipients (To,cc,bcc) specific functions
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeRecipients()
+	 */
+	protected void analyzeRecipients() {
+		if (hasRFC822Headers()) {
+			// smtp header value
 			recipientTo = rfc822Headers.getAddressHeader("To");
 			recipientCc = rfc822Headers.getAddressHeader("cc");
 			recipientBcc = rfc822Headers.getAddressHeader("bcc");
 		} else {
+			// pst file values
 			recipientTo = new ArrayList<String>();
 			recipientCc = new ArrayList<String>();
 			recipientBcc = new ArrayList<String>();
 
-			// pst file values
 			int recipientNumber;
 			PSTRecipient pstR;
 			String normAddress;
 			try {
 				recipientNumber = message.getNumberOfRecipients();
 			} catch (Exception e) {
-				logWarning("mailextract.libpst: Can't determine recipient list in message " + subject);
+				logMessageWarning("mailextract.libpst: Can't determine recipient list");
 				recipientNumber = 0;
 			}
 			for (int i = 0; i < recipientNumber; i++) {
@@ -161,74 +326,21 @@ public class LPStoreMessage extends StoreMessage {
 						break;
 					}
 				} catch (Exception e) {
-					logWarning("mailextract.libpst: Can't get recipient number " + Integer.toString(i) + " in message "
-							+ subject);
+					logMessageWarning("mailextract.libpst: Can't get recipient number " + Integer.toString(i));
 				}
 			}
 		}
 	}
 
-	// get sender name using all possible sources
-	private String getSenderName() {
-		String name;
+	// ReplyTo specific functions
 
-		name = message.getSenderName();
-		if ((name == null) || name.isEmpty())
-			name = message.getSentRepresentingName();
-		return name;
-	}
-
-	// get sender email address using all possible sources (sender and
-	// SentRepresenting field), and using SMTP first
-	private String getSenderEmailAddress() {
-		String name = "";
-
-		if (message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
-			name = message.getSenderEmailAddress().trim();
-		if (name.isEmpty() && message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
-			name = message.getSentRepresentingEmailAddress().trim();
-		if (name.isEmpty())
-			name = message.getSenderEmailAddress().trim();
-		if (name.isEmpty())
-			name = message.getSentRepresentingEmailAddress().trim();
-
-		return name;
-	}
-
-	// get from from smtp header
-	// or if empty from Microsoft Format in pst file
-	private String getFrom() {
-		String result = null;
-
-		if (hasRFC822Headers()) {
-			// smtp header value
-			String[] fromList = rfc822Headers.getHeader("From");
-			if (fromList != null) {
-				if (fromList.length > 1)
-					logWarning("mailextract.javamail: Multiple From addresses in header of message " + subject
-							+ ", keep the first one");
-				result = RFC822Headers.getHeaderValue(fromList[0]);
-			}
-		} else {
-			// pst file value
-			String fromAddr = getSenderEmailAddress();
-			if (fromAddr != null && !fromAddr.isEmpty()) {
-				String fromName = getSenderName();
-				if (fromName != null && !fromName.isEmpty())
-					result = fromName + " <" + fromAddr + ">";
-				else
-					result = fromAddr;
-			}
-		}
-		
-		if (result == null)
-			logWarning("mailextract.javamail: No From address in header of message " + subject);
-
-		return result;
-	}
-
-	// get reply address list from smtp header
-	private List<String> getReplyTo() {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReplyTo()
+	 */
+	protected void analyzeReplyTo() {
 		List<String> result = null;
 
 		if (hasRFC822Headers()) {
@@ -237,25 +349,18 @@ public class LPStoreMessage extends StoreMessage {
 		}
 		// FIXME pst file value
 
-		return result;
+		replyTo = result;
 	}
 
-	// get references address list from smtp header
-	private List<String> getReferences() {
-		List<String> result = null;
+	// Return-Path specific functions
 
-		if (hasRFC822Headers()) {
-			// smtp header value
-			result = rfc822Headers.getReferences();
-		}
-		// FIXME pst file value with at list in-reply-to
-
-		return result;
-	}
-
-	// get return-Path from SMTP
-	// or if empty from Microsoft Format in pst file
-	private String getReturnPath() {
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReturnPath()
+	 */
+	protected void analyzeReturnPath() {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -263,8 +368,8 @@ public class LPStoreMessage extends StoreMessage {
 			String[] rpList = rfc822Headers.getHeader("Return-Path");
 			if (rpList != null) {
 				if (rpList.length > 1)
-					logWarning("mailextract.javamail: Multiple Return-Path addresses in header of message " + subject
-							+ ", keep the first one");
+					logMessageWarning(
+							"mailextract.pst: Multiple Return-Path addresses, keep the first one in header");
 				result = RFC822Headers.getHeaderValue(rpList[0]);
 			}
 		} else {
@@ -273,36 +378,132 @@ public class LPStoreMessage extends StoreMessage {
 			if (result.isEmpty())
 				result = null;
 		}
-		
-		if (result == null)
-			logWarning("mailextract.javamail: No Return-Path address in header of message " + subject);
-		
-		return result;
 
+		if (result == null)
+			logMessageWarning("mailextract.pst: No Return-Path address in header");
+
+		returnPath = result;
 	}
-	
-	private List<String> getStringsFormatHeader(){
-		List<String> result;
-		
+
+	// Dates specific functions
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeDates()
+	 */
+	protected void analyzeDates() {
+		receivedDate = message.getMessageDeliveryTime();
+		sentDate = message.getClientSubmitTime();
+	}
+
+	// In-reply-to and References specific functions
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeInReplyToId(
+	 * )
+	 */
+	protected void analyzeInReplyToId() {
+		String result = null;
+
 		if (hasRFC822Headers()) {
-			result=Collections.list(rfc822Headers.getAllHeaderLines());
+			// smtp header value
+			String[] irtList = rfc822Headers.getHeader("In-Reply-To");
+			if (irtList != null) {
+				if (irtList.length > 1)
+					logMessageWarning(
+							"mailextract.pst: Multiple In-Reply-To identifiers, keep the first one in header");
+				result = RFC822Headers.getHeaderValue(irtList[0]);
+			}
+		} else {
+			// pst file value
+			result = message.getInReplyToId();
+			if (result.isEmpty()) {
+				if (messageID == null)
+					analyzeMessageID();
+				if ((messageID != null) && messageID.startsWith("<PST:")) {
+					if (messageID.lastIndexOf('+') > messageID.lastIndexOf('@')) {
+						result = messageID.substring(0, messageID.lastIndexOf('+')) + ">";
+					} else
+						result = null;
+				}
+			}
 		}
-		else result=null;
-		
-		return result;
+
+		inReplyToUID = result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReferences()
+	 */
+	protected void analyzeReferences() {
+		List<String> result = null;
+
+		if (hasRFC822Headers()) {
+			// smtp header value
+			result = rfc822Headers.getReferences();
+		}
+		// FIXME pst file value with at least in-reply-to
+
+		references = result;
 	}
 
 	// Content analysis methods
 
-	// get attachments with raw content and filename, mimetype... when possible
-	private List<StoreMessageAttachment> getAttachments() {
-		List<StoreMessageAttachment> lAttachment = new ArrayList<StoreMessageAttachment>();
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeBodies()
+	 */
+	protected void analyzeBodies() {
+		String result;
+
+		// text
+		result = message.getBody();
+		if (result.isEmpty())
+			result = null;
+		bodyContent[TEXT_BODY] = result;
+
+		// html
+		result = message.getBodyHTML();
+		if (result.isEmpty())
+			result = null;
+		bodyContent[HTML_BODY] = result;
+
+		// rtf
+		try {
+			result = message.getRTFBody();
+			if (result.isEmpty())
+				result = null;
+		} catch (PSTException | IOException e) {
+			result = null;
+			// forget it
+		}
+		bodyContent[RTF_BODY] = result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeAttachments(
+	 * )
+	 */
+	protected void analyzeAttachments() {
+		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
 		int attachmentNumber;
 		PSTAttachment pstA;
 		try {
 			attachmentNumber = message.getNumberOfAttachments();
 		} catch (Exception e) {
-			logWarning("mailextract.libpst: Can't determine attachment list in message " + subject);
+			logMessageWarning("mailextract.libpst: Can't determine attachment list");
 			attachmentNumber = 0;
 		}
 		for (int i = 0; i < attachmentNumber; i++) {
@@ -316,7 +517,7 @@ public class LPStoreMessage extends StoreMessage {
 				// TODO OLE case you can access the IStorage object through
 				// IAttach::OpenProperty(PR_ATTACH_DATA_OBJ, ...)
 				case PSTAttachment.ATTACHMENT_METHOD_OLE:
-					logWarning("mailextract.libpst: Can't extract OLE attachment " + subject);
+					logMessageWarning("mailextract.libpst: Can't extract OLE attachment");
 					break;
 				case PSTAttachment.ATTACHMENT_METHOD_BY_VALUE:
 					InputStream is = pstA.getFileInputStream();
@@ -328,14 +529,14 @@ public class LPStoreMessage extends StoreMessage {
 					}
 					attachment = new StoreMessageAttachment(pstA.getLongFilename(), baos.toByteArray(),
 							pstA.getCreationTime(), pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(),
-							INLINE_ATTACHMENT);
-					lAttachment.add(attachment);
+							StoreMessageAttachment.INLINE_ATTACHMENT);
+					result.add(attachment);
 					break;
 				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE:
 				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE:
 				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_ONLY:
 					// TODO reference cases
-					logWarning("mailextract.libpst: Can't extract reference attachment " + subject);
+					logMessageWarning("mailextract.libpst: Can't extract reference attachment");
 					break;
 				case PSTAttachment.ATTACHMENT_METHOD_EMBEDDED:
 					PSTMessage message = pstA.getEmbeddedPSTMessage();
@@ -346,103 +547,28 @@ public class LPStoreMessage extends StoreMessage {
 						name = pstA.getDisplayName();
 					attachment = new StoreMessageAttachment(name, message, pstA.getCreationTime(),
 							pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(),
-							STORE_ATTACHMENT + EMBEDDEDPST_STORE_ATTACHMENT);
-					lAttachment.add(attachment);
+							StoreMessageAttachment.STORE_ATTACHMENT
+									+ StoreMessageAttachment.EMBEDDEDPST_STORE_ATTACHMENT);
+					result.add(attachment);
 					break;
 				}
 			} catch (Exception e) {
-				logWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i) + " in message "
-						+ subject);
+				logMessageWarning("mailextract.libpst: Can't get attachment number " + Integer.toString(i));
 			}
 		}
-		return lAttachment;
 
+		attachments = result;
 	}
 
-	// get message ID from SMTP or the conversation index for PST
-	private String getMessageUId() {
-		String result;
+	// Global message
 
-		result = message.getInternetMessageId();
-		if ((result == null) || result.isEmpty()) {
-			PSTConversationIndex pstCI = message.getConversationIndex();
-
-			Instant inst = pstCI.getDeliveryTime().toInstant();
-			ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
-			result = "<" + pstCI.getGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
-			List<ResponseLevel> rlList = pstCI.getResponseLevels();
-			for (ResponseLevel rl : rlList) {
-				result += "+" + Integer.toHexString(rl.getDeltaCode());
-				result += Long.toHexString(rl.getTimeDelta());
-				result += Integer.toHexString(rl.getRandom());
-			}
-			result += ">";
-		}
-		return result;
-	}
-
-	// get in-reply-to ID from SMTP or from the messageUId which is a
-	// conversation index for PST
-	private String getInReplyToId() {
-		String result;
-
-		result = message.getInReplyToId();
-		if ((result == null) || result.isEmpty()) {
-			if ((messageUID != null) || messageUID.startsWith("PST:")) {
-				if (messageUID.lastIndexOf('+') > messageUID.lastIndexOf('@')) {
-					result = messageUID.substring(0, messageUID.lastIndexOf('+')) + ">";
-				}
-			}
-		}
-		return result;
-	}
-
-	public void doAnalyzeMessage() throws ExtractionException {
-		// header metadata extraction
-		// * special global
-		subject = message.getSubject();
-
-		// header content extraction
-		analyzeHeaders();
-		mailHeader = getStringsFormatHeader();
-
-		// * recipients and co
-		from = getFrom();
-		replyTo = getReplyTo();
-
-		getRecipients();
-		returnPath = getReturnPath();
-
-		// * dates
-		receivedDate = message.getMessageDeliveryTime();
-		sentDate = message.getClientSubmitTime();
-
-		bodyContent[TEXT_BODY] = message.getBody();
-		bodyContent[HTML_BODY] = message.getBodyHTML();
-		try {
-			bodyContent[RTF_BODY] = message.getRTFBody();
-		} catch (PSTException | IOException e) {
-			bodyContent[RTF_BODY] = null;
-			// forget it
-		}
-		attachments = getAttachments();
-
-		// no raw content, will be constructed at StoreMessage level
-		mimeContent = null;
-
-		messageUID = getMessageUId();
-		inReplyToUID = getInReplyToId();
-		references = getReferences();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxMessage#getMessageSize()
+	/**
+	 * Gets the native mime content.
+	 *
+	 * @return the native mime content
 	 */
-	@Override
-	public long getMessageSize() {
-		return message.getMessageSize();
+	protected byte[] getNativeMimeContent() {
+		return null;
 	}
 
 }

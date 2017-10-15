@@ -11,52 +11,54 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.InternetHeaders;
 import javax.mail.internet.MimeUtility;
 
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
+
 public class RFC822Headers extends InternetHeaders {
 
+	StoreMessage message;
 	
-	static ByteArrayInputStream getBAIS(String headersString){
+	static ByteArrayInputStream getBAIS(String headersString) {
 		if (headersString == null)
-			headersString="";
+			headersString = "";
 		headersString += "\n\n";
 		ByteArrayInputStream bais = new ByteArrayInputStream(headersString.getBytes());
 		return bais;
 	}
-	
-	public RFC822Headers(String headersString) throws MessagingException {
-		super(getBAIS(headersString),true);
+
+	public RFC822Headers(String headersString,StoreMessage message) throws MessagingException {
+		super(getBAIS(headersString), true);
 		// no use to close on ByteArrayInputStream
-	}
-	
-	
-	// utility function to get the value part of an header string
-	public static String getHeaderValue(String line) {
-	    int i = line.indexOf(':');
-	    if (i < 0)
-		return line;
-	    // skip whitespace after ':'
-	    int j;
-	    for (j = i + 1; j < line.length(); j++) {
-		char c = line.charAt(j);
-		if (!(c == ' ' || c == '\t' || c == '\r' || c == '\n'))
-		    break;
-	    }
-	    return line.substring(j);
+		this.message=message;
 	}
 
+	// utility function to get the value part of an header string
+	public static String getHeaderValue(String line) {
+		int i = line.indexOf(':');
+		if (i < 0)
+			return line;
+		// skip whitespace after ':'
+		int j;
+		for (j = i + 1; j < line.length(); j++) {
+			char c = line.charAt(j);
+			if (!(c == ' ' || c == '\t' || c == '\r' || c == '\n'))
+				break;
+		}
+		return line.substring(j);
+	}
 
 	public List<String> getReferences() {
 		List<String> result = null;
-		String refHeader = getHeader("References"," ");
-		if (refHeader!=null) {
+		String refHeader = getHeader("References", " ");
+		if (refHeader != null) {
 			result = new ArrayList<String>();
-			String[] refList = getHeaderValue(refHeader).split(",");
-			for (String tmp: refList )	
+			String[] refList = getHeaderValue(refHeader).split(" ");
+			for (String tmp : refList)
 				try {
-				result.add(MimeUtility.decodeText(tmp));
+					result.add(MimeUtility.decodeText(tmp));
 				} catch (UnsupportedEncodingException uee) {
 					// too bad
 				}
-			}
+		}
 		return result;
 	}
 
@@ -104,9 +106,13 @@ public class RFC822Headers extends InternetHeaders {
 	}
 
 	public List<String> getAddressHeader(String name) {
-		List<String> result = new ArrayList<String>();
-		String addressHeaderString = getHeader(name,", ");
+		List<String> result = null;
+		String addressHeaderString = null;
+
+		addressHeaderString = getHeader(name, ", ");
+
 		if (addressHeaderString != null) {
+			result = new ArrayList<String>();
 			InternetAddress[] iAddressArray = null;
 			try {
 				iAddressArray = InternetAddress.parseHeader(addressHeaderString, false);
@@ -117,7 +123,8 @@ public class RFC822Headers extends InternetHeaders {
 				} catch (UnsupportedEncodingException uee) {
 					// too bad
 				}
-				// wrongly formatted address, keep raw address list in metadata");
+				message.logMessageWarning("mailextract.rfc822: Wrongly formatted address " + addressHeaderString
+						+ ", keep raw address list in metadata in header " + name);
 				result.add(addressHeaderString);
 				return result;
 			}
@@ -125,9 +132,10 @@ public class RFC822Headers extends InternetHeaders {
 				for (InternetAddress ia : iAddressArray) {
 					result.add(getStringAddress(ia));
 				}
-			}
+			} else
+				result = null;
 		}
+
 		return result;
 	}
-
 }
