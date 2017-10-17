@@ -29,8 +29,8 @@ package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.store.msg.MsgStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.store.pst.LPStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg.MsgStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
@@ -516,7 +516,7 @@ public abstract class StoreExtractor {
 			folder = folder.substring(1);
 
 		if (protocol.equals("pst"))
-			store = new LPStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
+			store = new PstStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
 					options, rootStoreExtractor, logger);
 		else if (protocol.equals("msg"))
 			store = new MsgStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,

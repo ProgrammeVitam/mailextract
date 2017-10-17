@@ -25,15 +25,19 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.pst.attachedmsg;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Vector;
+
+import com.pff.PSTException;
+import com.pff.PSTFolder;
 import com.pff.PSTMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
-import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.store.pst.LPStoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -50,29 +54,35 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPEmbeddedStoreFolder extends StoreFolder {
+public class PstStoreFolder extends StoreFolder {
 
-	// Embedded message
-	private LPStoreMessage lpStoreMessage;
-
-	// Attachment of embedded message
-	private StoreMessageAttachment attachment;
+	/** Native libpst folder **/
+	protected PSTFolder pstFolder;
 
 	// name and fullName computed from constructors
 	private String fullName;
 	private String name;
 
 	// for the root folder
-	private LPEmbeddedStoreFolder(StoreExtractor storeExtractor, StoreMessageAttachment attachment) {
+	private PstStoreFolder(StoreExtractor storeExtractor, PSTFolder pstFolder) {
 		super(storeExtractor);
-		try {
-			this.lpStoreMessage = new LPStoreMessage(this, (PSTMessage) (attachment.getObjectContent()));
-		} catch (ExtractionException e) {
-			// no way
-		}
+		this.pstFolder = pstFolder;
 		this.fullName = "";
 		this.name = "";
-		this.attachment = attachment;
+	}
+
+	// for a folder with a father
+	private PstStoreFolder(StoreExtractor storeExtractor, PSTFolder pstFolder, PstStoreFolder father) {
+		super(storeExtractor);
+		this.pstFolder = pstFolder;
+		this.name = pstFolder.getDisplayName();
+		if (this.name == null)
+			this.name = "";
+		if (father.getFullName().isEmpty())
+			this.fullName = this.name;
+		else
+			this.fullName = father.fullName + File.separator + this.name;
+		finalizeStoreFolder(father);
 	}
 
 	/**
@@ -86,9 +96,9 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 *            Root ArchiveUnit
 	 * @return the LP store folder
 	 */
-	public static LPEmbeddedStoreFolder createRootFolder(LPEmbeddedStoreExtractor storeExtractor,
-			StoreMessageAttachment attachment, ArchiveUnit rootArchiveUnit) {
-		LPEmbeddedStoreFolder result = new LPEmbeddedStoreFolder(storeExtractor, attachment);
+	public static PstStoreFolder createRootFolder(PstStoreExtractor storeExtractor, PSTFolder pstFolder,
+			ArchiveUnit rootArchiveUnit) {
+		PstStoreFolder result = new PstStoreFolder(storeExtractor, pstFolder);
 		result.folderArchiveUnit = rootArchiveUnit;
 
 		return result;
@@ -102,14 +112,23 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
-		lpStoreMessage.analyzeMessage();
-		dateRange.extendRange(lpStoreMessage.getSentDate());
-		lpStoreMessage.extractMessage(writeFlag);
-		lpStoreMessage.countMessage();
-		attachment.setRawContent(lpStoreMessage.getMimeContent());
-		attachment.setMimeType("message/rfc822");
-		if ((attachment.getName()==null) || attachment.getName().isEmpty())
-			attachment.setName(lpStoreMessage.getSubject()+".eml");
+		PSTMessage message;
+
+		try {
+			message = (PSTMessage) pstFolder.getNextChild();
+			while (message != null) {
+				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
+				lPStoreMessage.analyzeMessage();
+				dateRange.extendRange(lPStoreMessage.getSentDate());
+				lPStoreMessage.extractMessage(writeFlag);
+				lPStoreMessage.countMessage();
+				message = (PSTMessage) pstFolder.getNextChild();
+			}
+		} catch (IOException e) {
+			throw new ExtractionException("MailExtract: Can't use pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
+		}
 	}
 
 	/*
@@ -121,7 +140,21 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException {
-		// no subfolders
+		PstStoreFolder lPMailBoxSubFolder;
+
+		try {
+			final Vector<PSTFolder> subfolders = pstFolder.getSubFolders();
+			for (final PSTFolder subfolder : subfolders) {
+				lPMailBoxSubFolder = new PstStoreFolder(storeExtractor, subfolder, this);
+				if (lPMailBoxSubFolder.extractFolder(level + 1, writeFlag))
+					incFolderSubFoldersCount();
+				dateRange.extendRange(lPMailBoxSubFolder.getDateRange());
+			}
+		} catch (IOException e) {
+			throw new ExtractionException("mailextract.libpst: Can't use pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("mailextract.libpst: Can't get sub folders from folder " + getFullName());
+		}
 	}
 
 	/*
@@ -151,7 +184,13 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	public boolean hasMessages() throws ExtractionException {
-		return true;
+		try {
+			return pstFolder.getEmailCount() > 0;
+		} catch (IOException e) {
+			throw new ExtractionException("mailextract.libpst: Can't use pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("mailextract.libpst: Can't get messages from folder " + getFullName());
+		}
 	}
 
 	/*
@@ -161,7 +200,7 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	public boolean hasSubfolders() throws ExtractionException {
-		return false;
+		return pstFolder.hasSubfolders();
 	}
 
 	/*
@@ -172,7 +211,20 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	protected void doListFolderMessages(boolean stats) throws ExtractionException {
-		lpStoreMessage.countMessage();
+		PSTMessage message;
+
+		try {
+			message = (PSTMessage) pstFolder.getNextChild();
+			while (message != null) {
+				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
+				lPStoreMessage.countMessage();
+				message = (PSTMessage) pstFolder.getNextChild();
+			}
+		} catch (IOException e) {
+			throw new ExtractionException("mailExtract.libpst: Can't Can't use pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("mailExtract.libpst: Can't get messages from folder " + getFullName());
+		}
 	}
 
 	/*
@@ -183,6 +235,19 @@ public class LPEmbeddedStoreFolder extends StoreFolder {
 	 */
 	@Override
 	protected void doListSubFolders(boolean stats) throws ExtractionException {
-		// no subfolder
+		PstStoreFolder lPMailBoxSubFolder;
+
+		try {
+			final Vector<PSTFolder> subfolders = pstFolder.getSubFolders();
+			for (final PSTFolder subfolder : subfolders) {
+				lPMailBoxSubFolder = new PstStoreFolder(storeExtractor, subfolder, this);
+				lPMailBoxSubFolder.listFolder(stats);
+				incFolderSubFoldersCount();
+			}
+		} catch (IOException e) {
+			throw new ExtractionException("mailextract.libpst: Can't use pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("mailextract.libpst: Can't get sub folders from folder " + getFullName());
+		}
 	}
 }

@@ -1,5 +1,3 @@
 
 
-- Amélioration des MimePart pour trouver les contenus text, html et rtf et les attachements dans le Store JavaMail
-- Traitement des contenus et extraction du text au niveau général StoreMessage
-- Use ESAPI for metadata cleaning (fully escape entities)
+- Ajout d'une couche d'abstraction entre message msg et message pst pour faire les traitements communs au format de données Microsoft

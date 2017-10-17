@@ -24,7 +24,7 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
-package fr.gouv.vitam.tools.mailextract.lib.store.pst.attachedmsg;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg;
 
 import java.util.logging.Logger;
 
@@ -47,7 +47,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPEmbeddedStoreExtractor extends StoreExtractor {
+public class PstEmbeddedStoreExtractor extends StoreExtractor {
 
 	/**
 	 * Instantiates a new LP embedded message store extractor.
@@ -82,12 +82,12 @@ public class LPEmbeddedStoreExtractor extends StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public LPEmbeddedStoreExtractor(String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
+	public PstEmbeddedStoreExtractor(String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
 			Logger logger, StoreMessageAttachment a) throws ExtractionException {
 		super("embeddedpstmsg", null, null, null, null, null, destRootPath, destName, options, rootStoreExtractor,
 				logger);
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		rootAnalysisMBFolder= LPEmbeddedStoreFolder.createRootFolder(this, a, rootNode);
+		rootAnalysisMBFolder= PstEmbeddedStoreFolder.createRootFolder(this, a, rootNode);
 		}
 }

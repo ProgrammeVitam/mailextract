@@ -25,11 +25,8 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.pst;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -37,12 +34,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 import javax.mail.MessagingException;
-import com.pff.PSTAttachment;
-import com.pff.PSTConversationIndex;
-import com.pff.PSTException;
+
 import com.pff.PSTMessage;
-import com.pff.PSTRecipient;
-import com.pff.PSTConversationIndex.ResponseLevel;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
@@ -64,10 +57,10 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPStoreMessage extends StoreMessage {
+public abstract class MicrosoftStoreMessage extends StoreMessage {
 
-	/** Native libpst message. */
-	protected PSTMessage message;
+	/** Native message object in each subclass. */
+	PSTMessage message;
 
 	/** The RFC822 headers if any. */
 	RFC822Headers rfc822Headers;
@@ -77,15 +70,12 @@ public class LPStoreMessage extends StoreMessage {
 	 *
 	 * @param mBFolder
 	 *            Containing MailBoxFolder
-	 * @param message
-	 *            Native libpst message
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public LPStoreMessage(StoreFolder mBFolder, PSTMessage message) throws ExtractionException {
+	public MicrosoftStoreMessage(StoreFolder mBFolder) throws ExtractionException {
 		super(mBFolder);
-		this.message = message;
 	}
 
 	/*
@@ -95,8 +85,101 @@ public class LPStoreMessage extends StoreMessage {
 	 */
 	@Override
 	public long getMessageSize() {
-		return message.getMessageSize();
+		return getNativeMessageSize();
 	}
+
+	// Property codes
+
+	static final int SMTP_TRANSPORT_HEADER = 0x007d;
+	static final int SUBJECT = 0x0037;
+	static final int INTERNET_MESSAGE_ID = 0x1035;
+	static final int CONVERSATION_INDEX = 0x0071;
+	static final int SENDER_NAME = 0x0c1a;
+	static final int SENT_REPRESENTING_NAME = 0x0042;
+	static final int SENDER_ADDR_TYPE = 0x0c1e;
+	static final int SENDER_EMAIL_ADDRESS = 0x0c1f;
+	static final int SENT_REPRESENTING_ADDR_TYPE = 0x0064;
+	static final int SENT_REPRESENTING_EMAIL_ADDRESS = 0x0065;
+	static final int RETURN_PATH = 0x1046;
+	static final int MESSAGE_DELIVERY_TIME = 0x0e06;
+	static final int CLIENT_SUBMIT_TIME = 0x0039;
+	static final int IN_REPLY_TO_ID = 0x1042;
+	static final int MESSAGE_SIZE=0x0e08;
+
+	// Native message functions
+
+	// return the native message size
+	abstract protected long getNativeMessageSize();
+
+	// return empty String if no item
+	abstract protected String getNativeStringItem(int item);
+
+	// return null if no item
+	abstract protected byte[] getNativeBinaryItem(int item);
+
+	// return null if no item
+	abstract protected Date getNativeDateItem(int item);
+
+	// ConversationIndex
+	abstract protected boolean hasNativeConversationIndex();
+
+	abstract protected Date getNativeCIDeliveryTime();
+
+	abstract protected String getNativeCIGuid();
+
+	abstract protected int getNativeCINumberOfResponseLevels();
+
+	abstract protected short getNativeCIResponseLevelDeltaCode(int responseLevelNumber);
+
+	abstract protected long getNativeCIResponseLevelTimeDelta(int responseLevelNumber);
+
+	abstract protected short getNativeCIResponseLevelRandom(int responseLevelNumber);
+
+	// recipients functions
+	abstract protected int getNativeNumberOfRecipients();
+
+	abstract protected String getNativeRecipientsSmtpAddress(int recipientNumber);
+
+	abstract protected String getNativeRecipientsEmailAddress(int recipientNumber);
+
+	abstract protected String getNativeRecipientsDisplayName(int recipientNumber);
+
+	abstract protected int getNativeRecipientsType(int recipientNumber);
+
+	// body functions
+	abstract protected String getNativeBodyText();
+
+	abstract protected String getNativeBodyHTML();
+
+	abstract protected String getNativeRTFBody();
+
+	// attachment functions
+	abstract protected int getNativeNumberOfAttachments();
+
+	abstract protected int getNativeAttachmentAttachMethod(int AttachmentNumber);
+
+	abstract protected byte[] getNativeAttachmentByteArray();
+
+	abstract protected String getNativeAttachmentFilename();
+	// TODO mettre tout cela dedans
+	// String name = pstA.getLongFilename();
+	// if (name.isEmpty())
+	// name = pstA.getFilename();
+	// if (name.isEmpty())
+	// name = pstA.getDisplayName();
+
+	abstract protected Date getNativeAttachmentCreationTime();
+
+	abstract protected Date getNativeAttachmentModificationTime();
+
+	abstract protected String getNativeAttachmentMimeTag();
+
+	abstract protected String getNativeAttachmentContentId();
+
+	abstract protected MicrosoftStoreMessage getNativeAttachmentEmbeddedMessage();
+
+	// for storeextractor choice return "pst", "msg"...
+	abstract protected String getNativeAttachmentProtocole();
 
 	// General Headers function
 
@@ -116,10 +199,10 @@ public class LPStoreMessage extends StoreMessage {
 		String headerString;
 
 		if (!hasRFC822Headers()) {
-			headerString = message.getTransportMessageHeaders();
+			headerString = getNativeStringItem(SMTP_TRANSPORT_HEADER);
 			if ((headerString != null) && (!headerString.isEmpty()))
 				try {
-					rfc822Headers = new RFC822Headers(message.getTransportMessageHeaders(), this);
+					rfc822Headers = new RFC822Headers(headerString, this);
 					mailHeader = Collections.list(rfc822Headers.getAllHeaderLines());
 					return;
 				} catch (MessagingException e) {
@@ -147,18 +230,25 @@ public class LPStoreMessage extends StoreMessage {
 			String[] sList = rfc822Headers.getHeader("Subject");
 			if (sList != null) {
 				if (sList.length > 1)
-					logMessageWarning(
-							"mailextract.pst: Multiple subjects, keep the first one in header");
+					logMessageWarning("mailextract.pst: Multiple subjects, keep the first one in header");
 				result = RFC822Headers.getHeaderValue(sList[0]);
 			}
 		} else {
 			// pst file value
-			result = message.getSubject();
+			result = getNativeStringItem(SUBJECT);
+
+			// FIXME filtering in LibPST (aim 0x0101, 0105 and 0110 values)
+			// to be verified why and if usefull in msg
+			if ((result.length() >= 2) && result.charAt(0) == 0x01) {
+				if (result.length() == 2) {
+					result = "";
+				} else {
+					result = result.substring(2, result.length());
+				}
+			}
 			if (result.isEmpty())
 				result = null;
-
 		}
-
 		if (result == null)
 			logMessageWarning("mailextract.pst: No subject in header");
 
@@ -187,23 +277,22 @@ public class LPStoreMessage extends StoreMessage {
 		} else {
 			// pst file value
 			// generate a messageID from the conversationIndex
-			result = message.getInternetMessageId();
+			result = getNativeStringItem(INTERNET_MESSAGE_ID);
 			if (result.isEmpty()) {
-				PSTConversationIndex pstCI = message.getConversationIndex();
-
-				Instant inst = pstCI.getDeliveryTime().toInstant();
-				ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
-				result = "<PST:" + pstCI.getGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
-				List<ResponseLevel> rlList = pstCI.getResponseLevels();
-				for (ResponseLevel rl : rlList) {
-					result += "+" + Integer.toHexString(rl.getDeltaCode());
-					result += Long.toHexString(rl.getTimeDelta());
-					result += Integer.toHexString(rl.getRandom());
+				if (hasNativeConversationIndex()) {
+					Instant inst = getNativeCIDeliveryTime().toInstant();
+					ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
+					result = "<MIC:" + getNativeCIGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
+					int responseLevelNumber = getNativeCINumberOfResponseLevels();
+					for (int i = 0; i < responseLevelNumber; i += 1) {
+						result += "+" + Integer.toHexString(getNativeCIResponseLevelDeltaCode(i));
+						result += Long.toHexString(getNativeCIResponseLevelTimeDelta(i));
+						result += Integer.toHexString(getNativeCIResponseLevelRandom(i));
+					}
+					result += ">";
 				}
-				result += ">";
 			}
 		}
-
 		if (result == null)
 			logMessageWarning("mailextract.pst: No Message ID address in header");
 		messageID = result;
@@ -215,9 +304,9 @@ public class LPStoreMessage extends StoreMessage {
 	private String getSenderName() {
 		String result;
 
-		result = message.getSenderName().trim();
+		result = getNativeStringItem(SENDER_NAME);
 		if ((result == null) || result.isEmpty())
-			result = message.getSentRepresentingName().trim();
+			result = getNativeStringItem(SENT_REPRESENTING_NAME);
 
 		if (result.isEmpty())
 			result = null;
@@ -229,14 +318,14 @@ public class LPStoreMessage extends StoreMessage {
 	private String getSenderEmailAddress() {
 		String result = "";
 
-		if (message.getSenderAddrtype().equalsIgnoreCase("SMTP"))
-			result = message.getSenderEmailAddress().trim();
-		if (result.isEmpty() && message.getSentRepresentingAddressType().equalsIgnoreCase("SMTP"))
-			result = message.getSentRepresentingEmailAddress().trim();
+		if (getNativeStringItem(SENDER_ADDR_TYPE).equalsIgnoreCase("SMTP"))
+			result = getNativeStringItem(SENDER_EMAIL_ADDRESS);
+		if (result.isEmpty() && getNativeStringItem(SENT_REPRESENTING_ADDR_TYPE).equalsIgnoreCase("SMTP"))
+			result = getNativeStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
 		if (result.isEmpty())
-			result = message.getSenderEmailAddress().trim();
+			result = getNativeStringItem(SENDER_EMAIL_ADDRESS);
 		if (result.isEmpty())
-			result = message.getSentRepresentingEmailAddress().trim();
+			result = getNativeStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
 
 		if (result.isEmpty())
 			result = null;
@@ -279,6 +368,10 @@ public class LPStoreMessage extends StoreMessage {
 
 	// Recipients (To,cc,bcc) specific functions
 
+	public static final int MAPI_TO = 1;
+	public static final int MAPI_CC = 2;
+	public static final int MAPI_BCC = 3;
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -298,30 +391,28 @@ public class LPStoreMessage extends StoreMessage {
 			recipientBcc = new ArrayList<String>();
 
 			int recipientNumber;
-			PSTRecipient pstR;
 			String normAddress;
 			try {
-				recipientNumber = message.getNumberOfRecipients();
+				recipientNumber = getNativeNumberOfRecipients();
 			} catch (Exception e) {
 				logMessageWarning("mailextract.libpst: Can't determine recipient list");
 				recipientNumber = 0;
 			}
 			for (int i = 0; i < recipientNumber; i++) {
 				try {
-					pstR = message.getRecipient(i);
 					// prefer smtp address
-					String emailAddress = pstR.getSmtpAddress();
+					String emailAddress = getNativeRecipientsSmtpAddress(i);
 					if (emailAddress.isEmpty())
-						emailAddress = pstR.getEmailAddress();
-					normAddress = pstR.getDisplayName() + " <" + emailAddress + ">";
-					switch (pstR.getRecipientType()) {
-					case PSTRecipient.MAPI_TO:
+						emailAddress = getNativeRecipientsEmailAddress(i);
+					normAddress = getNativeRecipientsDisplayName(i) + " <" + emailAddress + ">";
+					switch (getNativeRecipientsType(i)) {
+					case MAPI_TO:
 						recipientTo.add(normAddress);
 						break;
-					case PSTRecipient.MAPI_CC:
+					case MAPI_CC:
 						recipientCc.add(normAddress);
 						break;
-					case PSTRecipient.MAPI_BCC:
+					case MAPI_BCC:
 						recipientBcc.add(normAddress);
 						break;
 					}
@@ -347,7 +438,7 @@ public class LPStoreMessage extends StoreMessage {
 			// smtp header value
 			result = rfc822Headers.getAddressHeader("Reply-To");
 		}
-		// FIXME pst file value
+		// FIXME microsoft file value
 
 		replyTo = result;
 	}
@@ -368,13 +459,12 @@ public class LPStoreMessage extends StoreMessage {
 			String[] rpList = rfc822Headers.getHeader("Return-Path");
 			if (rpList != null) {
 				if (rpList.length > 1)
-					logMessageWarning(
-							"mailextract.pst: Multiple Return-Path addresses, keep the first one in header");
+					logMessageWarning("mailextract.pst: Multiple Return-Path addresses, keep the first one in header");
 				result = RFC822Headers.getHeaderValue(rpList[0]);
 			}
 		} else {
 			// pst file value
-			result = message.getReturnPath();
+			result = getNativeStringItem(RETURN_PATH);
 			if (result.isEmpty())
 				result = null;
 		}
@@ -393,8 +483,8 @@ public class LPStoreMessage extends StoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeDates()
 	 */
 	protected void analyzeDates() {
-		receivedDate = message.getMessageDeliveryTime();
-		sentDate = message.getClientSubmitTime();
+		receivedDate = getNativeDateItem(MESSAGE_DELIVERY_TIME);
+		sentDate = getNativeDateItem(CLIENT_SUBMIT_TIME);
 	}
 
 	// In-reply-to and References specific functions
@@ -420,11 +510,11 @@ public class LPStoreMessage extends StoreMessage {
 			}
 		} else {
 			// pst file value
-			result = message.getInReplyToId();
+			result = getNativeStringItem(IN_REPLY_TO_ID);
 			if (result.isEmpty()) {
 				if (messageID == null)
 					analyzeMessageID();
-				if ((messageID != null) && messageID.startsWith("<PST:")) {
+				if ((messageID != null) && messageID.startsWith("<MIC:")) {
 					if (messageID.lastIndexOf('+') > messageID.lastIndexOf('@')) {
 						result = messageID.substring(0, messageID.lastIndexOf('+')) + ">";
 					} else
@@ -466,28 +556,31 @@ public class LPStoreMessage extends StoreMessage {
 		String result;
 
 		// text
-		result = message.getBody();
+		result = getNativeBodyText();
 		if (result.isEmpty())
 			result = null;
 		bodyContent[TEXT_BODY] = result;
 
 		// html
-		result = message.getBodyHTML();
+		result = getNativeBodyHTML();
 		if (result.isEmpty())
 			result = null;
 		bodyContent[HTML_BODY] = result;
 
 		// rtf
-		try {
-			result = message.getRTFBody();
-			if (result.isEmpty())
-				result = null;
-		} catch (PSTException | IOException e) {
+		result = getNativeRTFBody();
+		if (result.isEmpty())
 			result = null;
-			// forget it
-		}
 		bodyContent[RTF_BODY] = result;
 	}
+
+	public static final int ATTACHMENT_METHOD_NONE = 0;
+	public static final int ATTACHMENT_METHOD_BY_VALUE = 1;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE = 2;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE = 3;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE_ONLY = 4;
+	public static final int ATTACHMENT_METHOD_EMBEDDED = 5;
+	public static final int ATTACHMENT_METHOD_OLE = 6;
 
 	/*
 	 * (non-Javadoc)
@@ -499,9 +592,8 @@ public class LPStoreMessage extends StoreMessage {
 	protected void analyzeAttachments() {
 		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
 		int attachmentNumber;
-		PSTAttachment pstA;
 		try {
-			attachmentNumber = message.getNumberOfAttachments();
+			attachmentNumber = getNativeNumberOfAttachments();
 		} catch (Exception e) {
 			logMessageWarning("mailextract.libpst: Can't determine attachment list");
 			attachmentNumber = 0;
@@ -510,44 +602,32 @@ public class LPStoreMessage extends StoreMessage {
 			try {
 				StoreMessageAttachment attachment;
 
-				pstA = message.getAttachment(i);
-				switch (pstA.getAttachMethod()) {
-				case PSTAttachment.ATTACHMENT_METHOD_NONE:
+				switch (getNativeAttachmentAttachMethod(i)) {
+				case ATTACHMENT_METHOD_NONE:
 					break;
 				// TODO OLE case you can access the IStorage object through
 				// IAttach::OpenProperty(PR_ATTACH_DATA_OBJ, ...)
-				case PSTAttachment.ATTACHMENT_METHOD_OLE:
+				case ATTACHMENT_METHOD_OLE:
 					logMessageWarning("mailextract.libpst: Can't extract OLE attachment");
 					break;
-				case PSTAttachment.ATTACHMENT_METHOD_BY_VALUE:
-					InputStream is = pstA.getFileInputStream();
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					byte[] buf = new byte[4096];
-					int bytesRead;
-					while ((bytesRead = is.read(buf)) != -1) {
-						baos.write(buf, 0, bytesRead);
-					}
-					attachment = new StoreMessageAttachment(pstA.getLongFilename(), baos.toByteArray(),
-							pstA.getCreationTime(), pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(),
-							StoreMessageAttachment.INLINE_ATTACHMENT);
+				case ATTACHMENT_METHOD_BY_VALUE:
+					attachment = new StoreMessageAttachment(getNativeAttachmentFilename(),
+							getNativeAttachmentByteArray(), getNativeAttachmentCreationTime(),
+							getNativeAttachmentModificationTime(), getNativeAttachmentMimeTag(),
+							getNativeAttachmentContentId(), StoreMessageAttachment.INLINE_ATTACHMENT);
 					result.add(attachment);
 					break;
-				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE:
-				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE:
-				case PSTAttachment.ATTACHMENT_METHOD_BY_REFERENCE_ONLY:
+				case ATTACHMENT_METHOD_BY_REFERENCE:
+				case ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE:
+				case ATTACHMENT_METHOD_BY_REFERENCE_ONLY:
 					// TODO reference cases
 					logMessageWarning("mailextract.libpst: Can't extract reference attachment");
 					break;
-				case PSTAttachment.ATTACHMENT_METHOD_EMBEDDED:
-					PSTMessage message = pstA.getEmbeddedPSTMessage();
-					String name = pstA.getLongFilename();
-					if (name.isEmpty())
-						name = pstA.getFilename();
-					if (name.isEmpty())
-						name = pstA.getDisplayName();
-					attachment = new StoreMessageAttachment(name, message, pstA.getCreationTime(),
-							pstA.getModificationTime(), pstA.getMimeTag(), pstA.getContentId(),
-							StoreMessageAttachment.STORE_ATTACHMENT
+				case ATTACHMENT_METHOD_EMBEDDED:
+					attachment = new StoreMessageAttachment(getNativeAttachmentFilename(),
+							getNativeAttachmentEmbeddedMessage(), getNativeAttachmentCreationTime(),
+							getNativeAttachmentModificationTime(), getNativeAttachmentMimeTag(),
+							getNativeAttachmentContentId(), StoreMessageAttachment.STORE_ATTACHMENT
 									+ StoreMessageAttachment.EMBEDDEDPST_STORE_ATTACHMENT);
 					result.add(attachment);
 					break;

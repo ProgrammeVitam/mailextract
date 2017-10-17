@@ -53,7 +53,7 @@ import fr.gouv.vitam.tools.mailextract.lib.formattools.Canonicalizator;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.FileTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.store.pst.attachedmsg.LPEmbeddedStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg.PstEmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
@@ -612,7 +612,7 @@ public abstract class StoreMessage extends StoreFile {
 			clearStoreFile(storeFile);
 			break;
 		case StoreMessageAttachment.EMBEDDEDPST_STORE_ATTACHMENT:
-			extractor = new LPEmbeddedStoreExtractor(rootNode.getRootPath(), rootNode.getName(),
+			extractor = new PstEmbeddedStoreExtractor(rootNode.getRootPath(), rootNode.getName(),
 					getStoreExtractor().options, getStoreExtractor(), getLogger(), a);
 			extractor.writeTargetLog();
 			extractor.rootAnalysisMBFolder.extractFolderAsRoot(writeFlag);

@@ -24,7 +24,7 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
-package fr.gouv.vitam.tools.mailextract.lib.store.pst;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +53,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class LPStoreExtractor extends StoreExtractor {
+public class PstStoreExtractor extends StoreExtractor {
 
 	private PSTFile pstFile;
 
@@ -90,7 +90,7 @@ public class LPStoreExtractor extends StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public LPStoreExtractor(String protocol, String server, String user, String password, String container,
+	public PstStoreExtractor(String protocol, String server, String user, String password, String container,
 			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
 			Logger logger) throws ExtractionException {
 		super(protocol, null, null, null, container, folder, destRootPath, destName, options, rootStoreExtractor,
@@ -104,7 +104,7 @@ public class LPStoreExtractor extends StoreExtractor {
 		}
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		LPStoreFolder lPRootMailBoxFolder;
+		PstStoreFolder lPRootMailBoxFolder;
 
 		try {
 			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), folder);
@@ -113,7 +113,7 @@ public class LPStoreExtractor extends StoreExtractor {
 				throw new ExtractionException(
 						"mailExtract.libpst: Can't find the root folder " + folder + " in pst file");
 
-			lPRootMailBoxFolder = LPStoreFolder.createRootFolder(this, pstFolder, rootNode);
+			lPRootMailBoxFolder = PstStoreFolder.createRootFolder(this, pstFolder, rootNode);
 
 			rootAnalysisMBFolder = lPRootMailBoxFolder;
 		} catch (IOException e) {

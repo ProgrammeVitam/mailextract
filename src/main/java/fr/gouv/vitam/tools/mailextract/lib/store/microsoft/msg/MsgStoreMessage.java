@@ -24,7 +24,7 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
-package fr.gouv.vitam.tools.mailextract.lib.store.msg;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,8 +32,10 @@ import java.util.List;
 import javax.mail.MessagingException;
 import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.Chunk;
+import org.apache.poi.hsmf.datatypes.Chunks;
 import org.apache.poi.hsmf.datatypes.PropertiesChunk;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
+import org.apache.poi.hsmf.datatypes.MessagePropertiesChunk;
 import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.RecipientChunks;
 import org.apache.poi.hsmf.datatypes.StringChunk;
@@ -41,6 +43,7 @@ import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 
 import com.pff.PSTRecipient;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
 
 // TODO: Auto-generated Javadoc
@@ -51,7 +54,7 @@ public class MsgStoreMessage extends StoreMessage {
 
 	/** The mapi message. */
 	MAPIMessage mapiMessage;
-	
+
 	/** The size. */
 	long size;
 
@@ -81,7 +84,7 @@ public class MsgStoreMessage extends StoreMessage {
 
 		return result;
 	}
-	
+
 	/**
 	 * Gets the first property value.
 	 *
@@ -91,21 +94,21 @@ public class MsgStoreMessage extends StoreMessage {
 	 *            the prop
 	 * @return the first property value
 	 */
-	//get a value from Chunk[] for MAPIProperty
-	PropertyValue getFirstPropertyValue(Chunk chunk, MAPIProperty prop){
+	// get a value from Chunk[] for MAPIProperty
+	PropertyValue getFirstPropertyValue(Chunk chunk, MAPIProperty prop) {
 		PropertyValue result;
-		
-		if (chunk==null)
-			result=null;
+
+		if (chunk == null)
+			result = null;
 		else {
-			List<PropertyValue> lPropertyValue=((PropertiesChunk)chunk).getValues(prop);
-			if ((lPropertyValue==null) || lPropertyValue.size()==0)
-				result=null;
-			else 
-				result=lPropertyValue.get(0);
+			List<PropertyValue> lPropertyValue = ((PropertiesChunk) chunk).getValues(prop);
+			if ((lPropertyValue == null) || lPropertyValue.size() == 0)
+				result = null;
+			else
+				result = lPropertyValue.get(0);
 		}
-		
-		return result;	
+
+		return result;
 	}
 
 	// General Headers function
@@ -125,6 +128,10 @@ public class MsgStoreMessage extends StoreMessage {
 	protected void prepareHeaders() {
 		String headerString;
 
+		Chunks chunks=mapiMessage.getMainChunks();
+		MessagePropertiesChunk chunk = chunks.getMessageProperties();
+		List<PropertyValue> lProp=chunk.getValues(MAPIProperty.MESSAGE_SIZE);
+		
 		if (!hasRFC822Headers()) {
 			headerString = getMAPIString(MAPIProperty.TRANSPORT_MESSAGE_HEADERS);
 			if ((headerString != null) && (!headerString.isEmpty()))
@@ -233,9 +240,9 @@ public class MsgStoreMessage extends StoreMessage {
 				result = getMAPIString(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS);
 			}
 		}
-		if (result==null)
+		if (result == null)
 			result = getMAPIString(MAPIProperty.SENDER_EMAIL_ADDRESS);
-		if (result==null)
+		if (result == null)
 			result = getMAPIString(MAPIProperty.SENT_REPRESENTING_EMAIL_ADDRESS);
 
 		if (result.isEmpty())
@@ -303,21 +310,21 @@ public class MsgStoreMessage extends StoreMessage {
 			for (int i = 0; i < recipientNumber; i++) {
 				try {
 					rChunk = mapiMessage.getRecipientDetailsChunks()[i];
-					emailAddress=null;
-					
+					emailAddress = null;
+
 					// prefer smtp address
 					tmpSC = rChunk.recipientSMTPChunk;
-					if (tmpSC!=null)
+					if (tmpSC != null)
 						emailAddress = mapiMessage.getStringFromChunk(tmpSC);
 					else {
 						tmpSC = rChunk.recipientEmailChunk;
-						if (tmpSC!=null)
+						if (tmpSC != null)
 							emailAddress = mapiMessage.getStringFromChunk(tmpSC);
 					}
 					normAddress = rChunk.getRecipientName();
-					if (emailAddress!=null) 
+					if (emailAddress != null)
 						normAddress += " <" + emailAddress + ">";
-					switch ((int)(rChunk.getProperties().get(MAPIProperty.RECIPIENT_TYPE).get(0).getValue())) {
+					switch ((int) (rChunk.getProperties().get(MAPIProperty.RECIPIENT_TYPE).get(0).getValue())) {
 					case PSTRecipient.MAPI_TO:
 						recipientTo.add(normAddress);
 						break;
@@ -338,32 +345,32 @@ public class MsgStoreMessage extends StoreMessage {
 	/**
 	 * Analyze message to get Reply-To metadata.
 	 */
-	protected void analyzeReplyTo()
-	{}
+	protected void analyzeReplyTo() {
+	}
 
 	/**
 	 * Analyze message to get Return-Path metadata.
 	 */
-	protected void analyzeReturnPath()
-	{}
+	protected void analyzeReturnPath() {
+	}
 
 	/**
 	 * Analyze message to get sent and received dates metadata.
 	 */
-	protected void analyzeDates()
-	{}
+	protected void analyzeDates() {
+	}
 
 	/**
 	 * Analyze message to get In-Reply-To metadata.
 	 */
-	protected void analyzeInReplyToId()
-	{}
+	protected void analyzeInReplyToId() {
+	}
 
 	/**
 	 * Analyze message to get References metadata.
 	 */
-	protected void analyzeReferences() 
-	{}
+	protected void analyzeReferences() {
+	}
 
 	// Content analysis methods
 
@@ -374,35 +381,35 @@ public class MsgStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeBodies()
 	 */
 	protected void analyzeBodies() {
-		String result=null;
+		String result = null;
 
 		// text
 		try {
 			result = mapiMessage.getTextBody();
-		} catch (ChunkNotFoundException cnfe){
-			result=null;
+		} catch (ChunkNotFoundException cnfe) {
+			result = null;
 		}
-		if ((result!=null) && (result.isEmpty()))
+		if ((result != null) && (result.isEmpty()))
 			result = null;
 		bodyContent[TEXT_BODY] = result;
 
 		// html
 		try {
 			result = mapiMessage.getHtmlBody();
-		} catch (ChunkNotFoundException cnfe){
-			result=null;
+		} catch (ChunkNotFoundException cnfe) {
+			result = null;
 		}
-		if ((result!=null) && (result.isEmpty()))
+		if ((result != null) && (result.isEmpty()))
 			result = null;
 		bodyContent[HTML_BODY] = result;
 
 		// rtf
 		try {
 			result = mapiMessage.getRtfBody();
-		} catch (ChunkNotFoundException cnfe){
-			result=null;
+		} catch (ChunkNotFoundException cnfe) {
+			result = null;
 		}
-		if ((result!=null) && (result.isEmpty()))
+		if ((result != null) && (result.isEmpty()))
 			result = null;
 		bodyContent[RTF_BODY] = result;
 	}
@@ -415,17 +422,21 @@ public class MsgStoreMessage extends StoreMessage {
 	 * )
 	 */
 	protected void analyzeAttachments() {
+		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
+		attachments = result;
 	}
 
 	// Global message
 
-	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#getNativeMimeContent()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#
+	 * getNativeMimeContent()
 	 */
 	protected byte[] getNativeMimeContent() {
 		return null;
 	}
-
 
 	/**
 	 * Instantiates a new msg store message.
@@ -443,8 +454,11 @@ public class MsgStoreMessage extends StoreMessage {
 		this.size = size;
 	}
 
-	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#getMessageSize()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#getMessageSize()
 	 */
 	@Override
 	public long getMessageSize() {
