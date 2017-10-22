@@ -32,16 +32,21 @@ import java.net.URLDecoder;
 
 import javax.mail.*;
 
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMEmbeddedStore;
+
 /**
  * JavaMail Store for mbox messages file.
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class MboxStore extends Store {
+public class MboxStore extends Store implements JMEmbeddedStore {
 
 	/** Path to the target mbox file */
 	private String container;
+
+	/** String eml content if embedded **/
+	private byte[] objectContent;
 
 	/**
 	 * Gets the container.
@@ -62,12 +67,6 @@ public class MboxStore extends Store {
 	 */
 	public MboxStore(Session session, URLName url) {
 		super(session, url);
-
-		try {
-			container = URLDecoder.decode(url.getFile(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// not possible
-		}
 	}
 
 	/**
@@ -91,18 +90,28 @@ public class MboxStore extends Store {
 	 */
 	@Override
 	protected boolean protocolConnect(String host, int port, String user, String passwd) throws MessagingException {
-		// verify params significance in ThunderMBox context
-		if (!host.equals("localhost"))
-			throw new MessagingException("mbox: only support localhost");
-		if (!((passwd == null) || (passwd.isEmpty())))
-			throw new MessagingException("mbox: does not allow passwords");
-		if (port != -1)
-			throw new MessagingException("mbox: does not allow port selection");
+		// verify only if not embedded
+		if (objectContent == null) {
+			// verify params significance in ThunderMBox context
+			if (!host.equals("localhost"))
+				throw new MessagingException("mbox: only support localhost");
+			if (!((passwd == null) || (passwd.isEmpty())))
+				throw new MessagingException("mbox: does not allow passwords");
+			if (port != -1)
+				throw new MessagingException("mbox: does not allow port selection");
 
-		// verify declared file for mbox availability
-		File test = new File(container);
-		if (!test.isFile()) {
-			throw new MessagingException("mbox: " + container + " is not an existing file");
+			// verify if embedded or declared file for eml availability
+			if (objectContent != null) {
+				try {
+					container = URLDecoder.decode(url.getFile(), "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					throw new MessagingException("mbox: Can't decode the container file name");
+				}
+				File test = new File(container);
+				if (!test.isFile()) {
+					throw new MessagingException("mbox: " + container + " is not an existing file");
+				}
+			}
 		}
 		return true;
 	}
@@ -137,17 +146,20 @@ public class MboxStore extends Store {
 	 */
 	@Override
 	public Folder getFolder(URLName url) throws MessagingException {
-		// verify that the root directory in store is respected
-		String name = "";
-		try {
-			name = URLDecoder.decode(url.getFile(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// not possible
-		}
-		if ((name == null) || (name.isEmpty()))
+		if ((url.getFile() == null) || (url.getFile().isEmpty()))
 			return new MboxFolder(this);
 		else
-			throw new MessagingException("mbox: only one root simulated folder, no " + name + " folder");
+			throw new MessagingException("mbox: only one root simulated folder, no " + url.getFile() + " folder");
 	}
 
+	@Override
+	public void setObjectContent(Object objectContent) {
+		if (objectContent instanceof byte[])
+			this.objectContent = (byte[]) objectContent;
+	}
+
+	@Override
+	public Object getObjectContent() {
+		return objectContent;
+	}
 }

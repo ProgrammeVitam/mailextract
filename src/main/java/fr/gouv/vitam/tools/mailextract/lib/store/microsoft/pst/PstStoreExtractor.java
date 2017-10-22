@@ -26,8 +26,15 @@
  */
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Vector;
 import java.util.logging.Logger;
 
@@ -36,9 +43,13 @@ import com.pff.PSTFolder;
 import com.pff.PSTException;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
+// TODO: Auto-generated Javadoc
 /**
  * StoreExtractor sub-class for mail boxes extracted through libpst library.
  * <p>
@@ -53,32 +64,27 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class PstStoreExtractor extends StoreExtractor {
+public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
 
+	// Attachment to complete with decoded form
+	private StoreMessageAttachment attachment;
+
+	// Temporary store file
+	File storeFile;
+
+	// PST File object
 	private PSTFile pstFile;
 
 	/**
 	 * Instantiates a new LP store extractor.
 	 *
-	 * @param protocol
-	 *            Protocol used for extraction (pstfile)
-	 * @param server
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param container
-	 *            Path to the local extraction target (Thunderbird or Outlook
-	 * @param folder
+	 * @param urlString
+	 *            the url string
+	 * @param storeFolder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
-	 * @param options
-	 *            Options (flag composition of CONST_)
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -90,36 +96,136 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public PstStoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
-			Logger logger) throws ExtractionException {
-		super(protocol, null, null, null, container, folder, destRootPath, destName, options, rootStoreExtractor,
-				logger);
-
+	public PstStoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+		
 		try {
-			pstFile = new PSTFile(container);
+			pstFile = new PSTFile(path);
 		} catch (Exception e) {
 			throw new ExtractionException(
-					"mailExtract.libpst: can't open " + container + ", doesn't exist or is not a pst file");
+					"mailExtract.pst: can't open " + path + ", doesn't exist or is not a pst file");
 		}
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
 		PstStoreFolder lPRootMailBoxFolder;
 
 		try {
-			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), folder);
+			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), storeFolder);
 
 			if (pstFolder == null)
 				throw new ExtractionException(
-						"mailExtract.libpst: Can't find the root folder " + folder + " in pst file");
+						"mailExtract.libpst: Can't find the root folder " + storeFolder + " in pst file");
 
 			lPRootMailBoxFolder = PstStoreFolder.createRootFolder(this, pstFolder, rootNode);
 
-			rootAnalysisMBFolder = lPRootMailBoxFolder;
+			setRootFolder(lPRootMailBoxFolder);
 		} catch (IOException e) {
-			throw new ExtractionException("mailExtract.libpst: Can't use " + container + " pst file");
+			throw new ExtractionException("mailExtract.libpst: Can't use " + path + " pst file");
 		} catch (PSTException e) {
-			throw new ExtractionException("mailExtract.libpst: Can't find extraction root folder " + folder);
+			throw new ExtractionException("mailExtract.libpst: Can't find extraction root folder " + storeFolder);
+		}
+	}
+
+	// create a store temporary file
+	private static File writeStoreFile(String dirPath, byte[] byteContent) throws ExtractionException {
+		File storeFile;
+
+		OutputStream output = null;
+		try {
+			Files.createDirectories(Paths.get(dirPath));
+			storeFile = getStoreTemporaryFile(dirPath);
+			output = new BufferedOutputStream(new FileOutputStream(storeFile));
+			if (byteContent != null)
+				output.write(byteContent);
+		} catch (IOException ex) {
+			if (dirPath.length() + 8 > 250)
+				throw new ExtractionException(
+						"mailextract: Store file extraction illegal destination file (may be too long pathname), extracting unit in path "
+								+ dirPath);
+			else
+				throw new ExtractionException(
+						"mailextract: Store file extraction illegal destination file, extracting unit in path "
+								+ dirPath);
+		} finally {
+			if (output != null)
+				try {
+					output.close();
+				} catch (IOException e) {
+					throw new ExtractionException(
+							"mailextract: Can't close store file extraction, extracting unit in path " + dirPath);
+				}
+		}
+
+		return (storeFile);
+	}
+
+	// fix a store temporary file name
+	static private File getStoreTemporaryFile(String destPathString) {
+		return new File(destPathString + File.separator + "tmpStore");
+	}
+
+	// generate temporary file and create the url to it
+	static private String generateFileAndUrl(StoreMessageAttachment attachment, ArchiveUnit rootNode)
+			throws ExtractionException {
+		String result = null;
+		File storeFile = writeStoreFile(rootNode.getFullName(), attachment.getRawAttachmentContent());
+		try {
+			result = "pst://localhost/" + URLEncoder.encode(storeFile.getAbsolutePath(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// not possible
+		}
+		return result;
+	}
+
+	/**
+	 * Instantiates a new LP embedded pst store extractor.
+	 *
+	 * @param attachment
+	 *            the attachment
+	 * @param destPathString
+	 *            the dest path string
+	 * @param options
+	 *            Options (flag composition of CONST_)
+	 * @param rootStoreExtractor
+	 *            the creating store extractor in nested extraction, or null if
+	 *            root one
+	 * @param logger
+	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @throws ExtractionException
+	 *             Any unrecoverable extraction exception (access trouble, major
+	 *             format problems...)
+	 */
+	public PstStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+		
+		this.attachment = attachment;
+		this.storeFile = new File(path);
+		
+		try {
+			pstFile = new PSTFile(path);
+		} catch (Exception e) {
+			throw new ExtractionException(
+					"mailExtract.pst: can't open " + path + ", doesn't exist or is not a pst file");
+		}
+		
+		PstStoreFolder lPRootMailBoxFolder;
+
+		try {
+			PSTFolder pstFolder = findChildFolder(pstFile.getRootFolder(), storeFolder);
+
+			if (pstFolder == null)
+				throw new ExtractionException(
+						"mailExtract.libpst: Can't find the root folder " + storeFolder + " in pst file");
+
+			lPRootMailBoxFolder = PstStoreFolder.createRootFolder(this, pstFolder, rootNode);
+
+			setRootFolder(lPRootMailBoxFolder);
+		} catch (IOException e) {
+			throw new ExtractionException("mailExtract.libpst: Can't use " + path + " pst file");
+		} catch (PSTException e) {
+			throw new ExtractionException("mailExtract.libpst: Can't find extraction root folder " + storeFolder);
 		}
 	}
 
@@ -157,6 +263,32 @@ public class PstStoreExtractor extends StoreExtractor {
 			}
 			return result;
 		}
+	}
+
+	@Override
+	public void endStoreExtractor() throws ExtractionException {
+		try {
+			pstFile.close();
+		} catch (IOException e) {
+			throw new ExtractionException("mailextract.pst: Can't close temporary file tmpstore");
+		}
+		if ((storeFile != null) &&
+			!storeFile.delete())
+			throw new ExtractionException("mailextract.pst: Can't delete temporary file tmpstore");
+	}
+
+	@Override
+	public StoreMessageAttachment getAttachment() {
+		return attachment;
+	}
+
+	static final byte[] PST_MN = new byte[] { 0x21, 0x42, 0x44, 0x4e };
+
+	public static String getVerifiedScheme(byte[] content) {
+		if (hasMagicNumber(content, PST_MN)) {
+			return "pst";
+		} else
+			return null;
 	}
 
 }

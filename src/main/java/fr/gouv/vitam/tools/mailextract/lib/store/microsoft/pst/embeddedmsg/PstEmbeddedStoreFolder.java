@@ -55,24 +55,17 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	// Embedded message
 	private PstStoreMessage lpStoreMessage;
 
-	// Attachment of embedded message
-	private StoreMessageAttachment attachment;
-
 	// name and fullName computed from constructors
 	private String fullName;
 	private String name;
 
 	// for the root folder
-	private PstEmbeddedStoreFolder(StoreExtractor storeExtractor, StoreMessageAttachment attachment) {
+	private PstEmbeddedStoreFolder(PSTMessage content, StoreExtractor storeExtractor) {
 		super(storeExtractor);
-		try {
-			this.lpStoreMessage = new PstStoreMessage(this, (PSTMessage) (attachment.getObjectContent()));
-		} catch (ExtractionException e) {
-			// no way
-		}
+
+		this.lpStoreMessage = new PstStoreMessage(this, content);
 		this.fullName = "";
 		this.name = "";
-		this.attachment = attachment;
 	}
 
 	/**
@@ -86,9 +79,9 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 *            Root ArchiveUnit
 	 * @return the LP store folder
 	 */
-	public static PstEmbeddedStoreFolder createRootFolder(PstEmbeddedStoreExtractor storeExtractor,
-			StoreMessageAttachment attachment, ArchiveUnit rootArchiveUnit) {
-		PstEmbeddedStoreFolder result = new PstEmbeddedStoreFolder(storeExtractor, attachment);
+	public static PstEmbeddedStoreFolder createRootFolder(PSTMessage content, PstEmbeddedStoreExtractor storeExtractor,
+			ArchiveUnit rootArchiveUnit) {
+		PstEmbeddedStoreFolder result = new PstEmbeddedStoreFolder(content, storeExtractor);
 		result.folderArchiveUnit = rootArchiveUnit;
 
 		return result;
@@ -106,10 +99,13 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 		dateRange.extendRange(lpStoreMessage.getSentDate());
 		lpStoreMessage.extractMessage(writeFlag);
 		lpStoreMessage.countMessage();
-		attachment.setRawContent(lpStoreMessage.getMimeContent());
+
+		// return to attachment the binary form
+		StoreMessageAttachment attachment = ((PstEmbeddedStoreExtractor) storeExtractor).getAttachment();
+		attachment.setStoreContent(lpStoreMessage.getMimeContent());
 		attachment.setMimeType("message/rfc822");
-		if ((attachment.getName()==null) || attachment.getName().isEmpty())
-			attachment.setName(lpStoreMessage.getSubject()+".eml");
+		if ((attachment.getName() == null) || attachment.getName().isEmpty())
+			attachment.setName(lpStoreMessage.getSubject() + ".eml");
 	}
 
 	/*

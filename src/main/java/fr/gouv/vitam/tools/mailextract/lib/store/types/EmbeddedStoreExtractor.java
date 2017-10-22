@@ -24,78 +24,31 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
-package fr.gouv.vitam.tools.mailextract.lib.formattools;
+package fr.gouv.vitam.tools.mailextract.lib.store.types;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
-
-import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 
 /**
- * Class for the text extraction tool. It uses Tika library.
+ * The Interface EmbeddedStoreExtractor.
  */
-public class FileTextExtractor {
-
-	/** Singleton instance **/
-	private static FileTextExtractor INSTANCE = new FileTextExtractor();
-
-	/** Tika object **/
-	private Tika tika;
-
-	/** Private constructor */
-	private FileTextExtractor() {
-		Level memLevel;
-		Logger logger;
-
-		logger = Logger.getGlobal();
-		memLevel = logger.getLevel();
-		if (memLevel != Level.FINEST)
-			logger.setLevel(Level.OFF);
-		tika = new Tika();
-		logger.setLevel(memLevel);
-	}
+public interface EmbeddedStoreExtractor {
 
 	/**
-	 * Get the FileTextExtractor singleton.
+	 * Gets the attachmentin which is the embedded object.
 	 *
-	 * @return single instance of FileTextExtractor
+	 * @return the attachment
 	 */
-	public static FileTextExtractor getInstance() {
-		return INSTANCE;
-	}
+	abstract StoreMessageAttachment getAttachment();
 
 	/**
-	 * Gets the text form of the file raw content.
+	 * Gets the scheme if this content can be managed by this StoreExtractor, or
+	 * null
 	 *
-	 * @param rawContent
-	 *            the raw content
-	 * @return the text String
-	 * @throws ExtractionException
-	 *             if text extract was not possible
+	 * @param content
+	 *            the content
+	 * @return the scheme
 	 */
-	public String act(byte[] rawContent) throws ExtractionException {
-		String s = null;
-		Level memLevel;
-		Logger logger;
-
-		logger = Logger.getGlobal();
-		memLevel = logger.getLevel();
-		if (memLevel != Level.FINEST)
-			logger.setLevel(Level.OFF);
-		try {
-			if (rawContent.length > 0)
-				s = tika.parseToString(new ByteArrayInputStream(rawContent));
-		} catch (IOException | TikaException e) {
-			throw new ExtractionException("mailextract.formattools: Can't extract text content");
-		} finally {
-			logger.setLevel(memLevel);
-		}
-
-		return s;
+	public static String getVerifiedScheme(byte[] content) {
+		return null;
 	}
 }

@@ -1,3 +1,0 @@
-
-
-- Ajout d'une couche d'abstraction entre message msg et message pst pour faire les traitements communs au format de données Microsoft

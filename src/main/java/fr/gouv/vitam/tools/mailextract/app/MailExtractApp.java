@@ -45,6 +45,7 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -132,7 +133,7 @@ import joptsimple.OptionSet;
  * <td>event level to log</td>
  * </tr>
  * <tr>
- * <td>--namesshortened</td>
+ * <td>--nameslength</td>
  * <td>generate short directories and files names</td>
  * </tr>
  * <tr>
@@ -192,7 +193,7 @@ public class MailExtractApp {
 		parser.accepts("dropemptyfolders", "drop empty folders");
 		parser.accepts("keeponlydeep", "keep only empty folders not at root level");
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
-		parser.accepts("namesshortened", "generate short directories and files names");
+		parser.accepts("nameslength", "generate short directories and files names").withRequiredArg();
 		parser.accepts("warning",
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("x", "extract account");
@@ -222,8 +223,10 @@ public class MailExtractApp {
 
 		// params
 		String destRootPath = "", destName = "";
-		String protocol = "", server = "localhost", user = "", password = "", container = "", folder = "";
-		int storeExtractorOptions = 0;
+		String protocol = "", host = "localhost", user = "", password = "", container = "", folder = "";
+		int port = -1;
+		int namesLength = 32;
+		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
 
 		String logLevel;
@@ -266,22 +269,21 @@ public class MailExtractApp {
 		}
 		if (options.has("type"))
 			protocol = (String) options.valueOf("type");
-		else 
+		else
 			protocol = "";
+		if (options.has("nameslength")) {
+			try {
+				namesLength = Integer.parseInt((String) options.valueOf("nameslength"));
+
+			} catch (NumberFormatException e) {
+				System.err.println("the names length argument must be numeric");
+				System.exit(1);
+			}
+		}
 
 		// get store extractor options
-		if (options.has("keeponlydeep")) {
-			storeExtractorOptions |= StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS;
-		}
-		if (options.has("dropemptyfolders")) {
-			storeExtractorOptions |= StoreExtractor.CONST_DROP_EMPTY_FOLDERS;
-		}
-		if (options.has("warning")) {
-			storeExtractorOptions |= StoreExtractor.CONST_WARNING_MSG_PROBLEM;
-		}
-		if (options.has("namesshortened")) {
-			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
-		}
+		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
+				options.has("warning"), namesLength);
 
 		// specific option parsing for local type extraction
 		switch (protocol) {
@@ -321,7 +323,14 @@ public class MailExtractApp {
 		user = (String) options.valueOf("user");
 		destName = user;
 		password = (String) options.valueOf("password");
-		server = (String) options.valueOf("server");
+		String server = (String) options.valueOf("server");
+		if (server != null) {
+			if (server.indexOf(':') >= 0) {
+				host = server.substring(0, server.indexOf(':'));
+				port = Integer.parseInt(server.substring(server.indexOf(':') + 1));
+			} else
+				host = server;
+		}
 		container = (String) options.valueOf("container");
 		folder = (String) options.valueOf("folder");
 
@@ -342,10 +351,10 @@ public class MailExtractApp {
 			destRootPath = System.getProperty("user.dir");
 
 		// if no do option graphic version
-		if (!options.has("l") && !options.has("z") && !options.has("x"))
-			new MailExtractGraphicApp(protocol, server, user, password, container, folder, destRootPath, destName,
+		if (!options.has("l") && !options.has("z") && !options.has("x")) {
+			new MailExtractGraphicApp(protocol, host, port, user, password, container, folder, destRootPath, destName,
 					storeExtractorOptions, logLevel, local);
-		else {
+		} else {
 			StoreExtractor storeExtractor = null;
 
 			if (protocol.isEmpty()) {
@@ -361,14 +370,15 @@ public class MailExtractApp {
 					destName = "unknown_extract";
 				else
 					destName = user;
-
-				storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
-						folder, destRootPath, destName, storeExtractorOptions, logger);
+				String urlString = StoreExtractor.composeStoreURL(protocol, server, user, password, container);
+				storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
+						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
 				if (options.has("l") || options.has("z")) {
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {
 					storeExtractor.extractAllFolders();
 				}
+				storeExtractor.endStoreExtractor();
 			} catch (Exception e) {
 				logFatalError(e, storeExtractor, logger);
 				System.exit(1);

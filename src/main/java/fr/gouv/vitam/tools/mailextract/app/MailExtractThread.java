@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -120,9 +121,9 @@ public class MailExtractThread extends Thread {
 	 * @param logLevel
 	 *            the log level
 	 */
-	public MailExtractThread(int actionNumber, String protocol, String server, String user, String password,
-			String container, String folder, String destRootPath, String destName, int storeExtractorOptions,
-			String logLevel) {
+	public MailExtractThread(int actionNumber, String protocol, String host, int port, String user, String password,
+			String container, String folder, String destRootPath, String destName,
+			StoreExtractorOptions storeExtractorOptions, String logLevel) {
 
 		logger = null;
 
@@ -134,8 +135,9 @@ public class MailExtractThread extends Thread {
 
 		// do the job, creating a store extractor and running the extraction
 		try {
-			this.storeExtractor = StoreExtractor.createStoreExtractor(protocol, server, user, password, container,
-					folder, destRootPath, destName, storeExtractorOptions, logger);
+			String urlString = StoreExtractor.composeStoreURL(protocol, host, user, password, container);
+			this.storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
+					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
 			this.actionNumber = actionNumber;
 		} catch (Exception e) {
 			this.actionNumber = 0;
@@ -169,6 +171,11 @@ public class MailExtractThread extends Thread {
 		} catch (Exception e) {
 			System.out.println(getPrintStackTrace(e));
 		} finally {
+			try {
+				storeExtractor.endStoreExtractor();
+			} catch (ExtractionException e) {
+				logger.severe(e.getMessage());
+			}
 			if (logger != null) {
 				Handler[] handler = logger.getHandlers();
 				for (Handler h : handler) {
@@ -179,7 +186,7 @@ public class MailExtractThread extends Thread {
 			}
 		}
 	}
-	
+
 	// make a String from the stack trace
 	private final static String getPrintStackTrace(Exception e) {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -189,7 +196,5 @@ public class MailExtractThread extends Thread {
 		p.close();
 		return baos.toString();
 	}
-
-
 
 }

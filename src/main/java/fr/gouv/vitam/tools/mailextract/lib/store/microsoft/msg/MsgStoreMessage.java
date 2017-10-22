@@ -26,6 +26,22 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	MsgConversationIndex msgConversationIndex;
 	MsgAttachment[] msgAttachments;
 
+	public static final int CONVERSATION_INDEX = 0x0071;
+	public static final int SMTP_TRANSPORT_HEADER = 0x007d;
+	public static final int SUBJECT = 0x0037;
+	public static final int INTERNET_MESSAGE_ID = 0x1035;
+	public static final int SENDER_NAME = 0x0c1a;
+	public static final int SENT_REPRESENTING_NAME = 0x0042;
+	public static final int SENDER_ADDR_TYPE = 0x0c1e;
+	public static final int SENDER_EMAIL_ADDRESS = 0x0c1f;
+	public static final int SENT_REPRESENTING_ADDR_TYPE = 0x0064;
+	public static final int SENT_REPRESENTING_EMAIL_ADDRESS = 0x0065;
+	public static final int RETURN_PATH = 0x1046;
+	public static final int MESSAGE_DELIVERY_TIME = 0x0e06;
+	public static final int CLIENT_SUBMIT_TIME = 0x0039;
+	public static final int IN_REPLY_TO_ID = 0x1042;
+	public static final int MESSAGE_SIZE = 0x0e08;
+
 	public MsgStoreMessage(StoreFolder mBFolder, MAPIMessage message, long size) {
 		super(mBFolder);
 		this.message = message;
@@ -35,7 +51,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	}
 
 	private void getConversationIndex() {
-		byte[] byteConversationIndex = getNativeByteItem(MicrosoftStoreMessage.CONVERSATION_INDEX);
+		byte[] byteConversationIndex = getByteItem(CONVERSATION_INDEX);
 		if (byteConversationIndex != null) {
 			msgConversationIndex = new MsgConversationIndex(byteConversationIndex);
 			if (msgConversationIndex.getGuid() == null)
@@ -57,8 +73,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return size;
 	}
 
-	@Override
-	protected String getNativeStringItem(int item) {
+	private String getStringItem(int item) {
 		String result = "";
 		MAPIProperty prop = MAPIProperty.get(item);
 		List<Chunk> lChunk = message.getMainChunks().getAll().get(prop);
@@ -76,8 +91,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
-	@Override
-	protected byte[] getNativeByteItem(int item) {
+	private byte[] getByteItem(int item) {
 		byte[] result = null;
 		MAPIProperty prop = MAPIProperty.get(item);
 		List<Chunk> lChunk = message.getMainChunks().getAll().get(prop);
@@ -95,8 +109,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
-	@Override
-	protected Date getNativeDateItem(int item) {
+	private Date getDateItem(int item) {
 		Date result = null;
 		MAPIProperty prop = MAPIProperty.get(item);
 		List<PropertyValue> lVal = message.getMainChunks().getMessageProperties().getProperties().get(prop);
@@ -107,6 +120,71 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 				result = cal.getTime();
 		}
 		return result;
+	}
+
+	@Override
+	protected String getNativeSmtpTransportHeader() {
+		return getStringItem(SMTP_TRANSPORT_HEADER);
+	}
+
+	@Override
+	protected String getNativeSubject() {
+		return getStringItem(SUBJECT);
+	}
+
+	@Override
+	protected String getNativeInternetMessageId() {
+		return getStringItem(INTERNET_MESSAGE_ID);
+	}
+
+	@Override
+	protected String getNativeSenderName() {
+		return getStringItem(SENDER_NAME);
+	}
+
+	@Override
+	protected String getNativeSentRepresentingName() {
+		return getStringItem(SENT_REPRESENTING_NAME);
+	}
+
+	@Override
+	protected String getNativeSenderAddrType() {
+		return getStringItem(SENDER_ADDR_TYPE);
+	}
+
+	@Override
+	protected String getNativeSenderEmailAddress() {
+		return getStringItem(SENDER_EMAIL_ADDRESS);
+	}
+
+	@Override
+	protected String getNativeSentRepresentingAddrType() {
+		return getStringItem(SENT_REPRESENTING_ADDR_TYPE);
+	}
+
+	@Override
+	protected String getNativeSentRepresentingEmailAddress() {
+		return getStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
+	}
+
+	@Override
+	protected String getNativeReturnPath() {
+		return getStringItem(RETURN_PATH);
+	}
+
+	@Override
+	protected Date getNativeMessageDeliveryTime() {
+		return getDateItem(MESSAGE_DELIVERY_TIME);
+	}
+
+	@Override
+	protected Date getNativeClientSubmitTime() {
+		return getDateItem(CLIENT_SUBMIT_TIME);
+	}
+
+	@Override
+	protected String getNativeInReplyToId() {
+		return getStringItem(IN_REPLY_TO_ID);
 	}
 
 	@Override
@@ -259,8 +337,8 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	}
 
 	@Override
-	protected String getNativeProtocole() {
-		return "msg";
+	protected String getEmbeddedMessageScheme() {
+		return "msg.embeddedmsg";
 	}
 
 }

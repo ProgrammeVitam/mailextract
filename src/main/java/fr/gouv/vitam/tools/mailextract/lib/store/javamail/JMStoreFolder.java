@@ -64,7 +64,7 @@ public class JMStoreFolder extends StoreFolder {
 			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
 		else if (folder instanceof MboxFolder)
 			((MboxFolder) folder).setLogger(storeExtractor.getLogger());
-		if (father!=null)
+		if (father != null)
 			finalizeStoreFolder(father);
 	}
 
@@ -115,6 +115,9 @@ public class JMStoreFolder extends StoreFolder {
 		} catch (MessagingException e) {
 			throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
 		}
+
+		// no need to return to attachment the binary form if embedded as it's
+		// already the extraction source
 	}
 
 	/*

@@ -28,13 +28,18 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg;
 
 import java.util.logging.Logger;
 
+import com.pff.PSTMessage;
+
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
- * StoreExtractor sub-class for embedded messages extracted through libpst library.
+ * StoreExtractor sub-class for embedded messages extracted through libpst
+ * library.
  * <p>
  * The java-libpst is a pure java library for the reading of Outlook PST and OST
  * files.
@@ -47,30 +52,18 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class PstEmbeddedStoreExtractor extends StoreExtractor {
+public class PstEmbeddedStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor{
+
+	// Attachment to complete with decoded form
+	private StoreMessageAttachment attachment;
 
 	/**
 	 * Instantiates a new LP embedded message store extractor.
 	 *
-	 * @param protocol
-	 *            Protocol used for extraction (embeddedmsg)
-	 * @param server
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param container
-	 *            Path to the local extraction target (Thunderbird or Outlook
-	 * @param folder
-	 *            Path of the extracted folder in the account mail box, can be
-	 *            null if default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
-	 * @param options
-	 *            Options (flag composition of CONST_)
+	 * @param attachment
+	 *            the attachment
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -82,12 +75,18 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public PstEmbeddedStoreExtractor(String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
-			Logger logger, StoreMessageAttachment a) throws ExtractionException {
-		super("embeddedpstmsg", null, null, null, null, null, destRootPath, destName, options, rootStoreExtractor,
-				logger);
+	public PstEmbeddedStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode,
+			StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger)
+			throws ExtractionException {
+		super("pst.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
 
-		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		rootAnalysisMBFolder= PstEmbeddedStoreFolder.createRootFolder(this, a, rootNode);
-		}
+		this.attachment=attachment;
+		setRootFolder(PstEmbeddedStoreFolder.createRootFolder((PSTMessage)attachment.getStoreContent(),this,rootNode));
+	}
+
+	@Override
+	public StoreMessageAttachment getAttachment() {
+		return attachment;
+	}
+
 }

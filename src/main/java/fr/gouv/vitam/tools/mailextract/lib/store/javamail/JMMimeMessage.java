@@ -25,27 +25,28 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
+package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import javax.mail.Folder;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
 /**
- * JavaMail Message for mbox file structure.
+ * JavaMail Message for for RFC822 uniq message file.
  * <p>
  * This class as the only action to use the general parse method of MimeMessage
- * on the InputStream constructed in MboxFolder
+ * on the InputStream constructed in RFC822Folder
  * <p>
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class MboxMessage extends MimeMessage {
+public class JMMimeMessage extends MimeMessage {
 
 	/**
-	 * Instantiates a new thunder mbox message.
+	 * Instantiates a new mime message in Javamail context.
 	 *
 	 * @param folder
 	 *            JavaMail folder
@@ -58,8 +59,7 @@ public class MboxMessage extends MimeMessage {
 	 * @throws IOException
 	 *             Signals that an I/O exception has occurred.
 	 */
-	public MboxMessage(MboxFolder folder, InputStream is, int msgno)
-			throws MessagingException, IOException {
+	public JMMimeMessage(Folder folder, InputStream is, int msgno) throws MessagingException {
 		super(folder, is, msgno);
 	}
 }

@@ -40,6 +40,8 @@ import javax.mail.MessagingException;
 import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
 
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMMimeMessage;
+
 /**
  * JavaMail Folder for mbox file structure.
  * <p>
@@ -52,7 +54,7 @@ public class MboxFolder extends Folder {
 
 	private volatile boolean opened = false;
 	private MboxStore mboxstore;
-	private MboxFileReader mboxfilereader;
+	private MboxReader mboxfilereader;
 	private Logger logger = Logger.getGlobal();
 	private List<MessageFork> messages;
 	private int total; // total number of messages in mailbox
@@ -265,7 +267,10 @@ public class MboxFolder extends Folder {
 		MessageFork mf;
 
 		try {
-			mboxfilereader = new MboxFileReader(logger,  new File(mboxstore.getContainer()));
+			if (mboxstore.getObjectContent() != null)
+				mboxfilereader = new MboxReader(logger, (byte[]) mboxstore.getObjectContent());
+			else
+				mboxfilereader = new MboxReader(logger, new File(mboxstore.getContainer()));
 			opened = true; // now really opened
 			long beg, end;
 
@@ -330,12 +335,9 @@ public class MboxFolder extends Folder {
 		// each get regenerate a message with no strong link so that it can be
 		// GC
 		// optimal for the extraction usage with only one get by message
-		try {
-			m = new MboxMessage(this,
-					mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
-		} catch (IOException e) {
-			throw new MessagingException("mbox: open Failure, can't read: " + mboxstore.getContainer());
-		}
+		m = new JMMimeMessage(this, mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end),
+				msgno);
+
 		return m;
 	}
 
@@ -364,8 +366,7 @@ public class MboxFolder extends Folder {
 	public URLName getURLName() {
 		URLName storeURL = getStore().getURLName();
 
-		return new URLName(storeURL.getProtocol(), storeURL.getHost(), storeURL.getPort(),
-				mboxstore.getContainer(), storeURL.getUsername(),
-				null /* no password */);
+		return new URLName(storeURL.getProtocol(), storeURL.getHost(), storeURL.getPort(), mboxstore.getContainer(),
+				storeURL.getUsername(), null /* no password */);
 	}
 }

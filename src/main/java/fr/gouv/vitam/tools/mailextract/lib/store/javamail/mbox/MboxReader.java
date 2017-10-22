@@ -27,12 +27,15 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.logging.Logger;
 
+import javax.mail.internet.SharedInputStream;
+import javax.mail.util.SharedByteArrayInputStream;
 import javax.mail.util.SharedFileInputStream;
 
 /**
@@ -41,13 +44,16 @@ import javax.mail.util.SharedFileInputStream;
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class MboxFileReader {
+public class MboxReader {
 
 	private Logger logger;
 
-	private RandomAccessFile raf;
-	private SharedFileInputStream sifs;
 	private String filePath;
+
+	// for random access to data when file
+	private RandomAccessFile raf;
+
+	private SharedInputStream sifs;
 
 	// for buffered access to RandomAccessFile
 	private static int BUFFER_SIZE = 4096;
@@ -68,11 +74,26 @@ public class MboxFileReader {
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
-	public MboxFileReader(Logger logger, File file) throws IOException {
+	public MboxReader(Logger logger, File file) throws IOException {
 		this.logger = logger;
 		this.filePath = file.getPath();
-		raf = new RandomAccessFile(file, "r");
 		sifs = new SharedFileInputStream(file);
+		raf = new RandomAccessFile(file, "r");
+	}
+
+	/**
+	 * Instantiates a new thunder mbox byte reader.
+	 *
+	 * @param logger
+	 *            Operation store extractor logger
+	 * @param file
+	 *            File
+	 * @throws IOException
+	 *             Unable to open the file.
+	 */
+	public MboxReader(Logger logger, byte[] source) throws IOException {
+		this.logger = logger;
+		sifs = new SharedByteArrayInputStream(source);
 	}
 
 	/**
@@ -96,8 +117,10 @@ public class MboxFileReader {
 	 *             Unable to close the file.
 	 */
 	public void close() throws IOException {
-		raf.close();
-		sifs.close();
+		if (raf != null)
+			raf.close();
+		if (sifs instanceof InputStream)
+			((InputStream) sifs).close();
 	}
 
 	/**
@@ -118,22 +141,34 @@ public class MboxFileReader {
 
 	// buffered read
 	private final int read() throws IOException {
-		if (curPos >= len) {
-			bufferPos = raf.getFilePointer();
-			if ((len = raf.read(buffer)) == -1)
-				return -1;
-			curPos = 0;
+		if (raf != null) {
+			// if File
+			if (curPos >= len) {
+				bufferPos = raf.getFilePointer();
+				if ((len = raf.read(buffer)) == -1)
+					return -1;
+				curPos = 0;
+			}
+		} else {
+			// if byte[]
+			// TODO get rid of buffer when byte[]
+			if (curPos >= len) {
+				bufferPos = sifs.getPosition();
+				if ((len = ((ByteArrayInputStream)sifs).read(buffer)) == -1)
+					return -1;
+				curPos = 0;
+			}
 		}
 		return buffer[curPos++];
 	}
 
 	// buffered get file pointer
-	private final long getFilePointer() {
+	private final long getPointer() {
 		return bufferPos + curPos;
 	}
 
 	// read a complete line but return only first 64 bytes
-	private final int readFirstBytesLine(RandomAccessFile raf, byte[] buffer) throws IOException {
+	private final int readFirstBytesLine(byte[] buffer) throws IOException {
 		int i = 0;
 		int b;
 
@@ -193,8 +228,8 @@ public class MboxFileReader {
 		byte[] buffer = new byte[64];
 
 		while (true) {
-			beg = getFilePointer();
-			len = readFirstBytesLine(raf, buffer);
+			beg = getPointer();
+			len = readFirstBytesLine(buffer);
 			if (len == -1) {
 				fromLineEnd = -1;
 				return -1;
@@ -203,7 +238,7 @@ public class MboxFileReader {
 					&& (buffer[4] == ' ')) {
 				// then verify whole line compliance
 				if (isCompliantFromLine(buffer, len)) {
-					fromLineEnd = getFilePointer();
+					fromLineEnd = getPointer();
 					return beg;
 				}
 			}

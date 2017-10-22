@@ -48,7 +48,8 @@ import javax.mail.URLName;
 
 import com.sun.mail.imap.protocol.BASE64MailboxDecoder;
 
-import fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxFileReader;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMMimeMessage;
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxReader;
 
 /**
  * JavaMail Folder for Thunderbird mbox directory/file structure.
@@ -67,7 +68,7 @@ public class ThunderbirdFolder extends Folder {
 	private List<MessageFork> messages;
 	private ThunderbirdStore mstore;
 	private File folderFile;
-	private MboxFileReader mboxfilereader;
+	private MboxReader mboxfilereader;
 	private Logger logger = Logger.getGlobal();
 
 	private class MessageFork {
@@ -499,7 +500,7 @@ public class ThunderbirdFolder extends Folder {
 		MessageFork mf;
 
 		try {
-			mboxfilereader = new MboxFileReader(logger, folderFile);
+			mboxfilereader = new MboxReader(logger, folderFile);
 			opened = true; // now really opened
 			long beg, end;
 
@@ -564,12 +565,9 @@ public class ThunderbirdFolder extends Folder {
 		// each get regenerate a message with no strong link so that it can be
 		// GC
 		// optimal for the extraction usage with only one get by message
-		try {
-			m = new ThunderbirdMessage(this,
-					mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end), msgno);
-		} catch (IOException e) {
-			throw new MessagingException("ThunderMBox: Open Failure, can't read: " + folderFile.getPath());
-		}
+		m = new JMMimeMessage(this, mboxfilereader.newStream(messages.get(msgno - 1).beg, messages.get(msgno - 1).end),
+				msgno);
+
 		return m;
 	}
 

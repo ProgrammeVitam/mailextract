@@ -533,7 +533,7 @@ public class JMStoreMessage extends StoreMessage {
 			date = disposition.getParameter("modification-date");
 			if ((date != null) && (!date.isEmpty()))
 				aModificationDate = mailDateFormat.parse(date);
-			aName=disposition.getParameter("filename");
+			aName = disposition.getParameter("filename");
 		}
 
 		// get all we can from content-type if any
@@ -543,10 +543,10 @@ public class JMStoreMessage extends StoreMessage {
 			try {
 				contenttype = new ContentType(headers[0]);
 				if (contenttype.getSubType().equalsIgnoreCase("RFC822"))
-					aType = StoreMessageAttachment.EML_STORE_ATTACHMENT + StoreMessageAttachment.STORE_ATTACHMENT;
+					aType = StoreMessageAttachment.STORE_ATTACHMENT;
 				aMimeType = contenttype.getBaseType();
-				if (aName==null)
-					aName=contenttype.getParameter("name");
+				if (aName == null)
+					aName = contenttype.getParameter("name");
 			} catch (Exception e) {
 				aMimeType = headers[0];
 				if (aMimeType.indexOf(';') != -1)
@@ -571,8 +571,12 @@ public class JMStoreMessage extends StoreMessage {
 		if (aName == null)
 			aName = "noname";
 
-		lStoreMessageAttachment.add(new StoreMessageAttachment(MimeUtility.decodeText(aName),
-				getPartRawContent(bodyPart), aCreationDate, aModificationDate, aMimeType, aContentID, aType));
+		if (aType == StoreMessageAttachment.STORE_ATTACHMENT)
+			lStoreMessageAttachment.add(new StoreMessageAttachment(getPartRawContent(bodyPart), "eml",
+					MimeUtility.decodeText(aName), aCreationDate, aModificationDate, aMimeType, aContentID, aType));
+		else
+			lStoreMessageAttachment.add(new StoreMessageAttachment(getPartRawContent(bodyPart), "file",
+					MimeUtility.decodeText(aName), aCreationDate, aModificationDate, aMimeType, aContentID, aType));
 	}
 
 	/*

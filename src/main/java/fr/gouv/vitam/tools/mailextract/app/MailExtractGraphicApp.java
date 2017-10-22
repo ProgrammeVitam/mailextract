@@ -37,7 +37,7 @@ import java.io.PrintStream;
 import javax.swing.JFileChooser;
 import javax.swing.SwingUtilities;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 
 /**
  * MailExtractGraphicApp class for the graphic application.
@@ -51,12 +51,13 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	private String destRootPath = "";
 	private String destName = "";
 	private String protocol = "";
-	private String server = "localhost";
+	private String host = "localhost";
+	private int port = -1;
 	private String user = "";
 	private String password = "";
 	private String container = "";
 	private String folder = "";
-	private int storeExtractorOptions = 0;
+	private StoreExtractorOptions storeExtractorOptions;
 	private boolean local = true;;
 	private String logLevel = "";
 
@@ -84,10 +85,12 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	 * @param local
 	 *            the local
 	 */
-	MailExtractGraphicApp(String protocol, String server, String user, String password, String container, String folder,
-			String destRootPath, String destName, int storeExtractorOptions, String logLevel, boolean local) {
+	MailExtractGraphicApp(String protocol, String host, int port, String user, String password, String container,
+			String folder, String destRootPath, String destName, StoreExtractorOptions storeExtractorOptions,
+			String logLevel, boolean local) {
 		this.protocol = protocol;
-		this.server = server;
+		this.host = host;
+		this.port = port;
 		this.user = user;
 		this.password = password;
 		this.container = container;
@@ -129,6 +132,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				mainWindow.emlRadioButton.doClick();
 			else if (protocol.equals("thunderbird"))
 				mainWindow.thunderbirdRadioButton.doClick();
+			else if (protocol.equals("msg"))
+				mainWindow.msgRadioButton.doClick();
 			mainWindow.containerField.setText(container);
 		} else {
 			mainWindow.protocoleRadioButton.doClick();
@@ -138,24 +143,22 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				mainWindow.imapsRadioButton.doClick();
 			mainWindow.userField.setText(user);
 			mainWindow.passwordField.setText(password);
-			mainWindow.serverField.setText(server);
+			mainWindow.serverField.setText(host+(port==-1?"":":"+Integer.toString(port)));
 		}
 		mainWindow.folderField.setText(folder);
 		mainWindow.savedirField.setText(destRootPath);
 		mainWindow.nameField.setText(destName);
 
-		if ((storeExtractorOptions & StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS) != 0) {
+		if (storeExtractorOptions.keepOnlyDeepEmptyFolders) {
 			mainWindow.keeponlydeepCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions & StoreExtractor.CONST_DROP_EMPTY_FOLDERS) != 0) {
+		if (storeExtractorOptions.dropEmptyFolders) {
 			mainWindow.dropemptyfoldersCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions & StoreExtractor.CONST_WARNING_MSG_PROBLEM) != 0) {
+		if (storeExtractorOptions.warningMsgProblem) {
 			mainWindow.warningCheckBox.setSelected(true);
 		}
-		if ((storeExtractorOptions & StoreExtractor.CONST_NAMES_SHORTENED) != 0) {
-			mainWindow.nameshortenedCheckBox.setSelected(true);
-		}
+		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 
 		// convert from normalized log level name to the choice list log level
 		for (int i = 0; i < 7; i++) {
@@ -182,6 +185,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.pstRadioButton.setEnabled(true);
 			mainWindow.mboxRadioButton.setEnabled(true);
 			mainWindow.emlRadioButton.setEnabled(true);
+			mainWindow.msgRadioButton.setEnabled(true);
 			mainWindow.containerLabel.setEnabled(true);
 			mainWindow.containerField.setEnabled(true);
 			mainWindow.containerButton.setEnabled(true);
@@ -198,6 +202,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.pstRadioButton.setEnabled(false);
 			mainWindow.mboxRadioButton.setEnabled(false);
 			mainWindow.emlRadioButton.setEnabled(false);
+			mainWindow.msgRadioButton.setEnabled(false);
 			mainWindow.containerLabel.setEnabled(false);
 			mainWindow.containerField.setEnabled(false);
 			mainWindow.containerButton.setEnabled(false);
@@ -267,7 +272,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (actionNumber == EMPTY_LOG) {
 			mainWindow.consoleTextArea.setText("");
 		} else
-			new MailExtractThread(actionNumber, protocol, server, user, password, container, folder, destRootPath,
+			new MailExtractThread(actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
 					destName, storeExtractorOptions, logLevel).start();
 	}
 
@@ -278,12 +283,13 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		destRootPath = "";
 		destName = "";
 		protocol = "";
-		server = "localhost";
-		user = "";
-		password = "";
+		host = "localhost";
+		port=-1;
+		user = null;
+		password = null;
 		container = "";
 		folder = "";
-		storeExtractorOptions = 0;
+		storeExtractorOptions = new StoreExtractorOptions();
 		local = true;
 
 		// local
@@ -292,6 +298,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				protocol = "thunderbird";
 			else if (mainWindow.emlRadioButton.isSelected())
 				protocol = "eml";
+			else if (mainWindow.msgRadioButton.isSelected())
+				protocol = "msg";
 			else if (mainWindow.mboxRadioButton.isSelected())
 				protocol = "mbox";
 			else if (mainWindow.pstRadioButton.isSelected())
@@ -304,7 +312,13 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				protocol = "imaps";
 			else
 				protocol = "imap";
-			server = mainWindow.serverField.getText();
+			String server = mainWindow.serverField.getText();
+			if (server.indexOf(':')>=0){
+				host=server.substring(0, server.indexOf(':'));
+				port=Integer.parseInt(server.substring(server.indexOf(':')+1));
+			}
+			else 
+				host=server;
 			user = mainWindow.userField.getText();
 			password = mainWindow.passwordField.getText();
 		}
@@ -313,16 +327,19 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		destName = mainWindow.nameField.getText();
 
 		if (mainWindow.keeponlydeepCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS;
+			storeExtractorOptions.keepOnlyDeepEmptyFolders = true;
 		}
 		if (mainWindow.dropemptyfoldersCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_DROP_EMPTY_FOLDERS;
+			storeExtractorOptions.dropEmptyFolders = true;
 		}
 		if (mainWindow.warningCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_WARNING_MSG_PROBLEM;
+			storeExtractorOptions.warningMsgProblem = true;
 		}
-		if (mainWindow.nameshortenedCheckBox.isSelected()) {
-			storeExtractorOptions |= StoreExtractor.CONST_NAMES_SHORTENED;
+		try {
+			storeExtractorOptions.namesLength=Integer.parseInt(mainWindow.namesLengthField.getText());
+		}
+		catch (NumberFormatException e){
+			mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 		}
 
 		// convert from log level name in the choice list to normalized log

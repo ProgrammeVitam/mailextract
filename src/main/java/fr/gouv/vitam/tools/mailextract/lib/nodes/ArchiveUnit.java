@@ -54,6 +54,7 @@ public class ArchiveUnit {
 	private StoreExtractor storeExtractor;
 	private String rootPath;
 	private String name;
+	private boolean forceMessageUnit;
 	private MetadataXMLList contentmetadatalist = new MetadataXMLList();
 	private List<ArchiveObject> objects = new ArrayList<ArchiveObject>();
 
@@ -88,6 +89,7 @@ public class ArchiveUnit {
 		this.storeExtractor = storeExtractor;
 		this.rootPath = rootPath;
 		this.name = name;
+		this.forceMessageUnit = false;
 	}
 
 	/**
@@ -111,8 +113,11 @@ public class ArchiveUnit {
 		this.storeExtractor = storeExtractor;
 		if (unitType == null)
 			this.name = name;
-		else
+		else {
 			this.name = this.normalizeUniqUnitname(unitType, name);
+			if (unitType.equals("Message"))
+				forceMessageUnit = true;
+		}
 		this.rootPath = father.getFullName();
 	}
 
@@ -149,12 +154,19 @@ public class ArchiveUnit {
 	}
 
 	/**
+	 * Force the ArchiveUnit as an ArchiveUnit with objects.
+	 */
+	public void setObjectUnit(boolean b) {
+		forceMessageUnit = true;
+	}
+
+	/**
 	 * Gets the name.
 	 *
 	 * @return Name of Archive Unit in directory name
 	 */
 	public String getName() {
-		if (objects.isEmpty())
+		if (!forceMessageUnit && (objects.isEmpty()))
 			return name;
 		else
 			return "__" + name + "__";
@@ -371,7 +383,7 @@ public class ArchiveUnit {
 		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
 			p.identifier = s.substring(beg + 1, end).trim();
 			if (p.identifier.isEmpty())
-				p.identifier = "[Vide]";			
+				p.identifier = "[Vide]";
 			name = s.substring(0, beg).trim();
 			if (!name.isEmpty()) {
 				p.birthName = name;
@@ -514,10 +526,7 @@ public class ArchiveUnit {
 		} else
 			result = filename;
 
-		if (storeExtractor.hasOptions(StoreExtractor.CONST_NAMES_SHORTENED))
-			len = 32 - extension.length();
-		else
-			len = 128 - extension.length();
+		len = storeExtractor.getOptions().namesLength+20;
 
 		// TODO: best filter
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
@@ -533,12 +542,10 @@ public class ArchiveUnit {
 		String result = "";
 		int len;
 
-		if (storeExtractor.hasOptions(StoreExtractor.CONST_NAMES_SHORTENED)) {
-			len = 8;
+		len = storeExtractor.getOptions().namesLength;
+		if (len < 32)
 			type = type.substring(0, 1);
-		} else {
-			len = 32;
-		}
+
 		if (filename != null)
 			result = filename.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}]", "-");
 

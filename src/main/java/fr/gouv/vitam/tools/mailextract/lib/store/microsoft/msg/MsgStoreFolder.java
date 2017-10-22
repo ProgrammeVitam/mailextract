@@ -29,15 +29,15 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg;
 import org.apache.poi.hsmf.MAPIMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
-// TODO: Auto-generated Javadoc
 /**
  * The Class MsgStoreFolder.
  */
 public class MsgStoreFolder extends StoreFolder {
-	
+
 	/** The msg store message. */
 	MsgStoreMessage msgStoreMessage;
 
@@ -51,10 +51,10 @@ public class MsgStoreFolder extends StoreFolder {
 	 * @param size
 	 *            the size
 	 */
-	public MsgStoreFolder(MsgStoreExtractor storeExtractor, MAPIMessage message, long size){
+	public MsgStoreFolder(MsgStoreExtractor storeExtractor, MAPIMessage message, long size) {
 		super(storeExtractor);
-		
-		this.msgStoreMessage=new MsgStoreMessage(this,message,size);
+
+		this.msgStoreMessage = new MsgStoreMessage(this, message, size);
 	}
 
 	/**
@@ -78,18 +78,22 @@ public class MsgStoreFolder extends StoreFolder {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasMessages()
 	 */
 	public boolean hasMessages() throws ExtractionException {
-		return(true);
+		return (true);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasSubfolders()
 	 */
 	public boolean hasSubfolders() throws ExtractionException {
-		return(false);
+		return (false);
 	}
 
 	/*
@@ -104,6 +108,15 @@ public class MsgStoreFolder extends StoreFolder {
 		dateRange.extendRange(msgStoreMessage.getSentDate());
 		msgStoreMessage.extractMessage(writeFlag);
 		msgStoreMessage.countMessage();
+
+		// return to attachment the binary form if exists
+		StoreMessageAttachment attachment = ((MsgStoreExtractor) storeExtractor).getAttachment();
+		if (attachment != null) {
+			attachment.setStoreContent(msgStoreMessage.getMimeContent());
+			attachment.setMimeType("message/rfc822");
+			if ((attachment.getName() == null) || attachment.getName().isEmpty())
+				attachment.setName(msgStoreMessage.getSubject() + ".eml");
+		}
 	}
 
 	/*

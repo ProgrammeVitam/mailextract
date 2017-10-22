@@ -29,13 +29,18 @@ package fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+
 import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
+import javax.mail.util.SharedByteArrayInputStream;
 import javax.mail.util.SharedFileInputStream;
+
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMMimeMessage;
 
 /**
  * JavaMail Folder simulated for Eml uniq message file.
@@ -49,7 +54,7 @@ public class EmlFolder extends Folder {
 
 	private volatile boolean opened = false;
 	private EmlStore emlstore;
-	private SharedFileInputStream emlfileinputstream;
+	private InputStream emlInputStream;
 
 	/**
 	 * Instantiates a new Eml simulated folder.
@@ -233,12 +238,18 @@ public class EmlFolder extends Folder {
 			break;
 		}
 
-		try {
-			emlfileinputstream = new SharedFileInputStream(new File(emlstore.getContainer()));
-		} catch (IOException e) {
-			throw new MessagingException("eml: open failure, can't read: " + emlstore.getContainer());
-		}
+		// create input stream from embedded content
+		if (emlstore.getObjectContent() != null) {
+			emlInputStream = new SharedByteArrayInputStream((byte[]) emlstore.getObjectContent());
+		} else {
+			// create input stream from file
+			try {
 
+				emlInputStream = new SharedFileInputStream(new File(emlstore.getContainer()));
+			} catch (IOException e) {
+				throw new MessagingException("eml: open failure, can't read: " + emlstore.getContainer());
+			}
+		}
 		opened = true;
 	}
 
@@ -253,7 +264,7 @@ public class EmlFolder extends Folder {
 			throw new IllegalStateException("eml: simulated folder is not open");
 		opened = false;
 		try {
-			emlfileinputstream.close();
+			emlInputStream.close();
 		} catch (IOException e) {
 			// forget it
 		}
@@ -280,7 +291,7 @@ public class EmlFolder extends Folder {
 			throw new IndexOutOfBoundsException("Eml: only message 1, no message number " + msgno);
 		Message m;
 
-		m = new EmlMessage(this, emlfileinputstream, msgno);
+		m = new JMMimeMessage(this, emlInputStream, msgno);
 
 		return m;
 	}
@@ -310,8 +321,7 @@ public class EmlFolder extends Folder {
 	public URLName getURLName() {
 		URLName storeURL = getStore().getURLName();
 
-		return new URLName(storeURL.getProtocol(), storeURL.getHost(), storeURL.getPort(),
-				emlstore.getContainer(), storeURL.getUsername(),
-				null /* no password */);
+		return new URLName(storeURL.getProtocol(), storeURL.getHost(), storeURL.getPort(), emlstore.getContainer(),
+				storeURL.getUsername(), null /* no password */);
 	}
 }

@@ -32,6 +32,8 @@ import java.net.URLDecoder;
 
 import javax.mail.*;
 
+import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMEmbeddedStore;
+
 // TODO: Auto-generated Javadoc
 /**
  * JavaMail Store for eml uniq message file.
@@ -39,10 +41,13 @@ import javax.mail.*;
  * <b>Warning:</b>Only for reading and without file locking or new messages
  * management.
  */
-public class EmlStore extends Store {
+public class EmlStore extends Store implements JMEmbeddedStore {
 
 	/** Path to the target eml file **/
 	private String container;
+
+	/** String eml content if embedded **/
+	private byte[] objectContent;
 
 	/**
 	 * Gets the container.
@@ -63,12 +68,6 @@ public class EmlStore extends Store {
 	 */
 	public EmlStore(Session session, URLName url) {
 		super(session, url);
-
-		try {
-			container = URLDecoder.decode(url.getFile(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// not possible
-		}
 	}
 
 	/**
@@ -92,18 +91,26 @@ public class EmlStore extends Store {
 	 */
 	@Override
 	protected boolean protocolConnect(String host, int port, String user, String passwd) throws MessagingException {
-		// verify params significance in ThunderMBox context
-		if (!host.equals("localhost"))
-			throw new MessagingException("eml: only support localhost");
-		if (!((passwd == null) || (passwd.isEmpty())))
-			throw new MessagingException("eml: does not allow passwords");
-		if (port != -1)
-			throw new MessagingException("eml: does not allow port selection");
+		// verify only if not embedded
+		if (objectContent == null) {
+			// verify params significance in ThunderMBox context
+			if (!host.equals("localhost"))
+				throw new MessagingException("eml: only support localhost");
+			if (!((passwd == null) || (passwd.isEmpty())))
+				throw new MessagingException("eml: does not allow passwords");
+			if (port != -1)
+				throw new MessagingException("eml: does not allow port selection");
 
-		// verify declared file for eml availability
-		File test = new File(container);
-		if (!test.isFile()) {
-			throw new MessagingException("Eml: " + container + " is not an existing file");
+			// verify declared file for eml availability
+			try {
+				container = URLDecoder.decode(url.getFile(), "UTF-8");
+			} catch (Exception e) {
+				throw new MessagingException("Eml: Can't decode the container file name");
+			}
+			File test = new File(container);
+			if (!test.isFile()) {
+				throw new MessagingException("Eml: " + container + " is not an existing file");
+			}
 		}
 		return true;
 	}
@@ -139,16 +146,21 @@ public class EmlStore extends Store {
 	@Override
 	public Folder getFolder(URLName url) throws MessagingException {
 		// verify that the root directory in store is respected
-		String name = "";
-		try {
-			name = URLDecoder.decode(url.getFile(), "UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			// not possible
-		}
-		if ((name == null) || (name.isEmpty()))
+		if ((url.getFile() == null) || (url.getFile().isEmpty()))
 			return new EmlFolder(this);
 		else
-			throw new MessagingException("eml: only one root simulated folder, no " + name + " folder");
+			throw new MessagingException("eml: only one root simulated folder, no " + url.getFile() + " folder");
+	}
+
+	@Override
+	public void setObjectContent(Object objectContent) {
+		if (objectContent instanceof byte[])
+			this.objectContent = (byte[]) objectContent;
+	}
+
+	@Override
+	public Object getObjectContent() {
+		return objectContent;
 	}
 
 }

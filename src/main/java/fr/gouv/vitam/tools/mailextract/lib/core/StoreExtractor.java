@@ -35,9 +35,15 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
+
+import javax.mail.URLName;
 
 /**
  * Abstract factory class for operation context on a defined mailbox.
@@ -116,42 +122,63 @@ import java.util.logging.Logger;
  */
 public abstract class StoreExtractor {
 
-	/** Protocol used for extraction (imap| thunderbird| pst) */
-	protected String protocol;
-	/** Server of target account ((hostname|ip)[:port]) **/
-	protected String server;
-	/** User account name **/
+	// TODO Map of StoreExtractor classes by scheme
+
+	// StoreExtractor definition parameters
+
+	/**
+	 * Scheme defining specific store extractor (imap| thunderbird| pst|
+	 * mbox|...)
+	 */
+	protected String scheme;
+
+	// /** Server:port of target store ((hostname|ip)[:port]) **/
+	// protected String authority;
+
+	/** Hostname of target store in ((hostname|ip)[:port]) **/
+	protected String host;
+
+	/** Port of target store in ((hostname|ip)[:port]) **/
+	protected int port;
+
+	/** User account name, can be null if not used **/
 	protected String user;
+
 	/** Password, can be null if not used **/
 	protected String password;
-	/**
-	 * Path to the local extraction target (Thunderbird or Outlook), can be null
-	 * of not used
-	 **/
-	protected String container;
-	/**
-	 * Path of the extracted folder in the account mail box, can be null if
-	 * default root folder
-	 **/
-	protected String folder;
 
-	/** Path and name of the extraction directory */
-	protected String destRootPath, destName;
-	
+	/** Path of ressource to extract **/
+	protected String path;
+
+	/**
+	 * Path of the folder in the store used as root for extraction, can be null
+	 * if default root folder
+	 **/
+	protected String storeFolder;
+
+	// /** Path and name of the extraction directory */
+	// protected String destRootPath, destName;
+
+	/** Path of the directory where will be the extraction directory */
+	protected String destRootPath;
+
+	/** Name of the extraction directory */
+	protected String destName;
+
 	/** Extractor options, flags coded on an int, defined thru constants **/
-	protected int options;
+	protected StoreExtractorOptions options;
 
 	/** Extractor context description */
 	protected String description;
-
-	/** Root folder for extraction (can be different form account root) **/
-	protected StoreFolder rootAnalysisMBFolder;
 
 	// private fields for global statictics
 	private int totalMessagesCount;
 	private int totalAttachedMessagesCount;
 	private int totalFoldersCount;
 	private long totalRawSize;
+
+	// private object extraction root folder in store
+	private StoreFolder rootAnalysisMBFolder;
 
 	// private root storeExtractor for nested extraction, null if root
 	private StoreExtractor rootStoreExtractor;
@@ -160,11 +187,50 @@ public abstract class StoreExtractor {
 	private Logger logger;
 
 	/**
+	 * Compose an URL String.
+	 *
+	 * @param scheme
+	 *            Type of local store to extract (thunderbird|pst|eml|mbox) or
+	 *            protocol for server access (imap|imaps|pop3...)
+	 * @param authority
+	 *            Server:port of target account ((hostname|ip)[:port
+	 * @param user
+	 *            User account name, can be null if not used
+	 * @param password
+	 *            Password, can be null if not used
+	 * @param path
+	 *            Path to the ressource
+	 */
+	static public String composeStoreURL(String scheme, String authority, String user, String password, String path) {
+		String result = null;
+
+		try {
+			result = scheme + "://";
+			if (user != null && !user.isEmpty()) {
+				result += URLEncoder.encode(user, "UTF-8");
+				if (password != null && !password.isEmpty())
+					result += ":" + URLEncoder.encode(password, "UTF-8");
+				result += "@";
+			}
+			if (authority != null && !authority.isEmpty())
+				result += authority;
+			else
+				result += "localhost";
+			if (path != null && !path.isEmpty())
+				result += "/" + URLEncoder.encode(path, "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// impossible case with UTF-8
+		}
+		return result;
+	}
+
+	/**
 	 * Instantiates a new store extractor.
 	 *
 	 * @param protocol
-	 *            Type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
-	 * @param server
+	 *            Type of local container to extract (thunderbird|pst|eml|mbox)
+	 *            or protocol for server access (imap|imaps|pop3...)
+	 * @param authority
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
 	 *            User account name
@@ -172,9 +238,9 @@ public abstract class StoreExtractor {
 	 *            Password, can be null if not used
 	 * @param container
 	 *            Path to the local extraction target (Thunderbird or Outlook
-	 * @param folder
-	 *            Path of the extracted folder in the account mail box, can be
-	 *            null if default root folder
+	 * @param storeFolder
+	 *            Path of the extracted folder in the store box, can be null if
+	 *            default root folder
 	 * @param destRootPath
 	 *            Root path of the extraction directory
 	 * @param destName
@@ -190,19 +256,32 @@ public abstract class StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected StoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
-			Logger logger) throws ExtractionException {
+	protected StoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
 
-		this.protocol = protocol;
-		this.server = server;
-		this.user = user;
-		this.password = password;
-		this.container = container;
-		this.folder = folder;
-		this.destRootPath = destRootPath;
-		this.destName = destName;
-		this.options = options;
+		URLName url;
+		url = new URLName(urlString);
+
+		this.scheme = url.getProtocol();
+		this.host = url.getHost();
+		this.port = url.getPort();
+		try {
+			if (url.getUsername() != null)
+				this.user = URLDecoder.decode(url.getUsername(), "UTF-8");
+			if (url.getPassword() != null)
+				this.password = URLDecoder.decode(url.getPassword(), "UTF-8");
+			if (url.getFile() != null)
+				this.path = URLDecoder.decode(url.getFile(), "UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			// not possible
+		}
+		this.storeFolder = storeFolder;
+		this.destRootPath = Paths.get(destPathString).normalize().getParent().toString();
+		this.destName = Paths.get(destPathString).normalize().getFileName().toString();
+		if (options == null)
+			this.options = new StoreExtractorOptions();
+		else
+			this.options = options;
 
 		this.totalFoldersCount = 0;
 		this.totalAttachedMessagesCount = 0;
@@ -212,20 +291,8 @@ public abstract class StoreExtractor {
 		this.rootStoreExtractor = rootStoreExtractor;
 		this.logger = logger;
 
-		this.description = ":p:" + protocol + ":u:" + user;
+		this.description = ":p:" + scheme + ":u:" + user;
 	}
-
-	/** KEEP_ONLY_DEEP_EMPTY_FOLDERS option constant */
-	final static public int CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS = 1;
-
-	/** DROP_EMPTY_FOLDERS option constant */
-	final static public int CONST_DROP_EMPTY_FOLDERS = 2;
-
-	/** WARNING_MSG_PROBLEMS option constant */
-	final static public int CONST_WARNING_MSG_PROBLEM = 4;
-
-	/** NAMES_SHORTENED option constant */
-	final static public int CONST_NAMES_SHORTENED = 8;
 
 	/**
 	 * Log the context of the StoreExtractor.
@@ -234,38 +301,37 @@ public abstract class StoreExtractor {
 
 		// if root extractor log extraction context
 		if (rootStoreExtractor == null) {
-			getLogger().info("Target mail box with protocol=" + protocol
-					+ (server == null || server.isEmpty() ? "" : "  server=" + server)
-					+ (user == null || user.isEmpty() ? "" : " user=" + user)
-					+ (password == null || password.isEmpty() ? "" : " password=" + password)
-					+ (container == null || container.isEmpty() ? "" : " container=" + container)
-					+ (folder == null || folder.isEmpty() ? "" : " folder=" + folder));
-			getLogger().info("to directory " + destRootPath + File.separator + destName);
+			getLogger().info(
+					"Target store with scheme=" + scheme + (host == null || host.isEmpty() ? "" : "  server=" + host)
+							+ (port == -1 ? "" : ":" + Integer.toString(port))
+							+ (user == null || user.isEmpty() ? "" : " user=" + user)
+							+ (password == null || password.isEmpty() ? "" : " password=" + password)
+							+ (path == null || path.isEmpty() ? "" : " path=" + path)
+							+ (storeFolder == null || storeFolder.isEmpty() ? "" : " store folder=" + storeFolder));
+			getLogger().info("to " + destRootPath + " in " + destName + " directory");
 
 			boolean first = true;
 			String optionsLog = "";
-			if (hasOptions(CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)) {
+			if (options.keepOnlyDeepEmptyFolders) {
 				optionsLog += "keeping all empty folders except root level ones";
 				first = false;
 			}
-			if (hasOptions(CONST_DROP_EMPTY_FOLDERS)) {
+			if (options.dropEmptyFolders) {
 				if (!first)
 					optionsLog += ", ";
 				optionsLog += "droping all empty folders";
 				first = false;
 			}
-			if (hasOptions(CONST_WARNING_MSG_PROBLEM)) {
+			if (options.warningMsgProblem) {
 				if (!first)
 					optionsLog += ", ";
 				optionsLog += "generate warning when there's a problem on a message (otherwise log at FINEST level)";
 				first = false;
 			}
-			if (hasOptions(CONST_NAMES_SHORTENED)) {
-				if (!first)
-					optionsLog += ", ";
-				optionsLog += "with shortened names";
-				first = false;
-			}
+			if (!first)
+				optionsLog += ", ";
+			optionsLog += "with names length="+Integer.toString(options.namesLength);
+			first = false;
 			if (!first)
 				optionsLog += ", ";
 			optionsLog += "with log level " + getLogger().getLevel();
@@ -274,8 +340,8 @@ public abstract class StoreExtractor {
 		}
 		// if internal extractor give attachment context
 		else {
-			getLogger().finer("Target attached store protocol=" + protocol);
-			getLogger().finer("to directory " + destRootPath);
+			getLogger().finer("Target attached store scheme=" + scheme);
+			getLogger().finer("to " + destRootPath + " in " + destName + " directory");
 		}
 
 	}
@@ -388,17 +454,17 @@ public abstract class StoreExtractor {
 		return totalRawSize;
 	}
 
-	/**
-	 * Checks for options.
-	 *
-	 * @param flags
-	 *            constant values (CONST_...) |/+ composition
-	 * @return true, if successful
-	 */
-	public boolean hasOptions(int flags) {
-		return (options & flags) != 0;
-	}
-
+	// /**
+	// * Checks for options.
+	// *
+	// * @param flags
+	// * constant values (CONST_...) |/+ composition
+	// * @return true, if successful
+	// */
+	// public boolean hasOptions(int flags) {
+	// return (options & flags) != 0;
+	// }
+	//
 	/**
 	 * Gets the extraction context description.
 	 *
@@ -415,6 +481,33 @@ public abstract class StoreExtractor {
 	 */
 	public boolean isRoot() {
 		return rootStoreExtractor == null;
+	}
+
+	/**
+	 * Gets the extraction root folder in store.
+	 *
+	 * @return the root StoreFolder
+	 */
+	public StoreFolder getRootFolder() {
+		return rootAnalysisMBFolder;
+	}
+
+	/**
+	 * Sets the extraction root folder in store.
+	 *
+	 * @return the root StoreFolder
+	 */
+	public void setRootFolder(StoreFolder rootFolder) {
+		rootAnalysisMBFolder = rootFolder;
+	}
+
+	/**
+	 * Gets the store extractor options.
+	 *
+	 * @return the store extractor options
+	 */
+	public StoreExtractorOptions getOptions() {
+		return options;
 	}
 
 	// /**
@@ -439,17 +532,18 @@ public abstract class StoreExtractor {
 	/**
 	 * Create a store extractor as a factory creator.
 	 *
-	 * @param protocol
-	 *            Type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
-	 * @param server
+	 * @param scheme
+	 *            Type of local container to extract (thunderbird|pst|eml|mbox)
+	 *            or protocol for server access (imap|imaps|pop3...)
+	 * @param authority
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
 	 *            User account name
 	 * @param password
 	 *            Password, can be null if not used
-	 * @param container
+	 * @param path
 	 *            Path to the local extraction target (Thunderbird or Outlook
-	 * @param folder
+	 * @param storeFolder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
 	 * @param destRootPath
@@ -465,28 +559,27 @@ public abstract class StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public static StoreExtractor createStoreExtractor(String protocol, String server, String user, String password,
-			String container, String folder, String destRootPath, String destName, int options, Logger logger)
-			throws ExtractionException {
+	public static StoreExtractor createStoreExtractor(String urlString, String storeFolder, String destPathString,
+			StoreExtractorOptions options, Logger logger) throws ExtractionException {
 
-		return createInternalStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-				options, null, logger);
+		return createInternalStoreExtractor(urlString, storeFolder, destPathString, options, null, logger);
 	}
 
 	/**
 	 * Create an internal depth store extractor as a factory creator.
 	 *
-	 * @param protocol
-	 *            type of local container to extract (thunderbird|pst|eml|mbox) or protocol for server access (imap|imaps|pop3...)
-	 * @param server
+	 * @param scheme
+	 *            type of local container to extract (thunderbird|pst|eml|mbox)
+	 *            or protocol for server access (imap|imaps|pop3...)
+	 * @param authority
 	 *            Server of target account ((hostname|ip)[:port
 	 * @param user
 	 *            User account name
 	 * @param password
 	 *            Password, can be null if not used
-	 * @param container
+	 * @param path
 	 *            Path to the local extraction target (Thunderbird or Outlook
-	 * @param folder
+	 * @param storeFolder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
 	 * @param destRootPath
@@ -505,25 +598,25 @@ public abstract class StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public static StoreExtractor createInternalStoreExtractor(String protocol, String server, String user,
-			String password, String container, String folder, String destRootPath, String destName, int options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+	public static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
+			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger)
+			throws ExtractionException {
 
 		StoreExtractor store;
+		URLName url;
+
+		url = new URLName(urlString);
 
 		// get read of leading file separator in folder
-		if ((folder != null) && (!folder.isEmpty()) && (folder.substring(0, 1) == File.separator))
-			folder = folder.substring(1);
+		if ((storeFolder != null) && (!storeFolder.isEmpty()) && (storeFolder.substring(0, 1) == File.separator))
+			storeFolder = storeFolder.substring(1);
 
-		if (protocol.equals("pst"))
-			store = new PstStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-					options, rootStoreExtractor, logger);
-		else if (protocol.equals("msg"))
-			store = new MsgStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-					options, rootStoreExtractor, logger);
+		if (url.getProtocol().equals("pst"))
+			store = new PstStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+		else if (url.getProtocol().equals("msg"))
+			store = new MsgStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
 		else
-			store = new JMStoreExtractor(protocol, server, user, password, container, folder, destRootPath, destName,
-					options, rootStoreExtractor, logger);
+			store = new JMStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
 
 		return store;
 
@@ -558,12 +651,12 @@ public abstract class StoreExtractor {
 		// title generation from context
 		if ((user != null) && (!user.isEmpty()))
 			title = "Ensemble des messages électroniques envoyés et reçus par le compte " + user;
-		else if ((container != null) && (!container.isEmpty()))
-			title = "Ensemble des messages électroniques du container " + container;
+		else if ((path != null) && (!path.isEmpty()))
+			title = "Ensemble des messages électroniques du container " + path;
 		else
 			title = "Ensemble de messages ";
-		if ((server != null) && (!server.isEmpty()))
-			title += " sur le serveur " + server;
+		if ((host != null) && (!host.isEmpty()))
+			title += " sur le serveur " + host + (port == -1 ? "" : ":" + Integer.toString(port));
 		title += " à la date du " + start;
 		rootNode.addMetadata("Title", title, true);
 		if (rootAnalysisMBFolder.dateRange.isDefined()) {
@@ -627,6 +720,29 @@ public abstract class StoreExtractor {
 
 		System.out.println(tmp);
 		getLogger().info(tmp);
+	}
+
+	/**
+	 * Do all end tasks for the StoreExtractor, like deleting temporary files.
+	 */
+	public void endStoreExtractor() throws ExtractionException {
+	}
+
+	// Utility function to detect if the four bytes is a defined magic number
+	public static boolean hasMagicNumber(byte[] content, byte[] magicNumber) {
+		return hasMagicNumber(content, magicNumber, 0);
+	}
+
+	// Utility function to detect if the bytes at offset is a defined magic
+	// number
+	public static boolean hasMagicNumber(byte[] content, byte[] magicNumber, int offset) {
+		if (content.length < magicNumber.length + offset)
+			return false;
+		for (int i = 0; i < magicNumber.length; i++) {
+			if (content[i + offset] != magicNumber[i])
+				return false;
+		}
+		return true;
 	}
 
 }

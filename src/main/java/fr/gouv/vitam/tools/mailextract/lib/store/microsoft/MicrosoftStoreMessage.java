@@ -90,37 +90,64 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	// Field codes
 
-	public static final int SMTP_TRANSPORT_HEADER = 0x007d;
-	public static final int SUBJECT = 0x0037;
-	public static final int INTERNET_MESSAGE_ID = 0x1035;
-	public static final int CONVERSATION_INDEX = 0x0071;
-	public static final int SENDER_NAME = 0x0c1a;
-	public static final int SENT_REPRESENTING_NAME = 0x0042;
-	public static final int SENDER_ADDR_TYPE = 0x0c1e;
-	public static final int SENDER_EMAIL_ADDRESS = 0x0c1f;
-	public static final int SENT_REPRESENTING_ADDR_TYPE = 0x0064;
-	public static final int SENT_REPRESENTING_EMAIL_ADDRESS = 0x0065;
-	public static final int RETURN_PATH = 0x1046;
-	public static final int MESSAGE_DELIVERY_TIME = 0x0e06;
-	public static final int CLIENT_SUBMIT_TIME = 0x0039;
-	public static final int IN_REPLY_TO_ID = 0x1042;
-	public static final int MESSAGE_SIZE = 0x0e08;
+	// public static final int SMTP_TRANSPORT_HEADER = 0x007d;
+	// public static final int SUBJECT = 0x0037;
+	// public static final int INTERNET_MESSAGE_ID = 0x1035;
+	// public static final int SENDER_NAME = 0x0c1a;
+	// public static final int SENT_REPRESENTING_NAME = 0x0042;
+	// public static final int SENDER_ADDR_TYPE = 0x0c1e;
+	// public static final int SENDER_EMAIL_ADDRESS = 0x0c1f;
+	// public static final int SENT_REPRESENTING_ADDR_TYPE = 0x0064;
+	// public static final int SENT_REPRESENTING_EMAIL_ADDRESS = 0x0065;
+	// public static final int RETURN_PATH = 0x1046;
+	// public static final int MESSAGE_DELIVERY_TIME = 0x0e06;
+	// public static final int CLIENT_SUBMIT_TIME = 0x0039;
+	// public static final int IN_REPLY_TO_ID = 0x1042;
+	// public static final int MESSAGE_SIZE = 0x0e08;
 
-	// Native message functions
+	// // return the native message size
+	// abstract protected long getNativeMessageSize();
+	//
+	// // return empty String if no item
+	// abstract protected String getNativeStringItem(int item);
+	//
+	// // return null if no item
+	// abstract protected byte[] getNativeByteItem(int item);
+	//
+	// // return null if no item
+	// abstract protected Date getNativeDateItem(int item);
 
-	// return the native message size
+	// Native message fields access functions
+
+	abstract protected String getNativeSmtpTransportHeader();
+
+	abstract protected String getNativeSubject();
+
+	abstract protected String getNativeInternetMessageId();
+
+	abstract protected String getNativeSenderName();
+
+	abstract protected String getNativeSentRepresentingName();
+
+	abstract protected String getNativeSenderAddrType();
+
+	abstract protected String getNativeSenderEmailAddress();
+
+	abstract protected String getNativeSentRepresentingAddrType();
+
+	abstract protected String getNativeSentRepresentingEmailAddress();
+
+	abstract protected String getNativeReturnPath();
+
+	abstract protected Date getNativeMessageDeliveryTime();
+
+	abstract protected Date getNativeClientSubmitTime();
+
+	abstract protected String getNativeInReplyToId();
+
 	abstract protected long getNativeMessageSize();
 
-	// return empty String if no item
-	abstract protected String getNativeStringItem(int item);
-
-	// return null if no item
-	abstract protected byte[] getNativeByteItem(int item);
-
-	// return null if no item
-	abstract protected Date getNativeDateItem(int item);
-
-	// ConversationIndex
+	// Native message ConversationIndex access functions
 	abstract protected boolean hasNativeConversationIndex();
 
 	abstract protected Date getNativeCIDeliveryTime();
@@ -135,7 +162,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	abstract protected short getNativeCIResponseLevelRandom(int responseLevelNumber);
 
-	// recipients functions
+	// Native message Recipients access functions
 	abstract protected int getNativeNumberOfRecipients();
 
 	abstract protected String getNativeRecipientsSmtpAddress(int recipientNumber);
@@ -146,14 +173,14 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	abstract protected int getNativeRecipientsType(int recipientNumber);
 
-	// body functions
+	// Native message body access functions
 	abstract protected String getNativeBodyText();
 
 	abstract protected String getNativeBodyHTML();
 
 	abstract protected String getNativeRTFBody();
 
-	// attachment functions
+	// Native message attachment access functions
 	abstract protected int getNativeNumberOfAttachments();
 
 	abstract protected int getNativeAttachmentAttachMethod(int attachmentNumber);
@@ -176,8 +203,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	abstract protected Object getNativeAttachmentEmbeddedMessage(int attachmentNumber);
 
-	// for storeextractor choice return "pst", "msg"...
-	abstract protected String getNativeProtocole();
+	abstract protected String getEmbeddedMessageScheme();
 
 	// General Headers function
 
@@ -197,7 +223,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 		String headerString;
 
 		if (!hasRFC822Headers()) {
-			headerString = getNativeStringItem(SMTP_TRANSPORT_HEADER);
+			headerString = getNativeSmtpTransportHeader();
 			if ((headerString != null) && (!headerString.isEmpty()))
 				try {
 					rfc822Headers = new RFC822Headers(headerString, this);
@@ -233,7 +259,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 			}
 		} else {
 			// pst file value
-			result = getNativeStringItem(SUBJECT);
+			result = getNativeSubject();
 
 			// FIXME filtering in LibPST (aim 0x0101, 0105 and 0110 values)
 			// to be verified why and if usefull in msg
@@ -275,7 +301,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 		} else {
 			// pst file value
 			// generate a messageID from the conversationIndex
-			result = getNativeStringItem(INTERNET_MESSAGE_ID);
+			result = getNativeInternetMessageId();
 			if (result.isEmpty()) {
 				if (hasNativeConversationIndex()) {
 					Instant inst = getNativeCIDeliveryTime().toInstant();
@@ -302,9 +328,9 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	private String getSenderName() {
 		String result;
 
-		result = getNativeStringItem(SENDER_NAME);
+		result = getNativeSenderName();
 		if ((result == null) || result.isEmpty())
-			result = getNativeStringItem(SENT_REPRESENTING_NAME);
+			result = getNativeSentRepresentingName();
 
 		if (result.isEmpty())
 			result = null;
@@ -316,14 +342,14 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	private String getSenderEmailAddress() {
 		String result = "";
 
-		if (getNativeStringItem(SENDER_ADDR_TYPE).equalsIgnoreCase("SMTP"))
-			result = getNativeStringItem(SENDER_EMAIL_ADDRESS);
-		if (result.isEmpty() && getNativeStringItem(SENT_REPRESENTING_ADDR_TYPE).equalsIgnoreCase("SMTP"))
-			result = getNativeStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
+		if (getNativeSenderAddrType().equalsIgnoreCase("SMTP"))
+			result = getNativeSenderEmailAddress();
+		if (result.isEmpty() && getNativeSentRepresentingAddrType().equalsIgnoreCase("SMTP"))
+			result = getNativeSentRepresentingEmailAddress();
 		if (result.isEmpty())
-			result = getNativeStringItem(SENDER_EMAIL_ADDRESS);
+			result = getNativeSenderEmailAddress();
 		if (result.isEmpty())
-			result = getNativeStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
+			result = getNativeSentRepresentingEmailAddress();
 
 		if (result.isEmpty())
 			result = null;
@@ -478,8 +504,8 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeDates()
 	 */
 	protected void analyzeDates() {
-		receivedDate = getNativeDateItem(MESSAGE_DELIVERY_TIME);
-		sentDate = getNativeDateItem(CLIENT_SUBMIT_TIME);
+		receivedDate = getNativeMessageDeliveryTime();
+		sentDate = getNativeClientSubmitTime();
 	}
 
 	// In-reply-to and References specific functions
@@ -505,7 +531,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 			}
 		} else {
 			// pst file value
-			result = getNativeStringItem(IN_REPLY_TO_ID);
+			result = getNativeInReplyToId();
 			if (result.isEmpty()) {
 				if (messageID == null)
 					analyzeMessageID();
@@ -619,10 +645,10 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 					logMessageWarning("mailextract.microsoft: Can't extract OLE attachment");
 					break;
 				case ATTACHMENT_METHOD_BY_VALUE:
-					attachment = new StoreMessageAttachment(getAttachementFilename(i), getNativeAttachmentByteArray(i),
-							getNativeAttachmentCreationTime(i), getNativeAttachmentModificationTime(i),
-							getNativeAttachmentMimeTag(i), getNativeAttachmentContentId(i),
-							StoreMessageAttachment.INLINE_ATTACHMENT);
+					attachment = new StoreMessageAttachment(getNativeAttachmentByteArray(i), "file",
+							getAttachementFilename(i), getNativeAttachmentCreationTime(i),
+							getNativeAttachmentModificationTime(i), getNativeAttachmentMimeTag(i),
+							getNativeAttachmentContentId(i), StoreMessageAttachment.INLINE_ATTACHMENT);
 					result.add(attachment);
 					break;
 				case ATTACHMENT_METHOD_BY_REFERENCE:
@@ -632,11 +658,10 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 					logMessageWarning("mailextract.microsoft: Can't extract reference attachment");
 					break;
 				case ATTACHMENT_METHOD_EMBEDDED:
-					attachment = new StoreMessageAttachment(getAttachementFilename(i),
-							getNativeAttachmentEmbeddedMessage(i), getNativeAttachmentCreationTime(i),
+					attachment = new StoreMessageAttachment(getNativeAttachmentEmbeddedMessage(i),
+							getEmbeddedMessageScheme(), getAttachementFilename(i), getNativeAttachmentCreationTime(i),
 							getNativeAttachmentModificationTime(i), getNativeAttachmentMimeTag(i),
-							getNativeAttachmentContentId(i), StoreMessageAttachment.STORE_ATTACHMENT
-									+ StoreMessageAttachment.EMBEDDEDPST_STORE_ATTACHMENT);
+							getNativeAttachmentContentId(i), StoreMessageAttachment.STORE_ATTACHMENT);
 					result.add(attachment);
 					break;
 				}

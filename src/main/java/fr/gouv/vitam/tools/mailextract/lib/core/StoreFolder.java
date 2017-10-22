@@ -304,9 +304,8 @@ public abstract class StoreFolder {
 		extractFolderMessages(writeFlag);
 		// extract all subfolders in the folder to the unit directory
 		extractSubFolders(level, writeFlag);
-		if (folderMessagesCount + folderSubFoldersCount != 0 || (!storeExtractor
-				.hasOptions(StoreExtractor.CONST_DROP_EMPTY_FOLDERS)
-				&& !(level == 1 && storeExtractor.hasOptions(StoreExtractor.CONST_KEEP_ONLY_DEEP_EMPTY_FOLDERS)))) {
+		if ((folderMessagesCount + folderSubFoldersCount != 0) || ((!storeExtractor.options.dropEmptyFolders)
+				&& !(level == 1 && storeExtractor.options.keepOnlyDeepEmptyFolders))) {
 			// get specific folder metadata to the unit
 			// compute and add to the folder ArchiveUnit the expected folder
 			// metadata

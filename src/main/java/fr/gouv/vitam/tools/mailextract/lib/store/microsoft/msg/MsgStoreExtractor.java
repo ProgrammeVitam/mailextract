@@ -26,14 +26,19 @@
  */
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.logging.Logger;
 
 import org.apache.poi.hsmf.MAPIMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -50,59 +55,110 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * Excel solution (for Excel 97-2008). We have a complete API for porting other
  * OOXML and OLE2 formats and welcome others to participate.
  */
-public class MsgStoreExtractor extends StoreExtractor {
+public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
 
-	// /**
-	// * Instantiates a new msg store extractor.
-	// *
-	// * @param protocol
-	// * Protocol used for extraction (pstfile)
-	// * @param server
-	// * Server of target account ((hostname|ip)[:port
-	// * @param user
-	// * User account name
-	// * @param password
-	// * Password, can be null if not used
-	// * @param container
-	// * Path to the local extraction target (Thunderbird or Outlook)
-	// * @param folder
-	// * Path of the extracted folder in the account mail box, can be
-	// * null if default root folder
-	// * @param destRootPath
-	// * Root path of the extraction directory
-	// * @param destName
-	// * Name of the extraction directory
-	// * @param options
-	// * Options (flag composition of CONST_)
-	// * @param options
-	// * Options (flag composition of CONST_)
-	// * @param rootStoreExtractor
-	// * the creating store extractor in nested extraction, or null if
-	// * root one
-	// * @param logger
-	// * Logger used (from {@link java.util.logging.Logger})
-	// * @throws ExtractionException
-	// * Any unrecoverable extraction exception (access trouble, major
-	// * format problems...)
-	// */
-	public MsgStoreExtractor(String protocol, String server, String user, String password, String container,
-			String folder, String destRootPath, String destName, int options, StoreExtractor rootStoreExtractor,
-			Logger logger) throws ExtractionException {
-		super(protocol, null, null, null, container, folder, destRootPath, destName, options, rootStoreExtractor,
-				logger);
+	// Attachment to complete with decoded form
+	private StoreMessageAttachment attachment;
+
+	/**
+	 * Instantiates a new msg store extractor.
+	 *
+	 * @param urlString
+	 *            the url string
+	 * @param folder
+	 *            the folder
+	 * @param destPathString
+	 *            the dest path string
+	 * @param options
+	 *            the options
+	 * @param rootStoreExtractor
+	 *            the root store extractor
+	 * @param logger
+	 *            the logger
+	 * @throws ExtractionException
+	 *             the extraction exception
+	 */
+	public MsgStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+		super(urlString, folder, destPathString, options, rootStoreExtractor, logger);
 		MAPIMessage message;
 		long size = 0;
 
 		try {
-			File messageFile = new File(container);
+			File messageFile = new File(path);
 			message = new MAPIMessage(messageFile);
 			size = Files.size(messageFile.toPath());
 		} catch (Exception e) {
 			throw new ExtractionException(
-					"mailExtract.msg: can't open " + container + ", doesn't exist or is not a msg file");
+					"mailExtract.msg: can't open " + path + ", doesn't exist or is not a msg file");
 		}
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
-		rootAnalysisMBFolder = MsgStoreFolder.createRootFolder(this, message, size, rootNode);
+		setRootFolder(MsgStoreFolder.createRootFolder(this, message, size, rootNode));
+	}
+
+	/**
+	 * Instantiates a new embedded msg store extractor.
+	 *
+	 * @param attachment
+	 *            the attachment
+	 * @param scheme
+	 *            the scheme
+	 * @param destPathString
+	 *            the dest path string
+	 * @param options
+	 *            the options
+	 * @param rootStoreExtractor
+	 *            the root store extractor
+	 * @param logger
+	 *            the logger
+	 * @throws ExtractionException
+	 *             the extraction exception
+	 */
+	public MsgStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
+			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+		super("msg.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+		MAPIMessage message;
+
+		this.attachment = attachment;
+		if (attachment.getStoreContent() instanceof MAPIMessage)
+			message = (MAPIMessage) attachment.getStoreContent();
+		else if (attachment.getStoreContent() instanceof byte[]) {
+			ByteArrayInputStream bais = new ByteArrayInputStream((byte[]) attachment.getStoreContent());
+			try {
+				message = new MAPIMessage(bais);
+			} catch (IOException e) {
+				throw new ExtractionException("mailextract.msg: Can't extract msg store");
+			}
+		} else
+			throw new ExtractionException("mailextract.msg: Can't extract msg store");
+
+		setRootFolder(MsgStoreFolder.createRootFolder(this, message, 0, rootNode));
+	}
+
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor#getAttachment()
+	 */
+	@Override
+	public StoreMessageAttachment getAttachment() {
+		return attachment;
+	}
+
+	/** The Constant MSG_MN. */
+	static final byte[] MSG_MN = new byte[] { (byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1,
+			0x1A, (byte) 0xE1 };
+
+	/**
+	 * Gets the verified scheme.
+	 *
+	 * @param content
+	 *            the content
+	 * @return the verified scheme
+	 */
+	public static String getVerifiedScheme(byte[] content) {
+		if (hasMagicNumber(content, MSG_MN)) {
+			return "msg";
+		} else
+			return null;
 	}
 }

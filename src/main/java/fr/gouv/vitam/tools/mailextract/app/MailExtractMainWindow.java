@@ -78,6 +78,9 @@ public class MailExtractMainWindow extends JFrame {
 	/** The eml radio button. */
 	JRadioButton emlRadioButton;
 
+	/** The eml radio button. */
+	JRadioButton msgRadioButton;
+
 	/** The name label. */
 	JLabel nameLabel;
 
@@ -133,8 +136,8 @@ public class MailExtractMainWindow extends JFrame {
 	/** The dropemptyfolders check box. */
 	JCheckBox dropemptyfoldersCheckBox;
 
-	/** The nameshortened check box. */
-	JCheckBox nameshortenedCheckBox;
+	/** The names length field. */
+	JTextField namesLengthField;
 
 	/** The console text area. */
 	JTextArea consoleTextArea;
@@ -201,13 +204,6 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_scrollPane.gridy = 11;
 		getContentPane().add(scrollPane, gbc_scrollPane);
 
-		nameshortenedCheckBox = new JCheckBox("Noms courts");
-		GridBagConstraints gbc_nameshortenedCheckBox = new GridBagConstraints();
-		gbc_nameshortenedCheckBox.insets = new Insets(0, 0, 5, 0);
-		gbc_nameshortenedCheckBox.gridx = 3;
-		gbc_nameshortenedCheckBox.gridy = 5;
-		getContentPane().add(nameshortenedCheckBox, gbc_nameshortenedCheckBox);
-
 		JButton extractButton = new JButton("Extraire messages");
 		GridBagConstraints gbc_extractButton = new GridBagConstraints();
 		gbc_extractButton.gridwidth = 1;
@@ -269,12 +265,30 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_loglevelLabel.gridy = 8;
 		getContentPane().add(loglevelLabel, gbc_loglevelLabel);
 
-		keeponlydeepCheckBox = new JCheckBox("Garde les vides infra-racine");
+		keeponlydeepCheckBox = new JCheckBox("Garder dossier 1er niv");
 		GridBagConstraints gbc_keeponlydeepRadioButton = new GridBagConstraints();
 		gbc_keeponlydeepRadioButton.insets = new Insets(0, 0, 5, 5);
-		gbc_keeponlydeepRadioButton.gridx = 2;
+		gbc_keeponlydeepRadioButton.gridx = 1;
 		gbc_keeponlydeepRadioButton.gridy = 5;
 		getContentPane().add(keeponlydeepCheckBox, gbc_keeponlydeepRadioButton);
+
+		JLabel namesLengthLabel = new JLabel("Longueur gardée des noms");
+		GridBagConstraints gbc_namesLengthLabel = new GridBagConstraints();
+		gbc_namesLengthLabel.anchor = GridBagConstraints.EAST;
+		gbc_namesLengthLabel.insets = new Insets(0, 0, 5, 5);
+		gbc_namesLengthLabel.gridx = 2;
+		gbc_namesLengthLabel.gridy = 5;
+		getContentPane().add(namesLengthLabel, gbc_namesLengthLabel);
+
+		namesLengthField = new JTextField();
+		GridBagConstraints gbc_namesLengthField = new GridBagConstraints();
+		gbc_namesLengthField.weightx = 0.5;
+		gbc_namesLengthField.insets = new Insets(0, 0, 5, 10);
+		gbc_namesLengthField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_namesLengthField.gridx = 3;
+		gbc_namesLengthField.gridy = 5;
+		getContentPane().add(namesLengthField, gbc_namesLengthField);
+		namesLengthField.setColumns(128);
 
 		JButton savedirButton = new JButton("Répertoire...");
 		GridBagConstraints gbc_savedirButton = new GridBagConstraints();
@@ -295,9 +309,8 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_savedirField.weightx = 0.5;
 		getContentPane().add(savedirField, gbc_savedirField);
 
-		dropemptyfoldersCheckBox = new JCheckBox("Eliminer les dossiers vides");
+		dropemptyfoldersCheckBox = new JCheckBox("Eliminer dossiers vides");
 		GridBagConstraints gbc_dropemptyfoldersCheckBox = new GridBagConstraints();
-		gbc_dropemptyfoldersCheckBox.gridwidth = 2;
 		gbc_dropemptyfoldersCheckBox.insets = new Insets(0, 0, 5, 5);
 		gbc_dropemptyfoldersCheckBox.gridx = 0;
 		gbc_dropemptyfoldersCheckBox.gridy = 5;
@@ -522,11 +535,22 @@ public class MailExtractMainWindow extends JFrame {
 		emlRadioButton = new JRadioButton("Eml");
 		emlRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
 		GridBagConstraints gbc_emlRadioButton = new GridBagConstraints();
+		gbc_emlRadioButton.weightx = 0.5;
 		gbc_emlRadioButton.fill = GridBagConstraints.HORIZONTAL;
 		gbc_emlRadioButton.insets = new Insets(0, 0, 5, 0);
 		gbc_emlRadioButton.gridx = 3;
 		gbc_emlRadioButton.gridy = 0;
 		localPanel.add(emlRadioButton, gbc_emlRadioButton);
+		
+		msgRadioButton = new JRadioButton("Outlook msg");
+		msgRadioButton.setHorizontalAlignment(SwingConstants.CENTER);
+		GridBagConstraints gbc_msgRadioButton = new GridBagConstraints();
+		gbc_msgRadioButton.weightx = 0;
+		gbc_msgRadioButton.fill = GridBagConstraints.HORIZONTAL;
+		gbc_msgRadioButton.insets = new Insets(0, 0, 5, 0);
+		gbc_msgRadioButton.gridx = 4;
+		gbc_msgRadioButton.gridy = 0;
+		localPanel.add(msgRadioButton, gbc_msgRadioButton);
 
 		containerLabel = new JLabel("Chemin");
 		GridBagConstraints gbc_containerLabel = new GridBagConstraints();
@@ -539,10 +563,10 @@ public class MailExtractMainWindow extends JFrame {
 		containerField = new JTextField();
 		containerField.setText("");
 		GridBagConstraints gbc_containerField = new GridBagConstraints();
-		gbc_containerField.gridwidth = 2;
+		gbc_containerField.gridwidth = 3;
 		gbc_containerField.insets = new Insets(0, 0, 0, 5);
 		gbc_containerField.anchor = GridBagConstraints.NORTHWEST;
-		gbc_containerField.weightx = 0.5;
+		gbc_containerField.weightx = 1.0;
 		gbc_containerField.fill = GridBagConstraints.HORIZONTAL;
 		gbc_containerField.gridx = 1;
 		gbc_containerField.gridy = 1;
@@ -551,7 +575,7 @@ public class MailExtractMainWindow extends JFrame {
 
 		containerButton = new JButton("Chemin...");
 		GridBagConstraints gbc_containerButton = new GridBagConstraints();
-		gbc_containerButton.gridx = 3;
+		gbc_containerButton.gridx = 4;
 		gbc_containerButton.gridy = 1;
 		localPanel.add(containerButton, gbc_containerButton);
 		containerButton.setActionCommand("container");
@@ -566,6 +590,7 @@ public class MailExtractMainWindow extends JFrame {
 		groupLocal.add(thunderbirdRadioButton);
 		groupLocal.add(pstRadioButton);
 		groupLocal.add(emlRadioButton);
+		groupLocal.add(msgRadioButton);
 		groupLocal.add(mboxRadioButton);
 
 		ButtonGroup groupProtocol = new ButtonGroup();
