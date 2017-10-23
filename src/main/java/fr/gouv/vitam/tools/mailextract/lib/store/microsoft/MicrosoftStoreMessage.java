@@ -301,24 +301,32 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 		} else {
 			// pst file value
 			// generate a messageID from the conversationIndex
-			result = getNativeInternetMessageId();
-			if (result.isEmpty()) {
-				if (hasNativeConversationIndex()) {
-					Instant inst = getNativeCIDeliveryTime().toInstant();
-					ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
-					result = "<MIC:" + getNativeCIGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
-					int responseLevelNumber = getNativeCINumberOfResponseLevels();
-					for (int i = 0; i < responseLevelNumber; i += 1) {
-						result += "+" + Integer.toHexString(getNativeCIResponseLevelDeltaCode(i));
-						result += Long.toHexString(getNativeCIResponseLevelTimeDelta(i));
-						result += Integer.toHexString(getNativeCIResponseLevelRandom(i));
+			try {
+				result = getNativeInternetMessageId();
+				if (result.isEmpty()) {
+					if (hasNativeConversationIndex()) {
+						Instant inst = getNativeCIDeliveryTime().toInstant();
+						ZonedDateTime zdt = ZonedDateTime.ofInstant(inst, ZoneOffset.UTC);
+						result = "<MIC:" + getNativeCIGuid() + "@" + zdt.format(DateTimeFormatter.ISO_DATE_TIME);
+						int responseLevelNumber = getNativeCINumberOfResponseLevels();
+						for (int i = 0; i < responseLevelNumber; i += 1) {
+							result += "+" + Integer.toHexString(getNativeCIResponseLevelDeltaCode(i));
+							result += Long.toHexString(getNativeCIResponseLevelTimeDelta(i));
+							result += Integer.toHexString(getNativeCIResponseLevelRandom(i));
+						}
+						result += ">";
 					}
-					result += ">";
 				}
+			} 
+			// FIXME AN pst to test
+			catch (Exception e) {
+				result = null;
 			}
 		}
-		if (result == null)
+		if (result == null) {
 			logMessageWarning("mailextract.microsoft: No Message ID address in header");
+			result = "NoMessageID";
+		}
 		messageID = result;
 	}
 

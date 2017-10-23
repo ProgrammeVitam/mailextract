@@ -96,7 +96,7 @@ public class PstStoreMessage extends MicrosoftStoreMessage {
 
 	@Override
 	protected boolean hasNativeConversationIndex() {
-		return message.getConversationIndex() != null;
+		return ((message.getConversationIndex() != null) && (message.getConversationIndex().getGuid()!=null));
 	}
 
 	@Override
