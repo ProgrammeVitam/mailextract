@@ -425,15 +425,16 @@ public abstract class StoreMessage extends StoreFile {
 		// header metadata extraction
 		// * special global
 		analyzeSubject();
+		if ((subject==null) || subject.isEmpty())
+			subject="[SubjectVide]";
 
 		// header content extraction
 		prepareHeaders();
 
 		// * messageID
 		analyzeMessageID();
-
-		// if (subject.startsWith("[story #789] En tant qu'Archiviste"))
-		// System.out.println("Trouvé");
+		if ((messageID==null)||messageID.isEmpty())
+			messageID="[MessageIDVide]";
 
 		// * recipients and co
 		analyzeFrom();
@@ -605,7 +606,7 @@ public abstract class StoreMessage extends StoreFile {
 			String tag, boolean writeFlag) throws ExtractionException {
 		StoreExtractor extractor = null;
 		ArchiveUnit subRootNode;
-		
+
 		switch (a.attachmentStoreScheme) {
 		case "eml": // for eml file attachement and embedded rf822
 			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
@@ -663,7 +664,8 @@ public abstract class StoreMessage extends StoreFile {
 
 		// prepare an ArchiveUnit to keep all attached message that can be
 		// recursively extracted
-		rootNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Container", "Liste de conteneurs attachés");
+		rootNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Container",
+				"Liste de conteneurs attachés");
 		rootNode.addMetadata("DescriptionLevel", "Item", true);
 		rootNode.addMetadata("Title", "Messages attachés", true);
 		rootNode.addMetadata("Description", "Ensemble des conteneurs attachés joint au message " + messageID, true);
@@ -895,14 +897,30 @@ public abstract class StoreMessage extends StoreFile {
 				}
 
 				// de-encapulate HTML from RTF if needed
-				if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].trim().isEmpty())
-						&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].trim().isEmpty())) {
+				if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].trim().isEmpty())) {
 					HTMLFromRTFExtractor htmlExtractor = new HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
-					if (htmlExtractor.isEncapsulatedHTMLorTEXTinRTF()) {
-
-						bodyContent[HTML_BODY] = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-						bodyContent[RTF_BODY] = null;
+					if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
+						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+						if ((result!=null) && !result.isEmpty()){
+							if ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].trim().isEmpty()){
+								bodyContent[TEXT_BODY] = result;
+								bodyContent[RTF_BODY] = null;
+							}
+							else {
+								result=result.trim();
+								if (bodyContent[TEXT_BODY].trim().equals(result))
+									bodyContent[RTF_BODY] = null;
+							}
+						}
+					} else if (htmlExtractor.isEncapsulatedHTMLinRTF()
+							&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].trim().isEmpty())) {
+						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+						if ((result != null) && !result.isEmpty()) {
+							bodyContent[HTML_BODY] = result;
+							bodyContent[RTF_BODY] = null;
+						}
 					}
+
 				}
 
 				// determine in which part to add related

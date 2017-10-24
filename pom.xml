@@ -4,7 +4,7 @@
 
 	<groupId>fr.gouv.vitam.tools</groupId>
 	<artifactId>mailextract</artifactId>
-	<version>0.20-SNAPSHOT</version>
+	<version>0.25.1</version>
 
 	<name>mailextract</name>
 	<url>http://maven.apache.org</url>

@@ -423,10 +423,26 @@ public class JMStoreMessage extends StoreMessage {
 
 	// append to bodyContent after creating it if needed
 	private void appendBodyContent(int type, String s) {
-		if (bodyContent[type] == null)
-			bodyContent[type] = s;
-		else {
-			bodyContent[type] += "/n" + s;
+		if (s != null) {
+			if (bodyContent[type] == null)
+				bodyContent[type] = s;
+			else {
+				bodyContent[type] += "/n" + s;
+			}
+		}
+	}
+
+	private static String getInputStreamContent(InputStream is) {
+		ByteArrayOutputStream result = new ByteArrayOutputStream();
+		byte[] buffer = new byte[1024];
+		int length;
+		try {
+			while ((length = is.read(buffer)) != -1) {
+				result.write(buffer, 0, length);
+			}
+			return result.toString("UTF-8");
+		} catch (IOException e) {
+			return null;
 		}
 	}
 
@@ -435,14 +451,26 @@ public class JMStoreMessage extends StoreMessage {
 	private void getPartBodyContents(Part p) throws MessagingException, IOException {
 		if (p.isMimeType("text/*")) {
 			if (p.isMimeType("text/plain")
-					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition())))
-				appendBodyContent(TEXT_BODY, (String) p.getContent());
+					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))){
+				if (p.getContent() instanceof InputStream)
+					appendBodyContent(TEXT_BODY,getInputStreamContent((InputStream)p.getContent()));
+				else if (p.getContent() instanceof String)
+					appendBodyContent(TEXT_BODY, (String) p.getContent());
+			}
 			else if (p.isMimeType("text/html")
-					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition())))
-				appendBodyContent(HTML_BODY, (String) p.getContent());
+					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))){
+				if (p.getContent() instanceof InputStream)
+					appendBodyContent(HTML_BODY,getInputStreamContent((InputStream)p.getContent()));
+				else if (p.getContent() instanceof String)
+					appendBodyContent(HTML_BODY, (String) p.getContent());
+			}
 			else if (p.isMimeType("text/rtf")
-					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition())))
-				appendBodyContent(RTF_BODY, (String) p.getContent());
+					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))) {
+				if (p.getContent() instanceof InputStream)
+					appendBodyContent(RTF_BODY,getInputStreamContent((InputStream)p.getContent()));
+				else if (p.getContent() instanceof String)
+					appendBodyContent(RTF_BODY, (String) p.getContent());
+			}
 		} else if (p.isMimeType("multipart/*")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); i++) {

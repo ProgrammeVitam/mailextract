@@ -536,6 +536,7 @@ public class HTMLFromRTFExtractor {
 			switch (controlWord) {
 			case "par":
 			case "line":
+				addOutputChar('\r');
 				addOutputChar('\n');
 				break;
 			case "tab":
@@ -861,12 +862,21 @@ public class HTMLFromRTFExtractor {
 	// public functions
 
 	/**
-	 * Checks if is encapsulated HTML or TEXT in RTF.
+	 * Checks if is encapsulated HTML in RTF.
 	 *
-	 * @return true, if is encapsulated HTM lin RTF
+	 * @return true, if is encapsulated HTML in RTF
 	 */
-	public boolean isEncapsulatedHTMLorTEXTinRTF() {
-		return isText || isHTML;
+	public boolean isEncapsulatedHTMLinRTF() {
+		return isHTML;
+	}
+
+	/**
+	 * Checks if is encapsulated TEXT in RTF.
+	 *
+	 * @return true, if is encapsulated TEXT in RTF
+	 */
+	public boolean isEncapsulatedTEXTinRTF() {
+		return isText;
 	}
 
 	/**

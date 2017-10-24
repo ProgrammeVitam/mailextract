@@ -225,7 +225,7 @@ public class MailExtractApp {
 		String destRootPath = "", destName = "";
 		String protocol = "", host = "localhost", user = "", password = "", container = "", folder = "";
 		int port = -1;
-		int namesLength = 32;
+		int namesLength = 12;
 		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
 
