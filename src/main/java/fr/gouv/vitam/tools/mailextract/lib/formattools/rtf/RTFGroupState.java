@@ -61,22 +61,6 @@ class RTFGroupState {
 	// previous in rtf group stack
 	private RTFGroupState previous;
 
-	// /**
-	// * Create default (root) RTF group state.
-	// */
-	// public RTFGroupState() {
-	// // Default is 1 if no uc control has been seen yet:
-	// ucSkip = 1;
-	// fontCharset = null;
-	//
-	// inIgnorable = false;
-	// inHtmltag = false;
-	// inHtmlrtf = false;
-	// ignore = false;
-	//
-	// previous = null;
-	// }
-	//
 	/**
 	 * Instantiates a new RTFGroupState, inheriting all properties from current
 	 * one or root if previous=null

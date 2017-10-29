@@ -177,7 +177,7 @@
 								<productName>${project.name}</productName>
 								<internalName>${project.name}</internalName>
 								<originalFilename>MailExtract.exe</originalFilename>
-							</versionInfo>
+							</versionInfo>jar
 						</configuration>
 					</execution>
 				</executions>

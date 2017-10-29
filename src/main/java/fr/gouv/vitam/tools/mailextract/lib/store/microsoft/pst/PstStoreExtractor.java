@@ -24,6 +24,7 @@
  * The fact that you are presently reading this means that you have had knowledge of the CeCILL 2.1 license and that you
  * accept its terms.
  */
+
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
 import java.io.BufferedOutputStream;
@@ -49,7 +50,6 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
-// TODO: Auto-generated Javadoc
 /**
  * StoreExtractor sub-class for mail boxes extracted through libpst library.
  * <p>
