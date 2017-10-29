@@ -25,30 +25,58 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.core;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
-public class StoreExtractorOptions {
-	public boolean keepOnlyDeepEmptyFolders;
-	public boolean dropEmptyFolders;
-	public boolean warningMsgProblem;
-	public int namesLength;
-	public boolean extractList;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import com.pff.PSTMessage;
+import com.pff.PSTAttachment;
+import com.pff.PSTException;
 
-	public StoreExtractorOptions() {
-		keepOnlyDeepEmptyFolders = false;
-		dropEmptyFolders = false;
-		warningMsgProblem = false;
-		extractList=false;
-		namesLength = 12;
-	}
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
-	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, boolean extractList) {
-		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
-		this.dropEmptyFolders = dropEmptyFolders;
-		this.warningMsgProblem = warningMsgProblem;
-		this.namesLength = namesLength;
-		this.extractList=extractList;
-		
+/**
+ * Class containing attachment information.
+ * 
+ * @author Richard Johnson
+ */
+public class PstStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
+
+	public PstStoreMessageAttachment(PSTMessage message, int i) {
+		PSTAttachment attachment;
+
+		try {
+			attachment = message.getAttachment(i);
+			size = attachment.getAttachSize();
+			attachMethod = attachment.getAttachMethod();
+			creationTime = attachment.getCreationTime();
+			modificationTime = attachment.getModificationTime();
+			displayName = attachment.getDisplayName();
+			try {
+				InputStream is = attachment.getFileInputStream();
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				byte[] buf = new byte[4096];
+				int bytesRead;
+				while ((bytesRead = is.read(buf)) != -1) {
+					baos.write(buf, 0, bytesRead);
+				}
+				byteArray = baos.toByteArray();
+			} catch (PSTException | IOException e) {
+				byteArray = null;
+			}
+			filename = attachment.getFilename();
+			longFilename = attachment.getLongFilename();
+			try {
+				embeddedMessage = attachment.getEmbeddedPSTMessage();
+			} catch (PSTException | IOException e) {
+				embeddedMessage = null;
+			}
+
+			mimeTag = attachment.getMimeTag();
+			contentId = attachment.getContentId();
+		} catch (PSTException | IOException ee) {
+			// forget it
+		}
 	}
 }

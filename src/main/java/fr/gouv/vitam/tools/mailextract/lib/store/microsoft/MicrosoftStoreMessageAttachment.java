@@ -25,30 +25,33 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.core;
+package fr.gouv.vitam.tools.mailextract.lib.store.microsoft;
 
-public class StoreExtractorOptions {
-	public boolean keepOnlyDeepEmptyFolders;
-	public boolean dropEmptyFolders;
-	public boolean warningMsgProblem;
-	public int namesLength;
-	public boolean extractList;
+import java.util.Date;
 
-	public StoreExtractorOptions() {
-		keepOnlyDeepEmptyFolders = false;
-		dropEmptyFolders = false;
-		warningMsgProblem = false;
-		extractList=false;
-		namesLength = 12;
+public class MicrosoftStoreMessageAttachment {
+
+	public static final int ATTACHMENT_METHOD_NONE = 0;
+	public static final int ATTACHMENT_METHOD_BY_VALUE = 1;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE = 2;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE = 3;
+	public static final int ATTACHMENT_METHOD_BY_REFERENCE_ONLY = 4;
+	public static final int ATTACHMENT_METHOD_EMBEDDED = 5;
+	public static final int ATTACHMENT_METHOD_OLE = 6;
+
+	public byte[] byteArray;
+	public String filename = "";
+	public Date creationTime;
+	public Date modificationTime;
+	public Object embeddedMessage;
+	public int attachMethod;
+	public int size;
+	public String longFilename = "";
+	public String displayName = "";
+	public String mimeTag = "";
+	public String contentId = "";
+
+	public MicrosoftStoreMessageAttachment() {
 	}
 
-	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, boolean extractList) {
-		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
-		this.dropEmptyFolders = dropEmptyFolders;
-		this.warningMsgProblem = warningMsgProblem;
-		this.namesLength = namesLength;
-		this.extractList=extractList;
-		
-	}
 }

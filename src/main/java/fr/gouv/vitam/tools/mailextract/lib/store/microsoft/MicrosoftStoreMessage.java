@@ -35,8 +35,6 @@ import java.util.*;
 
 import javax.mail.MessagingException;
 
-import com.pff.PSTMessage;
-
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
@@ -59,11 +57,11 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
  */
 public abstract class MicrosoftStoreMessage extends StoreMessage {
 
-	/** Native message object in each subclass. */
-	PSTMessage message;
-
 	/** The RFC822 headers if any. */
-	RFC822Headers rfc822Headers;
+	protected RFC822Headers rfc822Headers;
+
+	/** The attachments list. */
+	protected MicrosoftStoreMessageAttachment[] nativeAttachments;
 
 	/**
 	 * Instantiates a new LP store message.
@@ -85,11 +83,15 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 */
 	@Override
 	public long getMessageSize() {
-		return getNativeMessageSize();
+		long result;
+		result = getNativeMessageSize();
+		if ((result == 0) && (mimeContent != null))
+			result = mimeContent.length;
+		return result;
 	}
 
 	// Field codes
-
+	// public static final int MESSAGE_CLASS = 0x001a;
 	// public static final int SMTP_TRANSPORT_HEADER = 0x007d;
 	// public static final int SUBJECT = 0x0037;
 	// public static final int INTERNET_MESSAGE_ID = 0x1035;
@@ -181,27 +183,38 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	abstract protected String getNativeRTFBody();
 
 	// Native message attachment access functions
-	abstract protected int getNativeNumberOfAttachments();
-
-	abstract protected int getNativeAttachmentAttachMethod(int attachmentNumber);
-
-	abstract protected byte[] getNativeAttachmentByteArray(int attachmentNumber);
-
-	abstract protected String getNativeAttachmentLongFilename(int attachmentNumber);
-
-	abstract protected String getNativeAttachmentFilename(int attachmentNumber);
-
-	abstract protected String getNativeAttachmentDisplayName(int attachmentNumber);
-
-	abstract protected Date getNativeAttachmentCreationTime(int attachmentNumber);
-
-	abstract protected Date getNativeAttachmentModificationTime(int attachmentNumber);
-
-	abstract protected String getNativeAttachmentMimeTag(int attachmentNumber);
-
-	abstract protected String getNativeAttachmentContentId(int attachmentNumber);
-
-	abstract protected Object getNativeAttachmentEmbeddedMessage(int attachmentNumber);
+	abstract protected MicrosoftStoreMessageAttachment[] getNativeAttachments();
+	// abstract protected int getNativeNumberOfAttachments();
+	//
+	// abstract protected int getNativeAttachmentAttachMethod(int
+	// attachmentNumber);
+	//
+	// abstract protected byte[] getNativeAttachmentByteArray(int
+	// attachmentNumber);
+	//
+	// abstract protected String getNativeAttachmentLongFilename(int
+	// attachmentNumber);
+	//
+	// abstract protected String getNativeAttachmentFilename(int
+	// attachmentNumber);
+	//
+	// abstract protected String getNativeAttachmentDisplayName(int
+	// attachmentNumber);
+	//
+	// abstract protected Date getNativeAttachmentCreationTime(int
+	// attachmentNumber);
+	//
+	// abstract protected Date getNativeAttachmentModificationTime(int
+	// attachmentNumber);
+	//
+	// abstract protected String getNativeAttachmentMimeTag(int
+	// attachmentNumber);
+	//
+	// abstract protected String getNativeAttachmentContentId(int
+	// attachmentNumber);
+	//
+	// abstract protected Object getNativeAttachmentEmbeddedMessage(int
+	// attachmentNumber);
 
 	abstract protected String getEmbeddedMessageScheme();
 
@@ -219,7 +232,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#prepareHeaders()
 	 */
 	// get the smtp transport header if any
-	protected void prepareHeaders() {
+	protected void prepareAnalyze() {
 		String headerString;
 
 		if (!hasRFC822Headers()) {
@@ -228,14 +241,13 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 				try {
 					rfc822Headers = new RFC822Headers(headerString, this);
 					mailHeader = Collections.list(rfc822Headers.getAllHeaderLines());
-					return;
 				} catch (MessagingException e) {
 					logMessageWarning("mailextract.microsoft: Can't decode smtp header");
+					rfc822Headers = null;
+					mailHeader = null;
 				}
 		}
-		rfc822Headers = null;
-		mailHeader = null;
-
+		nativeAttachments = getNativeAttachments();
 	}
 
 	// Subject specific functions
@@ -317,7 +329,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 						result += ">";
 					}
 				}
-			} 
+			}
 			// FIXME AN pst to test
 			catch (Exception e) {
 				result = null;
@@ -498,9 +510,10 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 		}
 		// if not in the SMTP header there's no microsoft version
 
-		if (result == null)
-			logMessageWarning("mailextract.microsoft: No Return-Path address in header");
-
+		if (result == null) {
+			// logMessageWarning("mailextract.microsoft: No Return-Path address
+			// in header");
+		}
 		returnPath = result;
 	}
 
@@ -615,11 +628,11 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	private String getAttachementFilename(int attachmentNumber) {
 		String result = "";
 
-		result = getNativeAttachmentLongFilename(attachmentNumber);
+		result = nativeAttachments[attachmentNumber].longFilename;
 		if (result.isEmpty())
-			result = getNativeAttachmentFilename(attachmentNumber);
+			result = nativeAttachments[attachmentNumber].filename;
 		if (result.isEmpty())
-			result = getNativeAttachmentDisplayName(attachmentNumber);
+			result = nativeAttachments[attachmentNumber].displayName;
 
 		return result;
 	}
@@ -635,7 +648,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
 		int attachmentNumber;
 		try {
-			attachmentNumber = getNativeNumberOfAttachments();
+			attachmentNumber = nativeAttachments.length;
 		} catch (Exception e) {
 			logMessageWarning("mailextract.microsoft: Can't determine attachment list");
 			attachmentNumber = 0;
@@ -644,7 +657,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 			try {
 				StoreMessageAttachment attachment;
 
-				switch (getNativeAttachmentAttachMethod(i)) {
+				switch (nativeAttachments[i].attachMethod) {
 				case ATTACHMENT_METHOD_NONE:
 					break;
 				// TODO OLE case you can access the IStorage object through
@@ -653,10 +666,10 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 					logMessageWarning("mailextract.microsoft: Can't extract OLE attachment");
 					break;
 				case ATTACHMENT_METHOD_BY_VALUE:
-					attachment = new StoreMessageAttachment(getNativeAttachmentByteArray(i), "file",
-							getAttachementFilename(i), getNativeAttachmentCreationTime(i),
-							getNativeAttachmentModificationTime(i), getNativeAttachmentMimeTag(i),
-							getNativeAttachmentContentId(i), StoreMessageAttachment.INLINE_ATTACHMENT);
+					attachment = new StoreMessageAttachment(nativeAttachments[i].byteArray, "file",
+							getAttachementFilename(i), nativeAttachments[i].creationTime,
+							nativeAttachments[i].modificationTime, nativeAttachments[i].mimeTag,
+							nativeAttachments[i].contentId, StoreMessageAttachment.INLINE_ATTACHMENT);
 					result.add(attachment);
 					break;
 				case ATTACHMENT_METHOD_BY_REFERENCE:
@@ -666,10 +679,10 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 					logMessageWarning("mailextract.microsoft: Can't extract reference attachment");
 					break;
 				case ATTACHMENT_METHOD_EMBEDDED:
-					attachment = new StoreMessageAttachment(getNativeAttachmentEmbeddedMessage(i),
-							getEmbeddedMessageScheme(), getAttachementFilename(i), getNativeAttachmentCreationTime(i),
-							getNativeAttachmentModificationTime(i), getNativeAttachmentMimeTag(i),
-							getNativeAttachmentContentId(i), StoreMessageAttachment.STORE_ATTACHMENT);
+					attachment = new StoreMessageAttachment(nativeAttachments[i].embeddedMessage,
+							getEmbeddedMessageScheme(), getAttachementFilename(i), nativeAttachments[i].creationTime,
+							nativeAttachments[i].modificationTime, nativeAttachments[i].mimeTag,
+							nativeAttachments[i].contentId, StoreMessageAttachment.STORE_ATTACHMENT);
 					result.add(attachment);
 					break;
 				}

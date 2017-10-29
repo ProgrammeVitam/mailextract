@@ -43,6 +43,7 @@ import org.apache.poi.hsmf.exceptions.ChunkNotFoundException;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 public class MsgStoreMessage extends MicrosoftStoreMessage {
 
@@ -51,7 +52,8 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	long size;
 
 	MsgConversationIndex msgConversationIndex;
-	MsgAttachment[] msgAttachments;
+
+	static final String EMBEDDED_MESSAGE = "msg.embeddedmsg";
 
 	public static final int CONVERSATION_INDEX = 0x0071;
 	public static final int SMTP_TRANSPORT_HEADER = 0x007d;
@@ -74,7 +76,6 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		this.message = message;
 		this.size = size;
 		getConversationIndex();
-		getAttachments();
 	}
 
 	private void getConversationIndex() {
@@ -83,15 +84,6 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 			msgConversationIndex = new MsgConversationIndex(byteConversationIndex);
 			if (msgConversationIndex.getGuid() == null)
 				msgConversationIndex = null;
-		}
-	}
-
-	private void getAttachments() {
-		AttachmentChunks[] allAttachmentChunks = message.getAttachmentFiles();
-
-		msgAttachments = new MsgAttachment[allAttachmentChunks.length];
-		for (int i = 0; i < allAttachmentChunks.length; i++) {
-			msgAttachments[i] = new MsgAttachment(allAttachmentChunks[i]);
 		}
 	}
 
@@ -309,63 +301,20 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	}
 
 	@Override
-	protected int getNativeNumberOfAttachments() {
-		return msgAttachments.length;
-	}
-
-	@Override
-	protected int getNativeAttachmentAttachMethod(int attachmentNumber) {
-		return (int) msgAttachments[attachmentNumber].attachMethod;
-	}
-
-	@Override
-	protected byte[] getNativeAttachmentByteArray(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].byteArray;
-	}
-
-	@Override
-	protected String getNativeAttachmentLongFilename(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].longFilename;
-	}
-
-	@Override
-	protected String getNativeAttachmentFilename(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].filename;
-	}
-
-	@Override
-	protected String getNativeAttachmentDisplayName(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].displayName;
-	}
-
-	@Override
-	protected Date getNativeAttachmentCreationTime(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].creationTime;
-	}
-
-	@Override
-	protected Date getNativeAttachmentModificationTime(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].modificationTime;
-	}
-
-	@Override
-	protected String getNativeAttachmentMimeTag(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].mimeTag;
-	}
-
-	@Override
-	protected String getNativeAttachmentContentId(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].contentId;
-	}
-
-	@Override
-	protected Object getNativeAttachmentEmbeddedMessage(int attachmentNumber) {
-		return msgAttachments[attachmentNumber].embeddedMessage;
-	}
-
-	@Override
 	protected String getEmbeddedMessageScheme() {
-		return "msg.embeddedmsg";
+		return EMBEDDED_MESSAGE;
+	}
+
+	@Override
+	protected MicrosoftStoreMessageAttachment[] getNativeAttachments() {
+		MsgStoreMessageAttachment[] msgAttachments;
+		AttachmentChunks[] allAttachmentChunks = message.getAttachmentFiles();
+
+		msgAttachments = new MsgStoreMessageAttachment[allAttachmentChunks.length];
+		for (int i = 0; i < allAttachmentChunks.length; i++) {
+			msgAttachments[i] = new MsgStoreMessageAttachment(allAttachmentChunks[i]);
+		}
+		return msgAttachments;
 	}
 
 }

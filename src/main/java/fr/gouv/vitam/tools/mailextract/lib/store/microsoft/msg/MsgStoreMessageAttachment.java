@@ -29,11 +29,9 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg;
 
 import java.io.IOException;
 import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.poi.hsmf.MAPIMessage;
 import org.apache.poi.hsmf.datatypes.AttachmentChunks;
 import org.apache.poi.hsmf.datatypes.Chunk;
 import org.apache.poi.hsmf.datatypes.MAPIProperty;
@@ -41,40 +39,21 @@ import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.StoragePropertiesChunk;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 
+
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
+
 /**
  * Class containing attachment information.
  * 
  * @author Richard Johnson
  */
-public class MsgAttachment {
+public class MsgStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 
-	public static final int ATTACHMENT_METHOD_NONE = 0;
-	public static final int ATTACHMENT_METHOD_BY_VALUE = 1;
-	public static final int ATTACHMENT_METHOD_BY_REFERENCE = 2;
-	public static final int ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE = 3;
-	public static final int ATTACHMENT_METHOD_BY_REFERENCE_ONLY = 4;
-	public static final int ATTACHMENT_METHOD_EMBEDDED = 5;
-	public static final int ATTACHMENT_METHOD_OLE = 6;
-
-	AttachmentChunks attachmentChunks;
-	byte[] byteArray;
-	String filename="";
-	Date creationTime;
-	Date modificationTime;
-	MAPIMessage embeddedMessage;
-	int attachMethod;
-	int size;
-	String longFilename="";
-	String displayName="";
-	String mimeTag="";
-	String contentId="";
-
-	public MsgAttachment(AttachmentChunks attachmentChunks) {
+	public MsgStoreMessageAttachment(AttachmentChunks attachmentChunks) {
 		Chunk[] chunkArray = attachmentChunks.getAll();
 		List<PropertyValue> lVal;
 		StringChunk tmpSC;
 
-		this.attachmentChunks = attachmentChunks;
 		// lack of ATTACH_METHOD, ATTACH_SIZE, CREATION_TIME and
 		// LAST_MODIFICATION_TIME in POI
 		// get StoragePropertiesChunk for fixed values and find needed

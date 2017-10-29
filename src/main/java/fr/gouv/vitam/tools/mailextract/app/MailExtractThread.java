@@ -28,7 +28,10 @@ package fr.gouv.vitam.tools.mailextract.app;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -60,6 +63,9 @@ public class MailExtractThread extends Thread {
 
 	/** The logger. */
 	private Logger logger;
+	
+	/** The output stream for extract list, if any. */
+	private PrintStream psExtractList;
 
 	// generate a specific logger at the loglevel defined in constructor and
 	// sending to stdout console instead of stderr console
@@ -129,7 +135,11 @@ public class MailExtractThread extends Thread {
 
 		try {
 			logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
-		} catch (Exception e) {
+			if (storeExtractorOptions.extractList)
+				psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
+			else 
+				psExtractList=null;
+	} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
 
@@ -137,7 +147,7 @@ public class MailExtractThread extends Thread {
 		try {
 			String urlString = StoreExtractor.composeStoreURL(protocol, host, user, password, container);
 			this.storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
+					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
 			this.actionNumber = actionNumber;
 		} catch (Exception e) {
 			this.actionNumber = 0;

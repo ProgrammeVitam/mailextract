@@ -143,7 +143,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				mainWindow.imapsRadioButton.doClick();
 			mainWindow.userField.setText(user);
 			mainWindow.passwordField.setText(password);
-			mainWindow.serverField.setText(host+(port==-1?"":":"+Integer.toString(port)));
+			mainWindow.serverField.setText(host + (port == -1 ? "" : ":" + Integer.toString(port)));
 		}
 		mainWindow.folderField.setText(folder);
 		mainWindow.savedirField.setText(destRootPath);
@@ -157,6 +157,9 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		}
 		if (storeExtractorOptions.warningMsgProblem) {
 			mainWindow.warningCheckBox.setSelected(true);
+		}
+		if (storeExtractorOptions.extractList) {
+			mainWindow.extractlistCheckBox.setSelected(true);
 		}
 		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 
@@ -284,7 +287,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		destName = "";
 		protocol = "";
 		host = "localhost";
-		port=-1;
+		port = -1;
 		user = null;
 		password = null;
 		container = "";
@@ -313,12 +316,11 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			else
 				protocol = "imap";
 			String server = mainWindow.serverField.getText();
-			if (server.indexOf(':')>=0){
-				host=server.substring(0, server.indexOf(':'));
-				port=Integer.parseInt(server.substring(server.indexOf(':')+1));
-			}
-			else 
-				host=server;
+			if (server.indexOf(':') >= 0) {
+				host = server.substring(0, server.indexOf(':'));
+				port = Integer.parseInt(server.substring(server.indexOf(':') + 1));
+			} else
+				host = server;
 			user = mainWindow.userField.getText();
 			password = mainWindow.passwordField.getText();
 		}
@@ -326,19 +328,21 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		destRootPath = mainWindow.savedirField.getText();
 		destName = mainWindow.nameField.getText();
 
-		if (mainWindow.keeponlydeepCheckBox.isSelected()) {
+		if (mainWindow.keeponlydeepCheckBox.isSelected())
 			storeExtractorOptions.keepOnlyDeepEmptyFolders = true;
-		}
-		if (mainWindow.dropemptyfoldersCheckBox.isSelected()) {
+
+		if (mainWindow.dropemptyfoldersCheckBox.isSelected())
 			storeExtractorOptions.dropEmptyFolders = true;
-		}
-		if (mainWindow.warningCheckBox.isSelected()) {
+
+		if (mainWindow.warningCheckBox.isSelected())
 			storeExtractorOptions.warningMsgProblem = true;
-		}
+
+		if (mainWindow.extractlistCheckBox.isSelected())
+			storeExtractorOptions.extractList = true;
+
 		try {
-			storeExtractorOptions.namesLength=Integer.parseInt(mainWindow.namesLengthField.getText());
-		}
-		catch (NumberFormatException e){
+			storeExtractorOptions.namesLength = Integer.parseInt(mainWindow.namesLengthField.getText());
+		} catch (NumberFormatException e) {
 			mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 		}
 

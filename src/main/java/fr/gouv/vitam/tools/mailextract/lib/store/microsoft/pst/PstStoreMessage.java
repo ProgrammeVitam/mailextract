@@ -27,9 +27,7 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -41,10 +39,13 @@ import com.pff.PSTRecipient;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 public class PstStoreMessage extends MicrosoftStoreMessage {
 
 	PSTMessage message;
+
+	static final String EMBEDDED_MESSAGE = "pst.embeddedmsg";
 
 	public PstStoreMessage(StoreFolder mBFolder, PSTMessage message) {
 		super(mBFolder);
@@ -123,7 +124,7 @@ public class PstStoreMessage extends MicrosoftStoreMessage {
 
 	@Override
 	protected boolean hasNativeConversationIndex() {
-		return ((message.getConversationIndex() != null) && (message.getConversationIndex().getGuid()!=null));
+		return ((message.getConversationIndex() != null) && (message.getConversationIndex().getGuid() != null));
 	}
 
 	@Override
@@ -253,110 +254,19 @@ public class PstStoreMessage extends MicrosoftStoreMessage {
 	}
 
 	@Override
-	protected int getNativeNumberOfAttachments() {
-		return message.getNumberOfAttachments();
-	}
-
-	@Override
-	protected int getNativeAttachmentAttachMethod(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getAttachMethod();
-		} catch (PSTException | IOException e) {
-			return 0;
-		}
-	}
-
-	@Override
-	protected byte[] getNativeAttachmentByteArray(int attachmentNumber) {
-		try {
-			InputStream is = message.getAttachment(attachmentNumber).getFileInputStream();
-			ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			byte[] buf = new byte[4096];
-			int bytesRead;
-			while ((bytesRead = is.read(buf)) != -1) {
-				baos.write(buf, 0, bytesRead);
-			}
-			return baos.toByteArray();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected String getNativeAttachmentLongFilename(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getLongFilename();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected String getNativeAttachmentFilename(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getFilename();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected String getNativeAttachmentDisplayName(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getDisplayName();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected Date getNativeAttachmentCreationTime(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getCreationTime();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected Date getNativeAttachmentModificationTime(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getModificationTime();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected String getNativeAttachmentMimeTag(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getMimeTag();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected String getNativeAttachmentContentId(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getContentId();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
-	protected Object getNativeAttachmentEmbeddedMessage(int attachmentNumber) {
-		try {
-			return message.getAttachment(attachmentNumber).getEmbeddedPSTMessage();
-		} catch (PSTException | IOException e) {
-			return null;
-		}
-	}
-
-	@Override
 	protected String getEmbeddedMessageScheme() {
-		return "pst.embeddedmsg";
+		return EMBEDDED_MESSAGE;
+	}
+
+	@Override
+	protected MicrosoftStoreMessageAttachment[] getNativeAttachments() {
+		PstStoreMessageAttachment[] psmAttachment;
+		
+		psmAttachment = new PstStoreMessageAttachment[message.getNumberOfAttachments()];
+		for (int i = 0; i < message.getNumberOfAttachments(); i++) {
+			psmAttachment[i] = new PstStoreMessageAttachment(message, i);
+		}
+		return psmAttachment;
 	}
 
 }

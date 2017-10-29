@@ -25,30 +25,64 @@
  * accept its terms.
  */
 
-package fr.gouv.vitam.tools.mailextract.lib.core;
+package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
-public class StoreExtractorOptions {
-	public boolean keepOnlyDeepEmptyFolders;
-	public boolean dropEmptyFolders;
-	public boolean warningMsgProblem;
-	public int namesLength;
-	public boolean extractList;
+import java.io.UnsupportedEncodingException;
 
-	public StoreExtractorOptions() {
-		keepOnlyDeepEmptyFolders = false;
-		dropEmptyFolders = false;
-		warningMsgProblem = false;
-		extractList=false;
-		namesLength = 12;
-	}
+import javax.mail.internet.MimeUtility;
 
-	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, boolean extractList) {
-		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
-		this.dropEmptyFolders = dropEmptyFolders;
-		this.warningMsgProblem = warningMsgProblem;
-		this.namesLength = namesLength;
-		this.extractList=extractList;
+public class Person {
+
+	public String firstName;
+	public String birthName;
+	public String identifier;
+
+	/**
+	 * Extract a person from an address encoded. Example TOTO John
+	 * Do<toto@sample.fr>" is extracted as:
+	 * <p>
+	 * FirstName="John Do", BirthName="John Do", Identifier="toto@sample.fr"
+	 * <p>
+	 * 
+	 * @param s
+	 *            the s
+	 * @return the person
+	 */
+	public Person(String s) {
+		int beg, end;
+		String name = null;
+
+		if ((s == null) || s.isEmpty()) {
+			identifier = "[Vide]";
+			birthName = "[Vide]";
+			firstName = "[Vide]";
+			return;
+		}
+
+		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
+			identifier = s.substring(beg + 1, end).trim();
+			if (identifier.isEmpty())
+				identifier = "[Vide]";
+			name = s.substring(0, beg).trim();
+		} else
+			identifier = s.trim();
+
+		if ((name == null) || name.isEmpty()) {
+			if ((end = identifier.indexOf('@')) != -1)
+				name = identifier.substring(0, end);
+			else
+				name = "[Vide]";
+		}
 		
+		if (name.startsWith("=?"))
+			try {
+				name = MimeUtility.decodeText(name);
+			} catch (UnsupportedEncodingException e) {
+				// Don't care
+			}
+
+		firstName = name;
+		birthName = name;
+		return;
 	}
 }

@@ -30,6 +30,7 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.util.logging.Logger;
 
@@ -76,12 +77,13 @@ public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *            the root store extractor
 	 * @param logger
 	 *            the logger
+	 * @param osExtractList 
 	 * @throws ExtractionException
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super(urlString, folder, destPathString, options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+		super(urlString, folder, destPathString, options, rootStoreExtractor, logger,psExtractList);
 		MAPIMessage message;
 		long size = 0;
 
@@ -117,8 +119,8 @@ public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super("msg.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger,PrintStream psExtractList) throws ExtractionException {
+		super("msg.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		MAPIMessage message;
 
 		this.attachment = attachment;

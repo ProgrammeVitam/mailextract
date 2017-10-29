@@ -37,6 +37,7 @@ import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Properties;
@@ -83,13 +84,14 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param osExtractList 
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super(urlString, folder, destPathString, options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+		super(urlString, folder, destPathString, options, rootStoreExtractor, logger, psExtractList);
 
 		String url = "";
 
@@ -167,8 +169,8 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super(attachment.getScheme(), "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger,PrintStream psExtractList) throws ExtractionException {
+		super(attachment.getScheme(), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		String url;
 
 		url = attachment.getScheme()+":";

@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.file.Files;
@@ -92,13 +93,14 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param osExtractList 
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,psExtractList);
 		
 		try {
 			pstFile = new PSTFile(path);
@@ -197,8 +199,8 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
-		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		
 		this.attachment = attachment;
 		this.storeFile = new File(path);

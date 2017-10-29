@@ -29,6 +29,7 @@ package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -46,6 +47,7 @@ import fr.gouv.vitam.tools.mailextract.lib.formattools.TikaExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.rtf.HTMLFromRTFExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.nodes.Person;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg.MsgStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor;
@@ -103,6 +105,15 @@ public abstract class StoreMessage extends StoreFile {
 
 	/** Store folder. containing this message. **/
 	protected StoreFolder storeFolder;
+
+	/** Message nature (MESSAGE, CALENDAR). */
+	protected int nature;
+
+	/** The Constant MESSAGE. */
+	static public final int MESSAGE = 0;
+
+	/** The Constant CALENDAR. */
+	static public final int CALENDAR = 1;
 
 	/**
 	 * Raw binary content of the message for mime sources, or of the mime fake
@@ -286,9 +297,9 @@ public abstract class StoreMessage extends StoreFile {
 
 	/**
 	 * Get and generate the complete message mime header from original format,
-	 * if any.
+	 * if any, and all other information useful for analyzing.
 	 */
-	protected abstract void prepareHeaders();
+	protected abstract void prepareAnalyze();
 
 	/**
 	 * Analyze message to get Subject metadata.
@@ -357,7 +368,7 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	/**
-	 * Detect embedded store attachments not determine during parsing
+	 * Detect embedded store attachments not determine during parsing.
 	 */
 	protected void detectStoreAttachments() {
 		String mimeType, scheme;
@@ -405,15 +416,15 @@ public abstract class StoreMessage extends StoreFile {
 	protected abstract byte[] getNativeMimeContent();
 
 	// get rid of useless beginning and ending spaces, carriage returns...
-	private void trimBodies(){
-		if (bodyContent[TEXT_BODY]!=null)
-			bodyContent[TEXT_BODY]=bodyContent[TEXT_BODY].trim();
-		if (bodyContent[HTML_BODY]!=null)
-			bodyContent[HTML_BODY]=bodyContent[HTML_BODY].trim();
-		if (bodyContent[RTF_BODY]!=null)
-			bodyContent[RTF_BODY]=bodyContent[RTF_BODY].trim();
+	private void trimBodies() {
+		if (bodyContent[TEXT_BODY] != null)
+			bodyContent[TEXT_BODY] = bodyContent[TEXT_BODY].trim();
+		if (bodyContent[HTML_BODY] != null)
+			bodyContent[HTML_BODY] = bodyContent[HTML_BODY].trim();
+		if (bodyContent[RTF_BODY] != null)
+			bodyContent[RTF_BODY] = bodyContent[RTF_BODY].trim();
 	}
-	
+
 	/**
 	 * Analyze message to collect metadata and content information (protocol
 	 * specific).
@@ -442,7 +453,7 @@ public abstract class StoreMessage extends StoreFile {
 			System.out.println("Here");
 
 		// header content extraction
-		prepareHeaders();
+		prepareAnalyze();
 
 		// * messageID
 		analyzeMessageID();
@@ -567,6 +578,78 @@ public abstract class StoreMessage extends StoreFile {
 
 		getLogger().finer("mailextract: Extracted message " + (subject == null ? "no subject" : subject));
 		getLogger().finest("with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
+
+		// write in csv list
+		if (storeFolder.getStoreExtractor().options.extractList)
+			writeExtractList();
+	}
+
+	private void writeExtractList() {
+		SimpleDateFormat sdf= new SimpleDateFormat("dd/MM/yyyy HH:mm");
+			
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
+				(sentDate == null ? "" : sdf.format(sentDate)));
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
+				(receivedDate == null ? "" : sdf.format(receivedDate)));
+		if ((from != null) && !from.isEmpty()) {
+			Person p = new Person(from);
+			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.birthName), filterHyphen(p.identifier));
+		}
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
+				filterHyphen(personStringListToIndentifierString(recipientTo)));
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(subject));
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(messageID));
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(attachmentsNamesList()));
+		if (replyTo == null)
+			storeFolder.getStoreExtractor().getPSExtractList().format("\"\"|");
+		else {
+			Person p = new Person(replyTo.get(0));
+			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(p.identifier));
+		}
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(storeFolder.getFullName()));
+		storeFolder.getStoreExtractor().getPSExtractList().format("\"%d\"|", this.getMessageSize());
+		if (!storeFolder.getStoreExtractor().isRoot())
+			storeFolder.getStoreExtractor().getPSExtractList().format("\"Attached\"");
+		storeFolder.getStoreExtractor().getPSExtractList().println("");
+		storeFolder.getStoreExtractor().getPSExtractList().flush();
+	}
+
+	private String personStringListToIndentifierString(List<String> sList) {
+		String result = "";
+		Person p;
+		boolean first = true;
+
+		if (sList != null) {
+			for (String s : sList) {
+				if (first)
+					first = false;
+				else
+					result += ", ";
+				p = new Person(s);
+				result += p.identifier;
+			}
+		}
+		return result;
+	}
+
+	private String attachmentsNamesList() {
+		String result = "";
+		boolean first = true;
+
+		if (attachments != null) {
+			for (StoreMessageAttachment a : attachments) {
+				if (first)
+					first = false;
+				else
+					result += ", ";
+				result += a.getName();
+			}
+		}
+		return result;
+	}
+	
+	private String filterHyphen(String s){
+		return s.replace("\"", " ");
 	}
 
 	/** Extract a file or inline message attachment. */
@@ -623,8 +706,8 @@ public abstract class StoreMessage extends StoreFile {
 
 		switch (a.attachmentStoreScheme) {
 		case "eml": // for eml file attachement and embedded rf822
-			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger());
+			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
+					getStoreExtractor().getPSExtractList());
 			break;
 		case "mbox": // for mbox file attachement
 			subRootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
@@ -632,8 +715,8 @@ public abstract class StoreMessage extends StoreFile {
 			subRootNode.addMetadata("Title", "Conteneur mbox", true);
 			subRootNode.addMetadata("Description", "Extraction d'un mbox contenu", true);
 
-			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger());
+			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
+					getStoreExtractor().getPSExtractList());
 			break;
 		case "pst": // for msg file attachement
 			subRootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
@@ -642,16 +725,16 @@ public abstract class StoreMessage extends StoreFile {
 			subRootNode.addMetadata("Description", "Extraction d'un pst contenu", true);
 
 			extractor = new PstStoreExtractor(a, subRootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger());
+					getLogger(), getStoreExtractor().getPSExtractList());
 			break;
 		case "pst.embeddedmsg": // for embedded msg attachement in pst
 			extractor = new PstEmbeddedStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger());
+					getLogger(), getStoreExtractor().getPSExtractList());
 			break;
 		case "msg": // for msg file attachement
 		case "msg.embeddedmsg": // for embedded msg attachement in msg
 			extractor = new MsgStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger());
+					getLogger(), getStoreExtractor().getPSExtractList());
 			break;
 		default:
 			logMessageWarning("mailextract: Unknown embedded store type=" + a.attachmentStoreScheme
@@ -896,14 +979,14 @@ public abstract class StoreMessage extends StoreFile {
 	// }
 
 	// some extraction has no body and no attachements only headers
-	private boolean isEmptyMessage(){
-		if ((bodyContent[TEXT_BODY]!=null) && !bodyContent[TEXT_BODY].isEmpty())
+	private boolean isEmptyMessage() {
+		if ((bodyContent[TEXT_BODY] != null) && !bodyContent[TEXT_BODY].isEmpty())
 			return false;
-		if ((bodyContent[HTML_BODY]!=null) && !bodyContent[HTML_BODY].isEmpty())
+		if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
 			return false;
-		if ((bodyContent[RTF_BODY]!=null) && !bodyContent[RTF_BODY].isEmpty())
+		if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
 			return false;
-		if (attachments.size()>0)
+		if (attachments.size() > 0)
 			return false;
 		return true;
 	}
@@ -912,110 +995,110 @@ public abstract class StoreMessage extends StoreFile {
 		boolean hasInline = false;
 		int relatedPart = OUT_OF_BODY;
 
-			MimeMultipart rootMp = new MimeMultipart("mixed");
-			{
-				try {
-					// search if there are inlines
-					for (StoreMessageAttachment a : attachments) {
-						if (a.attachmentType == StoreMessageAttachment.INLINE_ATTACHMENT) {
-							hasInline = true;
-							break;
-						}
+		MimeMultipart rootMp = new MimeMultipart("mixed");
+		{
+			try {
+				// search if there are inlines
+				for (StoreMessageAttachment a : attachments) {
+					if (a.attachmentType == StoreMessageAttachment.INLINE_ATTACHMENT) {
+						hasInline = true;
+						break;
 					}
+				}
 
-					// de-encapulate HTML from RTF if needed
-					if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())) {
-						HTMLFromRTFExtractor htmlExtractor = new HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
-						if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
-							String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-							if ((result != null) && !result.isEmpty()) {
-								if ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()) {
-									bodyContent[TEXT_BODY] = result;
-									bodyContent[RTF_BODY] = null;
-								} else {
-									result = result.trim();
-									if (bodyContent[TEXT_BODY].equals(result))
-										bodyContent[RTF_BODY] = null;
-								}
-							}
-						} else if (htmlExtractor.isEncapsulatedHTMLinRTF()
-								&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].isEmpty())) {
-							String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-							if ((result != null) && !result.isEmpty()) {
-								bodyContent[HTML_BODY] = result;
+				// de-encapulate HTML from RTF if needed
+				if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())) {
+					HTMLFromRTFExtractor htmlExtractor = new HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
+					if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
+						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+						if ((result != null) && !result.isEmpty()) {
+							if ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()) {
+								bodyContent[TEXT_BODY] = result;
 								bodyContent[RTF_BODY] = null;
+							} else {
+								result = result.trim();
+								if (bodyContent[TEXT_BODY].equals(result))
+									bodyContent[RTF_BODY] = null;
 							}
 						}
-
-					}
-
-					// determine in which part to add related
-					if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
-						relatedPart = RTF_BODY;
-					else if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
-						relatedPart = HTML_BODY;
-
-					// build message part
-					MimeMultipart msgMp = newChild(rootMp, "alternative");
-					{
-						if ((bodyContent[TEXT_BODY] != null) && !bodyContent[TEXT_BODY].isEmpty()) {
-							MimeBodyPart part = new MimeBodyPart();
-							part.setContent(bodyContent[TEXT_BODY], "text/plain; charset=utf-8");
-							msgMp.addBodyPart(part);
-						}
-						// if empty message, construct a fake empty text part
-						if (isEmptyMessage()) {
-							MimeBodyPart part = new MimeBodyPart();
-							part.setContent("", "text/plain; charset=utf-8");
-							msgMp.addBodyPart(part);
-						}
-
-						if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty()) {
-							MimeMultipart upperpart;
-							if (hasInline && (relatedPart == HTML_BODY)) {
-								upperpart = newChild(msgMp, "related");
-							} else
-								upperpart = msgMp;
-
-							MimeBodyPart part = new MimeBodyPart();
-							part.setContent(bodyContent[HTML_BODY], "text/html; charset=utf-8");
-							upperpart.addBodyPart(part);
-
-							if (hasInline && (relatedPart == HTML_BODY))
-								addAttachmentPart(upperpart, true);
-						}
-						if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty()) {
-							MimeMultipart upperpart;
-							if (hasInline && (relatedPart == RTF_BODY)) {
-								upperpart = newChild(msgMp, "related");
-							} else
-								upperpart = msgMp;
-
-							MimeBodyPart part = new MimeBodyPart();
-							part.setContent(bodyContent[RTF_BODY], "text/rtf; charset=US-ASCII");// ;
-																									// charset=utf-8");
-							upperpart.addBodyPart(part);
-
-							if (hasInline && (relatedPart == RTF_BODY))
-								addAttachmentPart(upperpart, true);
-
+					} else if (htmlExtractor.isEncapsulatedHTMLinRTF()
+							&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].isEmpty())) {
+						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+						if ((result != null) && !result.isEmpty()) {
+							bodyContent[HTML_BODY] = result;
+							bodyContent[RTF_BODY] = null;
 						}
 					}
-				} catch (MessagingException e) {
-					throw new ExtractionException("Unable to generate mime body part of message " + subject);
+
 				}
 
-				// add inline part of attachments if not added to HTML body
-				if (relatedPart == OUT_OF_BODY)
-					addAttachmentPart(rootMp, true);
-				addAttachmentPart(rootMp, false);
+				// determine in which part to add related
+				if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
+					relatedPart = RTF_BODY;
+				else if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
+					relatedPart = HTML_BODY;
 
-				try {
-					mime.setContent(rootMp);
-				} catch (MessagingException e) {
-					throw new ExtractionException("Unable to generate mime fake of message " + subject);
+				// build message part
+				MimeMultipart msgMp = newChild(rootMp, "alternative");
+				{
+					if ((bodyContent[TEXT_BODY] != null) && !bodyContent[TEXT_BODY].isEmpty()) {
+						MimeBodyPart part = new MimeBodyPart();
+						part.setContent(bodyContent[TEXT_BODY], "text/plain; charset=utf-8");
+						msgMp.addBodyPart(part);
+					}
+					// if empty message, construct a fake empty text part
+					if (isEmptyMessage()) {
+						MimeBodyPart part = new MimeBodyPart();
+						part.setContent("", "text/plain; charset=utf-8");
+						msgMp.addBodyPart(part);
+					}
+
+					if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty()) {
+						MimeMultipart upperpart;
+						if (hasInline && (relatedPart == HTML_BODY)) {
+							upperpart = newChild(msgMp, "related");
+						} else
+							upperpart = msgMp;
+
+						MimeBodyPart part = new MimeBodyPart();
+						part.setContent(bodyContent[HTML_BODY], "text/html; charset=utf-8");
+						upperpart.addBodyPart(part);
+
+						if (hasInline && (relatedPart == HTML_BODY))
+							addAttachmentPart(upperpart, true);
+					}
+					if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty()) {
+						MimeMultipart upperpart;
+						if (hasInline && (relatedPart == RTF_BODY)) {
+							upperpart = newChild(msgMp, "related");
+						} else
+							upperpart = msgMp;
+
+						MimeBodyPart part = new MimeBodyPart();
+						part.setContent(bodyContent[RTF_BODY], "text/rtf; charset=US-ASCII");// ;
+																								// charset=utf-8");
+						upperpart.addBodyPart(part);
+
+						if (hasInline && (relatedPart == RTF_BODY))
+							addAttachmentPart(upperpart, true);
+
+					}
 				}
+			} catch (MessagingException e) {
+				throw new ExtractionException("Unable to generate mime body part of message " + subject);
 			}
+
+			// add inline part of attachments if not added to HTML body
+			if (relatedPart == OUT_OF_BODY)
+				addAttachmentPart(rootMp, true);
+			addAttachmentPart(rootMp, false);
+
+			try {
+				mime.setContent(rootMp);
+			} catch (MessagingException e) {
+				throw new ExtractionException("Unable to generate mime fake of message " + subject);
+			}
+		}
 	}
 
 	private String encodedFilename(String filename, String ifnone) {

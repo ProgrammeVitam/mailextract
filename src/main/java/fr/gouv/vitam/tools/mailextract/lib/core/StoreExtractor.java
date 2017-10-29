@@ -28,6 +28,7 @@
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
+import fr.gouv.vitam.tools.mailextract.lib.nodes.Person;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg.MsgStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor;
@@ -39,11 +40,13 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.logging.Logger;
-
 import javax.mail.URLName;
+
+import java.io.PrintStream;
 
 /**
  * Abstract factory class for operation context on a defined mailbox.
@@ -186,6 +189,9 @@ public abstract class StoreExtractor {
 	// private logger
 	private Logger logger;
 
+	// private output stream for extract list, if any
+	private PrintStream psExtractList;
+
 	/**
 	 * Compose an URL String.
 	 *
@@ -252,12 +258,13 @@ public abstract class StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param osExtractList2
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	protected StoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger) throws ExtractionException {
+			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
 
 		URLName url;
 		url = new URLName(urlString);
@@ -290,6 +297,7 @@ public abstract class StoreExtractor {
 
 		this.rootStoreExtractor = rootStoreExtractor;
 		this.logger = logger;
+		this.psExtractList = psExtractList;
 
 		this.description = ":p:" + scheme + ":u:" + user;
 	}
@@ -330,7 +338,7 @@ public abstract class StoreExtractor {
 			}
 			if (!first)
 				optionsLog += ", ";
-			optionsLog += "with names length="+Integer.toString(options.namesLength);
+			optionsLog += "with names length=" + Integer.toString(options.namesLength);
 			first = false;
 			if (!first)
 				optionsLog += ", ";
@@ -510,6 +518,15 @@ public abstract class StoreExtractor {
 		return options;
 	}
 
+	/**
+	 * Gets the output stream for extraction list, if any.
+	 *
+	 * @return the store extractor options
+	 */
+	public PrintStream getPSExtractList() {
+		return psExtractList;
+	}
+
 	// /**
 	// * Gets the extractor depth in nested store extraction.
 	// *
@@ -560,9 +577,18 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	public static StoreExtractor createStoreExtractor(String urlString, String storeFolder, String destPathString,
-			StoreExtractorOptions options, Logger logger) throws ExtractionException {
+			StoreExtractorOptions options, Logger logger, PrintStream psExtractList) throws ExtractionException {
+		StoreExtractor storeExtractor;
 
-		return createInternalStoreExtractor(urlString, storeFolder, destPathString, options, null, logger);
+		storeExtractor = createInternalStoreExtractor(urlString, storeFolder, destPathString, options, null, logger,
+				psExtractList);
+
+		// write column names, if extract list expected
+		if (options.extractList)
+			psExtractList.println(
+					"SentDate|ReceivedDate|FromName|FromAddress|ToList|Subject|MessageID|AttachmentList|ReplyTo|Folder|Size|Attached");
+
+		return storeExtractor;
 	}
 
 	/**
@@ -599,8 +625,8 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	public static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
-			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger)
-			throws ExtractionException {
+			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger,
+			PrintStream psExtractList) throws ExtractionException {
 
 		StoreExtractor store;
 		URLName url;
@@ -612,11 +638,14 @@ public abstract class StoreExtractor {
 			storeFolder = storeFolder.substring(1);
 
 		if (url.getProtocol().equals("pst"))
-			store = new PstStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+			store = new PstStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
+					psExtractList);
 		else if (url.getProtocol().equals("msg"))
-			store = new MsgStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+			store = new MsgStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
+					psExtractList);
 		else
-			store = new JMStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
+			store = new JMStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
+					psExtractList);
 
 		return store;
 
@@ -744,5 +773,4 @@ public abstract class StoreExtractor {
 		}
 		return true;
 	}
-
 }

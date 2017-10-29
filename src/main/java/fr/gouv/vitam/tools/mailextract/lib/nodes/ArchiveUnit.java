@@ -267,12 +267,6 @@ public class ArchiveUnit {
 					+ rootPath + "'");
 	}
 
-	class Person {
-		String firstName;
-		String birthName;
-		String identifier;
-	}
-
 	/**
 	 * Adds for the key metadata a person value
 	 * <p>
@@ -298,7 +292,7 @@ public class ArchiveUnit {
 		MetadataXMLList mlMetaData;
 
 		if ((value != null) && !value.isEmpty()) {
-			p = extractPersonFromAddress(value);
+			p = new Person(value);
 			mlMetaData = new MetadataXMLList();
 			mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
 			mlMetaData.addMetadataXMLNode(mvMetaData);
@@ -342,7 +336,7 @@ public class ArchiveUnit {
 
 		if ((valuesList != null) && (valuesList.size() != 0)) {
 			for (String s : valuesList) {
-				p = extractPersonFromAddress(s);
+				p = new Person(s);
 				mlMetaData = new MetadataXMLList();
 				mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
 				mlMetaData.addMetadataXMLNode(mvMetaData);
@@ -357,52 +351,6 @@ public class ArchiveUnit {
 					+ rootPath + "'");
 	}
 
-	/**
-	 * Extract a person from an address encoded. Example TOTO John
-	 * Do<toto@sample.fr>" is extracted as:
-	 * <p>
-	 * FirstName="John Do", BirthName="John Do", Identifier="toto@sample.fr"
-	 * <p>
-	 * 
-	 * @param s
-	 *            the s
-	 * @return the person
-	 */
-	Person extractPersonFromAddress(String s) {
-		int beg, end;
-		Person p = new Person();
-		String name;
-
-		if ((s == null) || s.isEmpty()) {
-			p.identifier = "[Vide]";
-			p.birthName = "[Vide]";
-			p.firstName = "[Vide]";
-			return p;
-		}
-
-		if (((beg = s.lastIndexOf('<')) != -1) && ((end = s.lastIndexOf('>')) != -1) && (beg < end)) {
-			p.identifier = s.substring(beg + 1, end).trim();
-			if (p.identifier.isEmpty())
-				p.identifier = "[Vide]";
-			name = s.substring(0, beg).trim();
-			if (!name.isEmpty()) {
-				p.birthName = name;
-				p.firstName = name;
-				return p;
-			}
-		} else
-			p.identifier = s.trim();
-
-		if ((end = p.identifier.indexOf('@')) != -1)
-			name = p.identifier.substring(0, end);
-		else
-			name = "[Vide]";
-
-		p.firstName = name;
-		p.birthName = name;
-		return p;
-
-	}
 
 	/**
 	 * Adds an object with content from a String.

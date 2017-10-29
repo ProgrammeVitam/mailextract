@@ -28,7 +28,9 @@ package fr.gouv.vitam.tools.mailextract.app;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -129,6 +131,10 @@ import joptsimple.OptionSet;
  * <td>keep only empty folders not at root level</td>
  * </tr>
  * <tr>
+ * <td>--extractlist</td>
+ * <td>generate a csv list of all extracts</td>
+ * </tr>
+ *<tr>
  * <td>--verbatim</td>
  * <td>event level to log</td>
  * </tr>
@@ -172,8 +178,6 @@ import joptsimple.OptionSet;
  **/
 public class MailExtractApp {
 
-	static private Logger logger;
-
 	// define the jopt option parser
 	private final static OptionParser createOptionParser() {
 		OptionParser parser;
@@ -194,6 +198,7 @@ public class MailExtractApp {
 		parser.accepts("keeponlydeep", "keep only empty folders not at root level");
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
 		parser.accepts("nameslength", "generate short directories and files names").withRequiredArg();
+		parser.accepts("extractlist", "generate a csv list of all extracts");
 		parser.accepts("warning",
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("x", "extract account");
@@ -228,8 +233,11 @@ public class MailExtractApp {
 		int namesLength = 12;
 		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
-
 		String logLevel;
+
+		// outputs
+		Logger logger=null;
+		PrintStream psExtractList;
 
 		// FIXME vérification des paramètres
 		// prepare parsing with jopt
@@ -283,7 +291,7 @@ public class MailExtractApp {
 
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength);
+				options.has("warning"), namesLength,options.has("extractlist"));
 
 		// specific option parsing for local type extraction
 		switch (protocol) {
@@ -366,13 +374,18 @@ public class MailExtractApp {
 			// do the job, creating a store extractor and running the extraction
 			try {
 				logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
+				if (options.has("extractlist"))
+					psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
+				else 
+					psExtractList=null;
+				
 				if (user == null || user.isEmpty())
 					destName = "unknown_extract";
 				else
 					destName = user;
 				String urlString = StoreExtractor.composeStoreURL(protocol, server, user, password, container);
 				storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
+						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger,psExtractList);
 				if (options.has("l") || options.has("z")) {
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {
@@ -424,6 +437,8 @@ public class MailExtractApp {
 	// try if possible to log in the store extractor logger all the information
 	// about the fatal error
 	private final static void logFatalError(Exception e, StoreExtractor storeExtractor, Logger logger) {
+		if (logger==null)
+			logger=Logger.getGlobal();
 		logger.severe("Terminated with unrecoverable error");
 		if (!e.getMessage().isEmpty())
 			logger.severe(e.getMessage());

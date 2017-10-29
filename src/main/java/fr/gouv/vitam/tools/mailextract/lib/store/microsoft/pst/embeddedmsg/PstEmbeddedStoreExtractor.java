@@ -27,6 +27,7 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg;
 
+import java.io.PrintStream;
 import java.util.logging.Logger;
 
 import com.pff.PSTMessage;
@@ -72,14 +73,15 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor implements Embedde
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param osExtractList 
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public PstEmbeddedStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode,
-			StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger)
+			StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList)
 			throws ExtractionException {
-		super("pst.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
+		super("pst.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 
 		this.attachment=attachment;
 		setRootFolder(PstEmbeddedStoreFolder.createRootFolder((PSTMessage)attachment.getStoreContent(),this,rootNode));

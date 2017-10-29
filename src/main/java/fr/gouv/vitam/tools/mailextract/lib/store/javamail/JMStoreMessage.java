@@ -68,6 +68,7 @@ public class JMStoreMessage extends StoreMessage {
 	public JMStoreMessage(StoreFolder mBFolder, MimeMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
+		this.nature = StoreMessage.MESSAGE;
 	}
 
 	/*
@@ -140,7 +141,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#prepareHeaders()
 	 */
-	protected void prepareHeaders() {
+	protected void prepareAnalyze() {
 		List<String> result = null;
 		String line, value;
 		Header header;
@@ -293,7 +294,8 @@ public class JMStoreMessage extends StoreMessage {
 		List<String> aList = getAddressHeader("Return-Path");
 
 		if ((aList == null) || (aList.size() == 0)) {
-			logMessageWarning("mailextract.javamail: No Return-Path address in header");
+			// logMessageWarning("mailextract.javamail: No Return-Path address
+			// in header");
 		} else {
 			if (aList.size() > 1)
 				logMessageWarning("mailextract.javamail: Multiple Return-Path, keep the first one addresses in header");
@@ -451,23 +453,21 @@ public class JMStoreMessage extends StoreMessage {
 	private void getPartBodyContents(Part p) throws MessagingException, IOException {
 		if (p.isMimeType("text/*")) {
 			if (p.isMimeType("text/plain")
-					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))){
-				if (p.getContent() instanceof InputStream)
-					appendBodyContent(TEXT_BODY,getInputStreamContent((InputStream)p.getContent()));
-				else if (p.getContent() instanceof String)
-					appendBodyContent(TEXT_BODY, (String) p.getContent());
-			}
-			else if (p.isMimeType("text/html")
-					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))){
-				if (p.getContent() instanceof InputStream)
-					appendBodyContent(HTML_BODY,getInputStreamContent((InputStream)p.getContent()));
-				else if (p.getContent() instanceof String)
-					appendBodyContent(HTML_BODY, (String) p.getContent());
-			}
-			else if (p.isMimeType("text/rtf")
 					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))) {
 				if (p.getContent() instanceof InputStream)
-					appendBodyContent(RTF_BODY,getInputStreamContent((InputStream)p.getContent()));
+					appendBodyContent(TEXT_BODY, getInputStreamContent((InputStream) p.getContent()));
+				else if (p.getContent() instanceof String)
+					appendBodyContent(TEXT_BODY, (String) p.getContent());
+			} else if (p.isMimeType("text/html")
+					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))) {
+				if (p.getContent() instanceof InputStream)
+					appendBodyContent(HTML_BODY, getInputStreamContent((InputStream) p.getContent()));
+				else if (p.getContent() instanceof String)
+					appendBodyContent(HTML_BODY, (String) p.getContent());
+			} else if (p.isMimeType("text/rtf")
+					&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition()))) {
+				if (p.getContent() instanceof InputStream)
+					appendBodyContent(RTF_BODY, getInputStreamContent((InputStream) p.getContent()));
 				else if (p.getContent() instanceof String)
 					appendBodyContent(RTF_BODY, (String) p.getContent());
 			}
