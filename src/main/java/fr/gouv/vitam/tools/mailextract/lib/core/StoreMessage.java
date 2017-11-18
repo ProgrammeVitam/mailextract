@@ -530,12 +530,15 @@ public abstract class StoreMessage extends StoreFile {
 
 		// purify textContent and put in metadata
 		if ((textContent != null) && (!textContent.isEmpty())) {
-			messageNode.addObject(Canonicalizator.getInstance().toSimpleText(textContent), messageID + ".txt",
-					"TextContent", 1);
-			// break HTML tags in metadata if any
-			textContent = textContent.replace("<", "< ");
-			textContent = textContent.replace("&lt;", "&lt; ");
-			messageNode.addMetadata("TextContent", textContent, true);
+			if (getStoreExtractor().options.extractMessageTextFile)
+				messageNode.addObject(Canonicalizator.getInstance().toSimpleText(textContent), messageID + ".txt",
+						"TextContent", 1);
+			if (getStoreExtractor().options.extractMessageTextMetadata) {
+				// break HTML tags in metadata if any
+				textContent = textContent.replace("<", "< ");
+				textContent = textContent.replace("&lt;", "&lt; ");
+				messageNode.addMetadata("TextContent", textContent, true);
+			}
 		}
 
 		// extract all attachment and generate mimecontent of theese attachments
@@ -673,14 +676,22 @@ public abstract class StoreMessage extends StoreFile {
 		attachmentNode.addObject(attachment.getRawAttachmentContent(), attachment.name, "BinaryMaster", 1);
 
 		// Text object extraction
-		String textExtract;
+		String textExtract = null;
 		try {
 			textExtract = TikaExtractor.getInstance().extractTextFromBinary(attachment.getRawAttachmentContent());
-			if (!((textExtract == null) || textExtract.isEmpty()))
-				attachmentNode.addObject(textExtract.getBytes(), attachment.name + ".txt", "TextContent", 1);
 		} catch (ExtractionException ee) {
 			logMessageWarning("mailextract: Can't extract text content from attachment " + attachment.name);
 		}
+		// put in file
+		if (getStoreExtractor().options.extractFileTextFile && (!((textExtract == null) || textExtract.isEmpty()))) {
+			attachmentNode.addObject(textExtract.getBytes(), attachment.name + ".txt", "TextContent", 1);
+		}
+		// put in metadata
+		if (getStoreExtractor().options.extractFileTextMetadata
+				&& (!((textExtract == null) || textExtract.isEmpty()))) {
+			attachmentNode.addMetadata("TextContent", textExtract, true);
+		}
+
 		if (writeFlag)
 			attachmentNode.write();
 	}
@@ -692,7 +703,7 @@ public abstract class StoreMessage extends StoreFile {
 			// String filename, byte[] rawContent, int attachedType,
 			String tag, boolean writeFlag) throws ExtractionException {
 		StoreExtractor extractor;
-		//ArchiveUnit subRootNode;
+		// ArchiveUnit subRootNode;
 
 		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(a.attachmentStoreScheme);
 		if (storeExtractorClass == null) {
@@ -713,8 +724,15 @@ public abstract class StoreMessage extends StoreFile {
 								StoreExtractor.class, Logger.class, PrintStream.class)
 						.newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
 								getStoreExtractor().getPSExtractList());
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException
+					| SecurityException e) {
+				logMessageWarning("mailextract: Dysfonctional embedded store type=" + a.attachmentStoreScheme
+						+ " , extracting unit in path " + rootNode.getFullName());
+				extractor = null;
+			} catch (InvocationTargetException e) {
+				Throwable te = e.getCause();
+				if (te instanceof ExtractionException)
+					throw (ExtractionException) te;
 				logMessageWarning("mailextract: Dysfonctional embedded store type=" + a.attachmentStoreScheme
 						+ " , extracting unit in path " + rootNode.getFullName());
 				extractor = null;

@@ -30,7 +30,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -149,10 +148,11 @@ public class MailExtractThread extends Thread {
 			this.storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
 					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
 			this.actionNumber = actionNumber;
+		} catch (ExtractionException ee) {
+			logger.severe(ee.getMessage());
 		} catch (Exception e) {
 			this.actionNumber = 0;
-			System.out.println(e.getMessage());
-			;
+			System.out.println(getPrintStackTrace(e));
 		}
 	}
 
@@ -178,11 +178,14 @@ public class MailExtractThread extends Thread {
 				break;
 
 			}
+		} catch (ExtractionException ee) {
+			logger.severe(ee.getMessage());
 		} catch (Exception e) {
 			System.out.println(getPrintStackTrace(e));
 		} finally {
 			try {
-				storeExtractor.endStoreExtractor();
+				if (storeExtractor!=null)
+					storeExtractor.endStoreExtractor();
 			} catch (ExtractionException e) {
 				logger.severe(e.getMessage());
 			}

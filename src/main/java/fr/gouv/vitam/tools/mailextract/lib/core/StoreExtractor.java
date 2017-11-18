@@ -585,25 +585,6 @@ public abstract class StoreExtractor {
 		return psExtractList;
 	}
 
-	// /**
-	// * Gets the extractor depth in nested store extraction.
-	// *
-	// * @return depth
-	// */
-	// public int getDepth() {
-	// return depth;
-	// }
-	//
-	// /**
-	// * Gets the extractor extractor tag to diversify the file hierarchy names
-	// of attached messages.
-	// *
-	// * @return depth
-	// */
-	// public String getTag() {
-	// return tag;
-	// }
-
 	/**
 	 * Create a store extractor as a factory creator.
 	 *
@@ -681,18 +662,21 @@ public abstract class StoreExtractor {
 		// find the store extractor constructor for scheme in URL
 		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(url.getProtocol());
 		if (storeExtractorClass == null) {
-			logger.severe("mailextract: Unknown embedded store type=" + url.getProtocol());
-			store = null;
+			throw new ExtractionException("mailextract: Unknown embedded store type=" + url.getProtocol());
 		} else {
 			try {
 				store = (StoreExtractor) storeExtractorClass.getConstructor(String.class, String.class, String.class,
 						StoreExtractorOptions.class, StoreExtractor.class, Logger.class, PrintStream.class)
 						.newInstance(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
 								psExtractList);
-			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
-					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
-				logger.severe("mailextract: Dysfonctional embedded store type=" + url.getProtocol());
-				store = null;
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException
+					| SecurityException e) {
+				throw new ExtractionException("mailextract: Dysfonctional embedded store type=" + url.getProtocol());
+			} catch (InvocationTargetException e) {
+				Throwable te = e.getCause();
+				if (te instanceof ExtractionException)
+					throw (ExtractionException) te;
+				throw new ExtractionException("mailextract: Dysfonctional embedded store type=" + url.getProtocol());
 			}
 		}
 		return store;

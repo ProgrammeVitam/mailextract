@@ -184,37 +184,6 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	// Native message attachment access functions
 	abstract protected MicrosoftStoreMessageAttachment[] getNativeAttachments();
-	// abstract protected int getNativeNumberOfAttachments();
-	//
-	// abstract protected int getNativeAttachmentAttachMethod(int
-	// attachmentNumber);
-	//
-	// abstract protected byte[] getNativeAttachmentByteArray(int
-	// attachmentNumber);
-	//
-	// abstract protected String getNativeAttachmentLongFilename(int
-	// attachmentNumber);
-	//
-	// abstract protected String getNativeAttachmentFilename(int
-	// attachmentNumber);
-	//
-	// abstract protected String getNativeAttachmentDisplayName(int
-	// attachmentNumber);
-	//
-	// abstract protected Date getNativeAttachmentCreationTime(int
-	// attachmentNumber);
-	//
-	// abstract protected Date getNativeAttachmentModificationTime(int
-	// attachmentNumber);
-	//
-	// abstract protected String getNativeAttachmentMimeTag(int
-	// attachmentNumber);
-	//
-	// abstract protected String getNativeAttachmentContentId(int
-	// attachmentNumber);
-	//
-	// abstract protected Object getNativeAttachmentEmbeddedMessage(int
-	// attachmentNumber);
 
 	abstract protected String getEmbeddedMessageScheme();
 

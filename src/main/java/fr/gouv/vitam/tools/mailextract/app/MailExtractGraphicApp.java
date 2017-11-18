@@ -149,18 +149,30 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		mainWindow.savedirField.setText(destRootPath);
 		mainWindow.nameField.setText(destName);
 
-		if (storeExtractorOptions.keepOnlyDeepEmptyFolders) {
+		if (storeExtractorOptions.keepOnlyDeepEmptyFolders)
 			mainWindow.keeponlydeepCheckBox.setSelected(true);
-		}
-		if (storeExtractorOptions.dropEmptyFolders) {
+
+		if (storeExtractorOptions.dropEmptyFolders)
 			mainWindow.dropemptyfoldersCheckBox.setSelected(true);
-		}
-		if (storeExtractorOptions.warningMsgProblem) {
+
+		if (storeExtractorOptions.warningMsgProblem)
 			mainWindow.warningCheckBox.setSelected(true);
-		}
-		if (storeExtractorOptions.extractList) {
+
+		if (storeExtractorOptions.extractList)
 			mainWindow.extractlistCheckBox.setSelected(true);
-		}
+
+		if (storeExtractorOptions.extractMessageTextFile)
+			mainWindow.extractmessagetextfileCheckBox.setSelected(true);
+
+		if (storeExtractorOptions.extractMessageTextMetadata)
+			mainWindow.extractmessagetextmetadataCheckBox.setSelected(true);
+
+		if (storeExtractorOptions.extractFileTextFile)
+			mainWindow.extractfiletextfileCheckBox.setSelected(true);
+
+		if (storeExtractorOptions.extractFileTextMetadata)
+			mainWindow.extractfiletextmetadataCheckBox.setSelected(true);
+
 		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 
 		// convert from normalized log level name to the choice list log level
@@ -339,6 +351,18 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 
 		if (mainWindow.extractlistCheckBox.isSelected())
 			storeExtractorOptions.extractList = true;
+
+		if (mainWindow.extractmessagetextfileCheckBox.isSelected())
+			storeExtractorOptions.extractMessageTextFile = true;
+
+		if (mainWindow.extractmessagetextmetadataCheckBox.isSelected())
+			storeExtractorOptions.extractMessageTextMetadata = true;
+
+		if (mainWindow.extractfiletextfileCheckBox.isSelected())
+			storeExtractorOptions.extractFileTextFile = true;
+
+		if (mainWindow.extractfiletextmetadataCheckBox.isSelected())
+			storeExtractorOptions.extractFileTextMetadata = true;
 
 		try {
 			storeExtractorOptions.namesLength = Integer.parseInt(mainWindow.namesLengthField.getText());

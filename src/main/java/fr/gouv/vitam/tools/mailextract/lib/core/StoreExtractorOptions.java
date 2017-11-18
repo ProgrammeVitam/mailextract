@@ -33,22 +33,35 @@ public class StoreExtractorOptions {
 	public boolean warningMsgProblem;
 	public int namesLength;
 	public boolean extractList;
+	public boolean extractMessageTextFile;
+	public boolean extractMessageTextMetadata;
+	public boolean extractFileTextFile;
+	public boolean extractFileTextMetadata;
 
 	public StoreExtractorOptions() {
 		keepOnlyDeepEmptyFolders = false;
 		dropEmptyFolders = false;
 		warningMsgProblem = false;
-		extractList=false;
 		namesLength = 12;
+		extractList = false;
+		extractMessageTextFile = false;
+		extractMessageTextMetadata = false;
+		extractFileTextFile = false;
+		extractFileTextMetadata = false;
 	}
 
 	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, boolean extractList) {
+			int namesLength, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
+			boolean extractFileTextFile, boolean extractFileTextMetadata) {
 		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
 		this.dropEmptyFolders = dropEmptyFolders;
 		this.warningMsgProblem = warningMsgProblem;
 		this.namesLength = namesLength;
-		this.extractList=extractList;
-		
+		this.extractList = extractList;
+		this.extractMessageTextFile = extractMessageTextFile;
+		this.extractMessageTextMetadata = extractMessageTextMetadata;
+		this.extractFileTextFile = extractFileTextFile;
+		this.extractFileTextMetadata = extractFileTextMetadata;
+
 	}
 }

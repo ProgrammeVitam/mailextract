@@ -48,6 +48,7 @@ import javax.swing.UnsupportedLookAndFeelException;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
+import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -199,6 +200,10 @@ public class MailExtractApp {
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
 		parser.accepts("nameslength", "generate short directories and files names").withRequiredArg();
 		parser.accepts("extractlist", "generate a csv list of all extracts");
+		parser.accepts("extractmessagetextfile", "extract a text version of messages");
+		parser.accepts("extractmessagetextmetadata", "put message text in metadata");
+		parser.accepts("extractfiletextfile", "extract a text version of files");
+		parser.accepts("extractfiletextmetadata", "put file text in metadata");
 		parser.accepts("warning",
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("x", "extract account");
@@ -291,7 +296,8 @@ public class MailExtractApp {
 
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength,options.has("extractlist"));
+				options.has("warning"), namesLength,options.has("extractlist"),options.has("extractmessagetextfile"),
+				options.has("extractmessagetextmetadata"),options.has("extractfiletextfile"),options.has("extractfiletextmetadata"));
 
 		// specific option parsing for local type extraction
 		switch (protocol) {
@@ -358,6 +364,9 @@ public class MailExtractApp {
 		else
 			destRootPath = System.getProperty("user.dir");
 
+		// init default store extractors
+		StoreExtractor.initDefaultExtractors();
+		
 		// if no do option graphic version
 		if (!options.has("l") && !options.has("z") && !options.has("x")) {
 			new MailExtractGraphicApp(protocol, host, port, user, password, container, folder, destRootPath, destName,
@@ -392,6 +401,9 @@ public class MailExtractApp {
 					storeExtractor.extractAllFolders();
 				}
 				storeExtractor.endStoreExtractor();
+			} catch (ExtractionException ee) {
+				logger.severe(ee.getMessage());
+				System.exit(1);
 			} catch (Exception e) {
 				logFatalError(e, storeExtractor, logger);
 				System.exit(1);
