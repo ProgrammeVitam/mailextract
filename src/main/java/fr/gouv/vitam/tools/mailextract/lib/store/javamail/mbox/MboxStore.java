@@ -100,17 +100,15 @@ public class MboxStore extends Store implements JMEmbeddedStore {
 			if (port != -1)
 				throw new MessagingException("mbox: does not allow port selection");
 
-			// verify if embedded or declared file for eml availability
-			if (objectContent != null) {
-				try {
-					container = URLDecoder.decode(url.getFile(), "UTF-8");
-				} catch (UnsupportedEncodingException e) {
-					throw new MessagingException("mbox: Can't decode the container file name");
-				}
-				File test = new File(container);
-				if (!test.isFile()) {
-					throw new MessagingException("mbox: " + container + " is not an existing file");
-				}
+			// verify declared file for mbox availability
+			try {
+				container = URLDecoder.decode(url.getFile(), "UTF-8");
+			} catch (UnsupportedEncodingException e) {
+				throw new MessagingException("mbox: Can't decode the container file name");
+			}
+			File test = new File(container);
+			if (!test.isFile()) {
+				throw new MessagingException("mbox: " + container + " is not an existing file");
 			}
 		}
 		return true;
