@@ -28,7 +28,9 @@
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -48,10 +50,6 @@ import fr.gouv.vitam.tools.mailextract.lib.formattools.rtf.HTMLFromRTFExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.Person;
-import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg.MsgStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg.PstEmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
@@ -371,7 +369,7 @@ public abstract class StoreMessage extends StoreFile {
 	 * Detect embedded store attachments not determine during parsing.
 	 */
 	protected void detectStoreAttachments() {
-		String mimeType, scheme;
+		String mimeType;
 
 		if (attachments != null && !attachments.isEmpty()) {
 			for (StoreMessageAttachment a : attachments) {
@@ -381,19 +379,10 @@ public abstract class StoreMessage extends StoreFile {
 						mimeType = TikaExtractor.getInstance().getMimeType(a.getRawAttachmentContent());
 						if (mimeType == null)
 							continue;
-						else if (mimeType.equals("application/mbox"))
-							setStoreAttachment(a, "mbox");
-						else if (mimeType.equals("application/vnd.ms-outlook-pst")) {
-							scheme = PstStoreExtractor.getVerifiedScheme(a.getRawAttachmentContent());
-							if (scheme != null) {
-								setStoreAttachment(a, scheme);
-								continue;
-							}
-						} else if (mimeType.equals("application/vnd.ms-outlook")) {
-							scheme = MsgStoreExtractor.getVerifiedScheme(a.getRawAttachmentContent());
-							if (scheme != null) {
-								setStoreAttachment(a, scheme);
-								continue;
+						for (String mt : StoreExtractor.mimeTypeSchemeMap.keySet()) {
+							if (mimeType.equals(mt)) {
+								setStoreAttachment(a, StoreExtractor.mimeTypeSchemeMap.get(mt));
+								break;
 							}
 						}
 					} catch (ExtractionException e) {
@@ -430,7 +419,6 @@ public abstract class StoreMessage extends StoreFile {
 	 * specific).
 	 * 
 	 * <p>
-	 * /home/js/Partage/TestMailExtract/test@programmevitam.fr.pst/home/js/Partage/TestMailExtract/test@programmevitam.fr.pst
 	 * This is the main method for sub classes, where all metadata and
 	 * information has to be extracted in standard representation out of the
 	 * inner representation of the message.
@@ -585,15 +573,16 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	private void writeExtractList() {
-		SimpleDateFormat sdf= new SimpleDateFormat("dd/MM/yyyy HH:mm");
-			
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
 				(sentDate == null ? "" : sdf.format(sentDate)));
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
 				(receivedDate == null ? "" : sdf.format(receivedDate)));
 		if ((from != null) && !from.isEmpty()) {
 			Person p = new Person(from);
-			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.birthName), filterHyphen(p.identifier));
+			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.birthName),
+					filterHyphen(p.identifier));
 		}
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
 				filterHyphen(personStringListToIndentifierString(recipientTo)));
@@ -647,8 +636,8 @@ public abstract class StoreMessage extends StoreFile {
 		}
 		return result;
 	}
-	
-	private String filterHyphen(String s){
+
+	private String filterHyphen(String s) {
 		return s.replace("\"", " ");
 	}
 
@@ -697,49 +686,39 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	/** Extract a store attachment */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
 			StoreMessageAttachment a,
 			// String filename, byte[] rawContent, int attachedType,
 			String tag, boolean writeFlag) throws ExtractionException {
-		StoreExtractor extractor = null;
-		ArchiveUnit subRootNode;
+		StoreExtractor extractor;
+		//ArchiveUnit subRootNode;
 
-		switch (a.attachmentStoreScheme) {
-		case "eml": // for eml file attachement and embedded rf822
-			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
-					getStoreExtractor().getPSExtractList());
-			break;
-		case "mbox": // for mbox file attachement
-			subRootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
-			subRootNode.addMetadata("DescriptionLevel", "Item", true);
-			subRootNode.addMetadata("Title", "Conteneur mbox", true);
-			subRootNode.addMetadata("Description", "Extraction d'un mbox contenu", true);
-
-			extractor = new JMStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
-					getStoreExtractor().getPSExtractList());
-			break;
-		case "pst": // for msg file attachement
-			subRootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
-			subRootNode.addMetadata("DescriptionLevel", "Item", true);
-			subRootNode.addMetadata("Title", "Conteneur pst", true);
-			subRootNode.addMetadata("Description", "Extraction d'un pst contenu", true);
-
-			extractor = new PstStoreExtractor(a, subRootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger(), getStoreExtractor().getPSExtractList());
-			break;
-		case "pst.embeddedmsg": // for embedded msg attachement in pst
-			extractor = new PstEmbeddedStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger(), getStoreExtractor().getPSExtractList());
-			break;
-		case "msg": // for msg file attachement
-		case "msg.embeddedmsg": // for embedded msg attachement in msg
-			extractor = new MsgStoreExtractor(a, rootNode, getStoreExtractor().options, getStoreExtractor(),
-					getLogger(), getStoreExtractor().getPSExtractList());
-			break;
-		default:
+		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(a.attachmentStoreScheme);
+		if (storeExtractorClass == null) {
 			logMessageWarning("mailextract: Unknown embedded store type=" + a.attachmentStoreScheme
 					+ " , extracting unit in path " + rootNode.getFullName());
-			break;
+			extractor = null;
+		} else {
+			Boolean b = StoreExtractor.schemeContainerMap.get(a.attachmentStoreScheme);
+			if (b) {
+				rootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
+				rootNode.addMetadata("DescriptionLevel", "Item", true);
+				rootNode.addMetadata("Title", "Conteneur " + a.attachmentStoreScheme, true);
+				rootNode.addMetadata("Description", "Extraction d'un conteneur " + a.attachmentStoreScheme, true);
+			}
+			try {
+				extractor = (StoreExtractor) storeExtractorClass
+						.getConstructor(StoreMessageAttachment.class, ArchiveUnit.class, StoreExtractorOptions.class,
+								StoreExtractor.class, Logger.class, PrintStream.class)
+						.newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
+								getStoreExtractor().getPSExtractList());
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				logMessageWarning("mailextract: Dysfonctional embedded store type=" + a.attachmentStoreScheme
+						+ " , extracting unit in path " + rootNode.getFullName());
+				extractor = null;
+			}
 		}
 		if (extractor != null) {
 			extractor.writeTargetLog();

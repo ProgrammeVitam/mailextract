@@ -28,21 +28,22 @@
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.nodes.Person;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg.MsgStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg.PstEmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.logging.Logger;
 import javax.mail.URLName;
 
@@ -58,14 +59,19 @@ import java.io.PrintStream;
  * listing, and the log level. It makes a first level of connection and
  * compliance check to warranty other methods calls a viable mail box access.
  * 
- * The StoreExtractor object has the context and links used to perform
- * extraction or structure listing of mail boxes from different sources:
+ * The StoreExtractor use sub class extractors to manage different protocols or
+ * formats (called schemes). There are defaults sub class for:
  * <ul>
- * <li>IMAP server with user/password login</li>
+ * <li>IMAP/IMAPS server with user/password login</li>
  * <li>Thunderbird directory containing mbox files and .sbd directory
  * hierarchy</li>
  * <li>Outlook pst file</li>
+ * <li>Msg file</li>
+ * <li>eml file</li>
+ * <li>mbox file</li>
  * </ul>
+ * Notice: you have to call {@link #initDefaultExtractors initDefaultExtractors}
+ * method before any usage to benefit from these extractors.
  * 
  * <p>
  * The extraction generate on disk a directories/files structure convenient for
@@ -125,7 +131,30 @@ import java.io.PrintStream;
  */
 public abstract class StoreExtractor {
 
-	// TODO Map of StoreExtractor classes by scheme
+	// Map of StoreExtractor classes by scheme
+
+	/** The map of mimetypes/scheme known relations. */
+	static HashMap<String, String> mimeTypeSchemeMap = new HashMap<String, String>();
+
+	/** The map of scheme/extractor class known relations. */
+	@SuppressWarnings("rawtypes")
+	static HashMap<String, Class> schemeStoreExtractorClassMap = new HashMap<String, Class>();
+
+	/**
+	 * The map of scheme/container extraction (vs single file extraction) known
+	 * relations.
+	 */
+	static HashMap<String, Boolean> schemeContainerMap = new HashMap<String, Boolean>();
+
+	/**
+	 * Subscribes all defaults store extractor.
+	 */
+	public static void initDefaultExtractors() {
+		JMStoreExtractor.subscribeStoreExtractor();
+		MsgStoreExtractor.subscribeStoreExtractor();
+		PstStoreExtractor.subscribeStoreExtractor();
+		PstEmbeddedStoreExtractor.subscribeStoreExtractor();
+	}
 
 	// StoreExtractor definition parameters
 
@@ -138,40 +167,40 @@ public abstract class StoreExtractor {
 	// /** Server:port of target store ((hostname|ip)[:port]) **/
 	// protected String authority;
 
-	/** Hostname of target store in ((hostname|ip)[:port]) **/
+	/** Hostname of target store in ((hostname|ip)[:port]) *. */
 	protected String host;
 
-	/** Port of target store in ((hostname|ip)[:port]) **/
+	/** Port of target store in ((hostname|ip)[:port]) *. */
 	protected int port;
 
-	/** User account name, can be null if not used **/
+	/** User account name, can be null if not used *. */
 	protected String user;
 
-	/** Password, can be null if not used **/
+	/** Password, can be null if not used *. */
 	protected String password;
 
-	/** Path of ressource to extract **/
+	/** Path of ressource to extract *. */
 	protected String path;
 
 	/**
 	 * Path of the folder in the store used as root for extraction, can be null
-	 * if default root folder
-	 **/
+	 * if default root folder.
+	 */
 	protected String storeFolder;
 
 	// /** Path and name of the extraction directory */
 	// protected String destRootPath, destName;
 
-	/** Path of the directory where will be the extraction directory */
+	/** Path of the directory where will be the extraction directory. */
 	protected String destRootPath;
 
-	/** Name of the extraction directory */
+	/** Name of the extraction directory. */
 	protected String destName;
 
-	/** Extractor options, flags coded on an int, defined thru constants **/
+	/** Extractor options, flags coded on an int, defined thru constants *. */
 	protected StoreExtractorOptions options;
 
-	/** Extractor context description */
+	/** Extractor context description. */
 	protected String description;
 
 	// private fields for global statictics
@@ -193,6 +222,33 @@ public abstract class StoreExtractor {
 	private PrintStream psExtractList;
 
 	/**
+	 * Add mimetypes, scheme, isContainer, store extractor known relation.
+	 * <p>
+	 * This is used by store extractor sub classes to subscribe. When the
+	 * relation is known it can be used for processing automatically the
+	 * mimetype files with appropriate store extractors, in code.
+	 * <p>
+	 * Warning: the mime type has to be the code returned by tika!
+	 *
+	 * @param mimeType
+	 *            the mime type
+	 * @param scheme
+	 *            the scheme
+	 * @param isContainer
+	 *            the is container
+	 * @param extractor
+	 *            the extractor
+	 */
+	@SuppressWarnings("rawtypes")
+	protected static void addExtractionRelation(String mimeType, String scheme, boolean isContainer, Class extractor) {
+		// if there is a file mimetype for this scheme
+		if (mimeType != null)
+			mimeTypeSchemeMap.put(mimeType, scheme);
+		schemeStoreExtractorClassMap.put(scheme, extractor);
+		schemeContainerMap.put(scheme, isContainer);
+	}
+
+	/**
 	 * Compose an URL String.
 	 *
 	 * @param scheme
@@ -206,6 +262,7 @@ public abstract class StoreExtractor {
 	 *            Password, can be null if not used
 	 * @param path
 	 *            Path to the ressource
+	 * @return the string
 	 */
 	static public String composeStoreURL(String scheme, String authority, String user, String password, String path) {
 		String result = null;
@@ -233,24 +290,13 @@ public abstract class StoreExtractor {
 	/**
 	 * Instantiates a new store extractor.
 	 *
-	 * @param protocol
-	 *            Type of local container to extract (thunderbird|pst|eml|mbox)
-	 *            or protocol for server access (imap|imaps|pop3...)
-	 * @param authority
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param container
-	 *            Path to the local extraction target (Thunderbird or Outlook
+	 * @param urlString
+	 *            the url string
 	 * @param storeFolder
 	 *            Path of the extracted folder in the store box, can be null if
 	 *            default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Extractor options
 	 * @param rootStoreExtractor
@@ -258,7 +304,8 @@ public abstract class StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @param osExtractList2
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -397,6 +444,9 @@ public abstract class StoreExtractor {
 
 	/**
 	 * Increment the messages total count.
+	 *
+	 * @param count
+	 *            the count
 	 */
 	public void addTotalMessagesCount(int count) {
 		totalMessagesCount += count;
@@ -413,6 +463,9 @@ public abstract class StoreExtractor {
 
 	/**
 	 * Increment the attached messages total count.
+	 *
+	 * @param count
+	 *            the count
 	 */
 	public void addTotalAttachedMessagesCount(int count) {
 		totalAttachedMessagesCount += count;
@@ -445,6 +498,9 @@ public abstract class StoreExtractor {
 
 	/**
 	 * Add to total raw size.
+	 *
+	 * @param messageSize
+	 *            the message size
 	 */
 	public void addTotalRawSize(long messageSize) {
 		totalRawSize += messageSize;
@@ -503,6 +559,8 @@ public abstract class StoreExtractor {
 	/**
 	 * Sets the extraction root folder in store.
 	 *
+	 * @param rootFolder
+	 *            the new root folder
 	 * @return the root StoreFolder
 	 */
 	public void setRootFolder(StoreFolder rootFolder) {
@@ -549,28 +607,19 @@ public abstract class StoreExtractor {
 	/**
 	 * Create a store extractor as a factory creator.
 	 *
-	 * @param scheme
-	 *            Type of local container to extract (thunderbird|pst|eml|mbox)
-	 *            or protocol for server access (imap|imaps|pop3...)
-	 * @param authority
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param path
-	 *            Path to the local extraction target (Thunderbird or Outlook
+	 * @param urlString
+	 *            the url string
 	 * @param storeFolder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @return the store extractor, constructed as a non abstract subclass
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
@@ -594,24 +643,13 @@ public abstract class StoreExtractor {
 	/**
 	 * Create an internal depth store extractor as a factory creator.
 	 *
-	 * @param scheme
-	 *            type of local container to extract (thunderbird|pst|eml|mbox)
-	 *            or protocol for server access (imap|imaps|pop3...)
-	 * @param authority
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param path
-	 *            Path to the local extraction target (Thunderbird or Outlook
+	 * @param urlString
+	 *            the url string
 	 * @param storeFolder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -619,11 +657,14 @@ public abstract class StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @return the store extractor, constructed as a non abstract subclass
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
 			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger,
 			PrintStream psExtractList) throws ExtractionException {
@@ -637,16 +678,23 @@ public abstract class StoreExtractor {
 		if ((storeFolder != null) && (!storeFolder.isEmpty()) && (storeFolder.substring(0, 1) == File.separator))
 			storeFolder = storeFolder.substring(1);
 
-		if (url.getProtocol().equals("pst"))
-			store = new PstStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
-					psExtractList);
-		else if (url.getProtocol().equals("msg"))
-			store = new MsgStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
-					psExtractList);
-		else
-			store = new JMStoreExtractor(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
-					psExtractList);
-
+		// find the store extractor constructor for scheme in URL
+		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(url.getProtocol());
+		if (storeExtractorClass == null) {
+			logger.severe("mailextract: Unknown embedded store type=" + url.getProtocol());
+			store = null;
+		} else {
+			try {
+				store = (StoreExtractor) storeExtractorClass.getConstructor(String.class, String.class, String.class,
+						StoreExtractorOptions.class, StoreExtractor.class, Logger.class, PrintStream.class)
+						.newInstance(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
+								psExtractList);
+			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException
+					| InvocationTargetException | NoSuchMethodException | SecurityException e) {
+				logger.severe("mailextract: Dysfonctional embedded store type=" + url.getProtocol());
+				store = null;
+			}
+		}
 		return store;
 
 	}
@@ -753,16 +801,39 @@ public abstract class StoreExtractor {
 
 	/**
 	 * Do all end tasks for the StoreExtractor, like deleting temporary files.
+	 *
+	 * @throws ExtractionException
+	 *             the extraction exception
 	 */
 	public void endStoreExtractor() throws ExtractionException {
 	}
 
+	/**
+	 * Checks for magic number.
+	 *
+	 * @param content
+	 *            the content
+	 * @param magicNumber
+	 *            the magic number
+	 * @return true, if successful
+	 */
 	// Utility function to detect if the four bytes is a defined magic number
 	public static boolean hasMagicNumber(byte[] content, byte[] magicNumber) {
 		return hasMagicNumber(content, magicNumber, 0);
 	}
 
 	// Utility function to detect if the bytes at offset is a defined magic
+	/**
+	 * Checks for magic number.
+	 *
+	 * @param content
+	 *            the content
+	 * @param magicNumber
+	 *            the magic number
+	 * @param offset
+	 *            the offset
+	 * @return true, if successful
+	 */
 	// number
 	public static boolean hasMagicNumber(byte[] content, byte[] magicNumber, int offset) {
 		if (content.length < magicNumber.length + offset)

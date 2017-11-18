@@ -43,6 +43,7 @@ import java.net.URLDecoder;
 import java.util.Properties;
 import java.util.logging.Logger;
 
+// TODO: Auto-generated Javadoc
 /**
  * StoreExtractor sub-class for mail boxes extracted through JavaMail library.
  * <p>
@@ -51,6 +52,22 @@ import java.util.logging.Logger;
  */
 public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
 	private Store store;
+	
+	/**
+	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
+	 * <p>
+	 * This is in default list.
+	 */
+	static public void subscribeStoreExtractor()
+	{
+		addExtractionRelation("message/rfc822","eml",false, JMStoreExtractor.class);
+		addExtractionRelation("application/mbox","mbox", true,JMStoreExtractor.class);
+		addExtractionRelation(null,"thunderbird", true,JMStoreExtractor.class);
+		addExtractionRelation(null,"imap", true,JMStoreExtractor.class);
+		addExtractionRelation(null,"imaps", true,JMStoreExtractor.class);
+		addExtractionRelation(null,"gimap", true,JMStoreExtractor.class);
+		addExtractionRelation(null,"pop3", true,JMStoreExtractor.class);
+	}
 
 	// Attachment to complete with decoded form
 	private StoreMessageAttachment attachment;
@@ -59,24 +76,13 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	 * Instantiates a new JavaMail StoreExtractor for protcole or complex
 	 * containers.
 	 *
-	 * @param protocol
-	 *            Protocol used for extraction (imap| thunderbird [not tested
-	 *            gimap| pop3])
-	 * @param server
-	 *            Server of target account ((hostname|ip)[:port
-	 * @param user
-	 *            User account name
-	 * @param password
-	 *            Password, can be null if not used
-	 * @param container
-	 *            Path to the local extraction target (Thunderbird or Outlook
+	 * @param urlString
+	 *            the url string
 	 * @param folder
 	 *            Path of the extracted folder in the account mail box, can be
 	 *            null if default root folder
-	 * @param destRootPath
-	 *            Root path of the extraction directory
-	 * @param destName
-	 *            Name of the extraction directory
+	 * @param destPathString
+	 *            the dest path string
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -84,7 +90,8 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @param osExtractList 
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -151,12 +158,10 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	/**
 	 * Instantiates a new JavaMail StoreExtractor for embedded container.
 	 *
-	 * @param content
-	 *            Object containing the store
-	 * @param scheme
-	 *            Scheme defining specific store extractor (eml| mbox)
-	 * @param destPathString
-	 *            Path of the extraction directory
+	 * @param attachment
+	 *            the attachment
+	 * @param rootNode
+	 *            the root node
 	 * @param options
 	 *            Options
 	 * @param rootStoreExtractor
@@ -164,6 +169,8 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -243,8 +250,12 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 		// //not default
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor#getAttachment()
+	 */
 	@Override
 	public StoreMessageAttachment getAttachment() {
 		return attachment;
 	}
+
 }

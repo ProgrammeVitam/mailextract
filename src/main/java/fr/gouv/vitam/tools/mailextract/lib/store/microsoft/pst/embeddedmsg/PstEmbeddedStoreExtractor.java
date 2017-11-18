@@ -56,6 +56,16 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  */
 public class PstEmbeddedStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor{
 
+	/**
+	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
+	 * <p>
+	 * This is in default list.
+	 */
+	static public void subscribeStoreExtractor()
+	{
+		addExtractionRelation(null,"pst.embeddedmsg", true, PstEmbeddedStoreExtractor.class);
+	}
+	
 	// Attachment to complete with decoded form
 	private StoreMessageAttachment attachment;
 

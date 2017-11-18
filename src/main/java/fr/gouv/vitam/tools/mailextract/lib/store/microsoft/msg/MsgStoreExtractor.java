@@ -59,6 +59,17 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  */
 public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
 
+	/**
+	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
+	 * <p>
+	 * This is in default list.
+	 */
+	static public void subscribeStoreExtractor()
+	{
+		addExtractionRelation("application/vnd.ms-outlook","msg", false, MsgStoreExtractor.class);
+		addExtractionRelation(null,"msg.embeddedmsg", false, MsgStoreExtractor.class);
+	}
+
 	// Attachment to complete with decoded form
 	private StoreMessageAttachment attachment;
 
