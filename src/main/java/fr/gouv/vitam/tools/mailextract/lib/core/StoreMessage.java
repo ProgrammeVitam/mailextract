@@ -682,6 +682,22 @@ public abstract class StoreMessage extends StoreFile {
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%d\"|", this.getMessageSize());
 		if (!storeFolder.getStoreExtractor().isRoot())
 			storeFolder.getStoreExtractor().getPSExtractList().format("\"Attached\"");
+		if (appointment!=null){
+			String bdString, edString;
+			if (appointment.beginDate != null)
+				bdString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.beginDate);
+			else
+				bdString = "[Date/HeureInconnues]";
+			if (appointment.endDate != null)
+				edString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.endDate);
+			else
+				edString = "[Date/HeureInconnues]";
+			storeFolder.getStoreExtractor().getPSExtractList().format("|\"%s\"|\"%s\"|\"%s\"",
+					filterHyphen(appointment.location),bdString,edString);
+		}
+		else {
+			storeFolder.getStoreExtractor().getPSExtractList().format("|||", this.getMessageSize());
+		}
 		storeFolder.getStoreExtractor().getPSExtractList().println("");
 		storeFolder.getStoreExtractor().getPSExtractList().flush();
 	}

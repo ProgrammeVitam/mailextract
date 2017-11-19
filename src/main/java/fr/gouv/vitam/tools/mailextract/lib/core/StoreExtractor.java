@@ -615,8 +615,9 @@ public abstract class StoreExtractor {
 
 		// write column names, if extract list expected
 		if (options.extractList)
-			psExtractList.println(
-					"SentDate|ReceivedDate|FromName|FromAddress|ToList|Subject|MessageID|AttachmentList|ReplyTo|Folder|Size|Attached");
+			psExtractList.println("SentDate|ReceivedDate|FromName|FromAddress|ToList|Subject|MessageID|"
+					+ "AttachmentList|ReplyTo|Folder|Size|Attached|"
+					+ "AppointmentLocation|AppointmentBeginDate|AppointmentEndDate");
 
 		return storeExtractor;
 	}
