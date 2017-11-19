@@ -68,7 +68,7 @@ public class JMStoreMessage extends StoreMessage {
 	public JMStoreMessage(StoreFolder mBFolder, MimeMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
-		this.nature = StoreMessage.MESSAGE;
+//		this.nature = StoreMessage.MESSAGE;
 	}
 
 	/*
@@ -648,6 +648,12 @@ public class JMStoreMessage extends StoreMessage {
 		attachments = result;
 	}
 
+	@Override
+	protected void analyzeAppointmentInformation() {
+		// no normalized appointment information in messages
+		return;
+	}
+
 	/*
 	 * Global message
 	 */
@@ -668,5 +674,4 @@ public class JMStoreMessage extends StoreMessage {
 
 		return baos.toByteArray();
 	}
-
 }

@@ -34,6 +34,7 @@ import java.util.Vector;
 import com.pff.PSTException;
 import com.pff.PSTFolder;
 import com.pff.PSTMessage;
+import com.pff.PSTObject;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
@@ -115,14 +116,16 @@ public class PstStoreFolder extends StoreFolder {
 		PSTMessage message;
 
 		try {
-			message = (PSTMessage) pstFolder.getNextChild();
+			PSTObject po = pstFolder.getNextChild();
+			message = (PSTMessage) po;
 			while (message != null) {
 				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
 				lPStoreMessage.analyzeMessage();
 				dateRange.extendRange(lPStoreMessage.getSentDate());
 				lPStoreMessage.extractMessage(writeFlag);
 				lPStoreMessage.countMessage();
-				message = (PSTMessage) pstFolder.getNextChild();
+				po = pstFolder.getNextChild();
+				message = (PSTMessage) po;
 			}
 		} catch (IOException e) {
 			throw new ExtractionException("MailExtract: Can't use pst file");

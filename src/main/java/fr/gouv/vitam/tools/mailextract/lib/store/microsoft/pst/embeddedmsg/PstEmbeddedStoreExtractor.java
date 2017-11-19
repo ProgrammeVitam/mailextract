@@ -63,7 +63,7 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor implements Embedde
 	 */
 	static public void subscribeStoreExtractor()
 	{
-		addExtractionRelation(null,"pst.embeddedmsg", true, PstEmbeddedStoreExtractor.class);
+		addExtractionRelation(null,"pst.embeddedmsg", false, PstEmbeddedStoreExtractor.class);
 	}
 	
 	// Attachment to complete with decoded form

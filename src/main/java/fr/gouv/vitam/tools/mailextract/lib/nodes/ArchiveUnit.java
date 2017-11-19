@@ -307,6 +307,32 @@ public class ArchiveUnit {
 	}
 
 	/**
+	 * Adds an event value
+	 * 
+	 * @param key
+	 *            Metadata key
+	 * @param value
+	 *            Person value
+	 * @param mandatory
+	 *            Mandatory flag
+	 */
+	public void addEventMetadata(String identifier, String type, String dateTime, String detail) {
+		MetadataXMLNode mvMetaData;
+		MetadataXMLList mlMetaData;
+
+		mlMetaData = new MetadataXMLList();
+		mvMetaData = new MetadataXMLNode("EventIdentifier", identifier);
+		mlMetaData.addMetadataXMLNode(mvMetaData);
+		mvMetaData = new MetadataXMLNode("EventType", type);
+		mlMetaData.addMetadataXMLNode(mvMetaData);
+		mvMetaData = new MetadataXMLNode("EventDateTime", dateTime);
+		mlMetaData.addMetadataXMLNode(mvMetaData);
+		mvMetaData = new MetadataXMLNode("EventDetail", detail);
+		mlMetaData.addMetadataXMLNode(mvMetaData);
+		contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode("Event", mlMetaData));
+	}
+
+	/**
 	 * Adds for the key metadata an array of person values, with values in
 	 * valuesList
 	 * <p>
@@ -350,7 +376,6 @@ public class ArchiveUnit {
 			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
-
 
 	/**
 	 * Adds an object with content from a String.
@@ -474,7 +499,7 @@ public class ArchiveUnit {
 		} else
 			result = filename;
 
-		len = storeExtractor.getOptions().namesLength+20;
+		len = storeExtractor.getOptions().namesLength + 20;
 
 		// TODO: best filter
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");

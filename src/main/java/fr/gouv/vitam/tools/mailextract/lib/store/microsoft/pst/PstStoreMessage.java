@@ -28,16 +28,19 @@
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst;
 
 import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import com.pff.PSTAppointment;
 import com.pff.PSTConversationIndex.ResponseLevel;
 import com.pff.PSTException;
 import com.pff.PSTMessage;
 import com.pff.PSTRecipient;
-
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAppointment;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
@@ -261,12 +264,46 @@ public class PstStoreMessage extends MicrosoftStoreMessage {
 	@Override
 	protected MicrosoftStoreMessageAttachment[] getNativeAttachments() {
 		PstStoreMessageAttachment[] psmAttachment;
-		
+
 		psmAttachment = new PstStoreMessageAttachment[message.getNumberOfAttachments()];
 		for (int i = 0; i < message.getNumberOfAttachments(); i++) {
 			psmAttachment[i] = new PstStoreMessageAttachment(message, i);
 		}
 		return psmAttachment;
+	}
+
+	@Override
+	protected void analyzeAppointmentInformation() {
+		StoreMessageAppointment appointment = null;
+//		System.out.println("messageID=" + messageID);
+//		if ((messageID != null) && (messageID.equals("[MessageIDVide]")))
+//			System.out.println("messageID=" + messageID);
+		if (message instanceof PSTAppointment) {
+			PSTAppointment pstAppointment = (PSTAppointment) message;
+
+			ZonedDateTime zdtBeg = null;
+			Date dBeg = pstAppointment.getStartTime();
+			if (dBeg != null) {
+				zdtBeg = ZonedDateTime.ofInstant(dBeg.toInstant().minusMillis(0), ZoneOffset.UTC);
+			}
+
+			ZonedDateTime zdtEnd = null;
+			Date dEnd = pstAppointment.getEndTime();
+			if (dEnd != null) {
+				zdtEnd = ZonedDateTime.ofInstant(dEnd.toInstant().minusMillis(0), ZoneOffset.UTC);
+			}
+
+			String appointmentID = null, appointmentLocation=null;
+			try {
+				appointmentID = pstAppointment.getCleanGlobalObjectId().toString();
+				appointmentLocation =pstAppointment.getLocation();
+			} catch (Exception e) {
+				// catch a null pointer exception when there's no ID or location
+			}
+
+			appointment = new StoreMessageAppointment(appointmentID, appointmentLocation, zdtBeg, zdtEnd);
+		}
+		this.appointment = appointment;
 	}
 
 }

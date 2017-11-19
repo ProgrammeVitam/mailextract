@@ -317,4 +317,10 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return msgAttachments;
 	}
 
+	@Override
+	protected void analyzeAppointmentInformation() {
+		// TODO Auto-generated method stub
+		return;
+	}
+
 }

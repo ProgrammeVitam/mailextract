@@ -32,6 +32,7 @@ import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -104,15 +105,15 @@ public abstract class StoreMessage extends StoreFile {
 	/** Store folder. containing this message. **/
 	protected StoreFolder storeFolder;
 
-	/** Message nature (MESSAGE, CALENDAR). */
-	protected int nature;
-
-	/** The Constant MESSAGE. */
-	static public final int MESSAGE = 0;
-
-	/** The Constant CALENDAR. */
-	static public final int CALENDAR = 1;
-
+	// /** Message nature (MESSAGE, CALENDAR). */
+	// protected int nature;
+	//
+	// /** The Constant MESSAGE. */
+	// static public final int MESSAGE = 0;
+	//
+	// /** The Constant CALENDAR. */
+	// static public final int CALENDAR = 1;
+	//
 	/**
 	 * Raw binary content of the message for mime sources, or of the mime fake
 	 * for others.
@@ -142,6 +143,9 @@ public abstract class StoreMessage extends StoreFile {
 
 	/** Attachments list. */
 	protected List<StoreMessageAttachment> attachments;
+
+	/** Appointment information. */
+	protected StoreMessageAppointment appointment;
 
 	/** Subject. */
 	protected String subject;
@@ -187,6 +191,9 @@ public abstract class StoreMessage extends StoreFile {
 
 	/** List of "Sender" addresses. */
 	protected List<String> sender;
+
+	/** Message ArchiveUnit. */
+	public ArchiveUnit messageNode;
 
 	/**
 	 * Instantiates a new mail box message.
@@ -379,6 +386,9 @@ public abstract class StoreMessage extends StoreFile {
 						mimeType = TikaExtractor.getInstance().getMimeType(a.getRawAttachmentContent());
 						if (mimeType == null)
 							continue;
+						// if (mimeType.equals("application/vnd.ms-tnef"))
+						// System.out.println("---------------------TNEF
+						// detected");
 						for (String mt : StoreExtractor.mimeTypeSchemeMap.keySet()) {
 							if (mimeType.equals(mt)) {
 								setStoreAttachment(a, StoreExtractor.mimeTypeSchemeMap.get(mt));
@@ -404,15 +414,12 @@ public abstract class StoreMessage extends StoreFile {
 	 */
 	protected abstract byte[] getNativeMimeContent();
 
-	// get rid of useless beginning and ending spaces, carriage returns...
-	private void trimBodies() {
-		if (bodyContent[TEXT_BODY] != null)
-			bodyContent[TEXT_BODY] = bodyContent[TEXT_BODY].trim();
-		if (bodyContent[HTML_BODY] != null)
-			bodyContent[HTML_BODY] = bodyContent[HTML_BODY].trim();
-		if (bodyContent[RTF_BODY] != null)
-			bodyContent[RTF_BODY] = bodyContent[RTF_BODY].trim();
-	}
+	/**
+	 * Gets the appointment information if any in the message, or null.
+	 *
+	 * @return the appointment information
+	 */
+	protected abstract void analyzeAppointmentInformation();
 
 	/**
 	 * Analyze message to collect metadata and content information (protocol
@@ -463,14 +470,61 @@ public abstract class StoreMessage extends StoreFile {
 
 		// content extraction
 		analyzeBodies();
-		trimBodies();
+		optimizeBodies();
 		analyzeAttachments();
+
+		// try to get appointment information if any
+		analyzeAppointmentInformation();
 
 		// detect embedded store attachments not determine during parsing
 		detectStoreAttachments();
 
 		// no raw content, will be constructed at StoreMessage level
 		mimeContent = getNativeMimeContent();
+	}
+
+	// get rid of useless beginning and ending spaces, carriage returns and
+	// desencapsulate html and text from rtf
+	private void optimizeBodies() {
+		// get rid of useless beginning and ending spaces, carriage returns...
+		if (bodyContent[TEXT_BODY] != null)
+			bodyContent[TEXT_BODY] = bodyContent[TEXT_BODY].trim();
+		if (bodyContent[HTML_BODY] != null)
+			bodyContent[HTML_BODY] = bodyContent[HTML_BODY].trim();
+		if (bodyContent[RTF_BODY] != null)
+			bodyContent[RTF_BODY] = bodyContent[RTF_BODY].trim();
+
+		try {
+			// de-encapsulate TEXT and HTML from RTF if defined as encapsulated
+			if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())) {
+				HTMLFromRTFExtractor htmlExtractor = new HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
+				if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
+					String result;
+					result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+					if ((result != null) && !result.isEmpty()) {
+						result = result.trim();
+						if ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()) {
+							bodyContent[TEXT_BODY] = result;
+							bodyContent[RTF_BODY] = null;
+						} else {
+							if (bodyContent[TEXT_BODY].equals(result))
+								bodyContent[RTF_BODY] = null;
+						}
+					}
+				} else if (htmlExtractor.isEncapsulatedHTMLinRTF()
+						&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].isEmpty())) {
+					String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+					if ((result != null) && !result.isEmpty()) {
+						result = result.trim();
+						bodyContent[HTML_BODY] = result;
+						bodyContent[RTF_BODY] = null;
+					}
+				}
+
+			}
+		} catch (ExtractionException e) {
+			// forget bodies optimisation
+		}
 	}
 
 	/**
@@ -489,7 +543,6 @@ public abstract class StoreMessage extends StoreFile {
 	 *             format problems...)
 	 */
 	public final void extractMessage(boolean writeFlag) throws ExtractionException {
-		ArchiveUnit messageNode = null;
 		// String description = "[Vide]";
 		String textContent = null;
 
@@ -506,7 +559,9 @@ public abstract class StoreMessage extends StoreFile {
 
 		// description = "Message extrait du compte " +
 		// mailBoxFolder.storeExtractor.user;
-		// messageNode.addMetadata("Description", description, true);
+		if (appointment != null) {
+			messageNode.addMetadata("Description", "Rendez-vous", true);
+		}
 		messageNode.addPersonMetadata("Writer", from, false);
 		messageNode.addPersonMetadataList("Addressee", recipientTo, false);
 		messageNode.addPersonMetadataList("Recipient", recipientCc, false);
@@ -514,7 +569,30 @@ public abstract class StoreMessage extends StoreFile {
 		messageNode.addMetadata("SentDate", DateRange.getISODateString(sentDate), false);
 		messageNode.addMetadata("ReceivedDate", DateRange.getISODateString(receivedDate), false);
 
-		// not in SEDA ontology
+		// put appointment information in metadata if any
+		if (appointment != null) {
+			if (appointment.identifier == null)
+				appointment.identifier = "[IDVide]";
+			if (appointment.location == null)
+				appointment.location = "[LocalisationVide]";
+			String bdString, edString;
+			if (appointment.beginDate != null)
+				bdString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.beginDate);
+			else
+				bdString = "[Date/HeureInconnues]";
+			if (appointment.endDate != null)
+				edString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.endDate);
+			else
+				edString = "[Date/HeureInconnues]";
+
+			messageNode.addEventMetadata(appointment.identifier, "RDV Début", bdString,
+					"Localisation : " + appointment.location);
+			messageNode.addEventMetadata(appointment.identifier, "RDV Fin", edString, "");
+			// System.out.println("Identifier="+appointment.identifier);
+			// System.out.println("Location="+appointment.location);
+			// System.out.println("Beg="+DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("Europe/Paris")).format(appointment.beginDate));
+			// System.out.println("End="+DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("Europe/Paris")).format(appointment.endDate));
+		}
 
 		// reply-to messageID
 		if ((inReplyToUID != null) && !inReplyToUID.isEmpty())
@@ -562,8 +640,10 @@ public abstract class StoreMessage extends StoreFile {
 		if (mimeContent == null)
 			mimeContent = "".getBytes();
 
-		// add object binary master
-		messageNode.addObject(mimeContent, messageID + ".eml", "BinaryMaster", 1);
+		// add object binary master except if empty one
+		if (!isEmptyBodies() || (attachments!=null))
+			messageNode.addObject(mimeContent, messageID + ".eml", "BinaryMaster", 1);
+
 		if (writeFlag)
 			messageNode.write();
 
@@ -699,9 +779,7 @@ public abstract class StoreMessage extends StoreFile {
 	/** Extract a store attachment */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
-			StoreMessageAttachment a,
-			// String filename, byte[] rawContent, int attachedType,
-			String tag, boolean writeFlag) throws ExtractionException {
+			StoreMessageAttachment a, boolean writeFlag) throws ExtractionException {
 		StoreExtractor extractor;
 		// ArchiveUnit subRootNode;
 
@@ -754,7 +832,6 @@ public abstract class StoreMessage extends StoreFile {
 		ArchiveUnit rootNode;
 		DateRange attachedMessagedateRange;
 		boolean attachedFlag = false;
-		int count = 1;
 
 		// prepare an ArchiveUnit to keep all attached message that can be
 		// recursively extracted
@@ -770,8 +847,7 @@ public abstract class StoreMessage extends StoreFile {
 			if (a.attachmentType == StoreMessageAttachment.STORE_ATTACHMENT) {
 				// recursive extraction of a message in attachment...
 				logMessageWarning("mailextract: Attached message extraction");
-				extractStoreAttachment(rootNode, attachedMessagedateRange, a, "At#" + count, writeFlag);
-				count++;
+				extractStoreAttachment(rootNode, attachedMessagedateRange, a, writeFlag);
 				attachedFlag = true;
 			} else if (writeFlag) {
 				// standard attachment file
@@ -957,34 +1033,16 @@ public abstract class StoreMessage extends StoreFile {
 		return child;
 	}
 
-	// public void extract(String winmailFilename, String directoryName) throws
-	// Exception {
-	// HMEFContentsExtractor ext = new HMEFContentsExtractor(new
-	// File(winmailFilename));
-	//
-	// File dir = new File(directoryName);
-	// File rtf = new File(dir, "message.rtf");
-	// if(! dir.exists()) {
-	// throw new FileNotFoundException("Output directory " + dir.getName() + "
-	// not found");
-	// }
-	//
-	// System.out.println("Extracting...");
-	// ext.extractMessageBody(rtf);
-	// ext.extractAttachments(dir);
-	// System.out.println("Extraction completed");
-	// }
-
-	// some extraction has no body and no attachements only headers
-	private boolean isEmptyMessage() {
+	// some extraction has no body only headers
+	private boolean isEmptyBodies() {
 		if ((bodyContent[TEXT_BODY] != null) && !bodyContent[TEXT_BODY].isEmpty())
 			return false;
 		if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
 			return false;
 		if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
 			return false;
-		if (attachments.size() > 0)
-			return false;
+//		if (attachments.size() > 0)
+//			return false;
 		return true;
 	}
 
@@ -1003,31 +1061,35 @@ public abstract class StoreMessage extends StoreFile {
 					}
 				}
 
-				// de-encapulate HTML from RTF if needed
-				if (((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())) {
-					HTMLFromRTFExtractor htmlExtractor = new HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
-					if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
-						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-						if ((result != null) && !result.isEmpty()) {
-							if ((bodyContent[TEXT_BODY] == null) || bodyContent[TEXT_BODY].isEmpty()) {
-								bodyContent[TEXT_BODY] = result;
-								bodyContent[RTF_BODY] = null;
-							} else {
-								result = result.trim();
-								if (bodyContent[TEXT_BODY].equals(result))
-									bodyContent[RTF_BODY] = null;
-							}
-						}
-					} else if (htmlExtractor.isEncapsulatedHTMLinRTF()
-							&& ((bodyContent[HTML_BODY] == null) || bodyContent[HTML_BODY].isEmpty())) {
-						String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-						if ((result != null) && !result.isEmpty()) {
-							bodyContent[HTML_BODY] = result;
-							bodyContent[RTF_BODY] = null;
-						}
-					}
-
-				}
+				// // de-encapulate HTML from RTF if needed
+				// if (((bodyContent[RTF_BODY] != null) &&
+				// !bodyContent[RTF_BODY].isEmpty())) {
+				// HTMLFromRTFExtractor htmlExtractor = new
+				// HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
+				// if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
+				// String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+				// if ((result != null) && !result.isEmpty()) {
+				// if ((bodyContent[TEXT_BODY] == null) ||
+				// bodyContent[TEXT_BODY].isEmpty()) {
+				// bodyContent[TEXT_BODY] = result;
+				// bodyContent[RTF_BODY] = null;
+				// } else {
+				// result = result.trim();
+				// if (bodyContent[TEXT_BODY].equals(result))
+				// bodyContent[RTF_BODY] = null;
+				// }
+				// }
+				// } else if (htmlExtractor.isEncapsulatedHTMLinRTF()
+				// && ((bodyContent[HTML_BODY] == null) ||
+				// bodyContent[HTML_BODY].isEmpty())) {
+				// String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
+				// if ((result != null) && !result.isEmpty()) {
+				// bodyContent[HTML_BODY] = result;
+				// bodyContent[RTF_BODY] = null;
+				// }
+				// }
+				//
+				// }
 
 				// determine in which part to add related
 				if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
@@ -1044,7 +1106,7 @@ public abstract class StoreMessage extends StoreFile {
 						msgMp.addBodyPart(part);
 					}
 					// if empty message, construct a fake empty text part
-					if (isEmptyMessage()) {
+					if (isEmptyBodies()) {
 						MimeBodyPart part = new MimeBodyPart();
 						part.setContent("", "text/plain; charset=utf-8");
 						msgMp.addBodyPart(part);
