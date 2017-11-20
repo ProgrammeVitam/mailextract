@@ -50,14 +50,14 @@ public class DateRange {
 
 	private static SimpleDateFormat writeformat;
 	static {
-		writeformat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss.s'Z'");
+		writeformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.s'Z'");
 		writeformat.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
 	/**
 	 * Get a compliant ISO date form of a Date.
 	 * <p>
-	 * YYYY-MM-DD'T'hh:mm:ss'Z' (eg 1997-07-16T19:20:30Z)
+	 * YYYY-MM-DD'T'HH:mm:ss'Z' (eg 1997-07-16T19:20:30Z)
 	 * <p>
 	 * where:
 	 * <ul>

@@ -527,6 +527,17 @@ public abstract class StoreMessage extends StoreFile {
 		}
 	}
 
+	// get the String rid of all characters that may cause problems in xml metadata
+	private static String purifyMetadataText(String in) {
+		String result;
+
+		result = in.replaceAll("[\\p{C}&&[^\\r\\n\\t]]", "");
+		// break HTML tags in metadata if any
+		result = result.replace("<", "< ");
+		result = result.replace("&lt;", "&lt; ");
+		return result;
+	}
+
 	/**
 	 * Create the Archive Unit structures with all content and metadata needed,
 	 * and then write them on disk if writeFlag is true
@@ -546,8 +557,11 @@ public abstract class StoreMessage extends StoreFile {
 		// String description = "[Vide]";
 		String textContent = null;
 
+		if (messageID.equals("<20CBF48095D47140B58E9F5202ADD9800BD0837C71@KIARA.cab.travail.gouv.fr>"))
+			System.out.println("Got it!");
+	
 		// create message unit
-		if ((subject == null) || subject.isEmpty())
+		if ((subject == null) || subject.trim().isEmpty())
 			subject = "[Vide]";
 
 		messageNode = new ArchiveUnit(storeFolder.storeExtractor, storeFolder.folderArchiveUnit, "Message", subject);
@@ -587,7 +601,7 @@ public abstract class StoreMessage extends StoreFile {
 
 			messageNode.addEventMetadata(appointment.identifier, "RDV Début", bdString,
 					"Localisation : " + appointment.location);
-			messageNode.addEventMetadata(appointment.identifier, "RDV Fin", edString, "");
+			messageNode.addEventMetadata(appointment.identifier, "RDV Fin", edString, "Localisation : " + appointment.location);
 			// System.out.println("Identifier="+appointment.identifier);
 			// System.out.println("Location="+appointment.location);
 			// System.out.println("Beg="+DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("Europe/Paris")).format(appointment.beginDate));
@@ -612,10 +626,10 @@ public abstract class StoreMessage extends StoreFile {
 				messageNode.addObject(Canonicalizator.getInstance().toSimpleText(textContent), messageID + ".txt",
 						"TextContent", 1);
 			if (getStoreExtractor().options.extractMessageTextMetadata) {
-				// break HTML tags in metadata if any
-				textContent = textContent.replace("<", "< ");
-				textContent = textContent.replace("&lt;", "&lt; ");
-				messageNode.addMetadata("TextContent", textContent, true);
+//				// break HTML tags in metadata if any
+//				textContent = textContent.replace("<", "< ");
+//				textContent = textContent.replace("&lt;", "&lt; ");
+				messageNode.addMetadata("TextContent", purifyMetadataText(textContent), true);
 			}
 		}
 
@@ -641,7 +655,7 @@ public abstract class StoreMessage extends StoreFile {
 			mimeContent = "".getBytes();
 
 		// add object binary master except if empty one
-		if (!isEmptyBodies() || (attachments!=null))
+		if (!isEmptyBodies() || (attachments != null))
 			messageNode.addObject(mimeContent, messageID + ".eml", "BinaryMaster", 1);
 
 		if (writeFlag)
@@ -682,7 +696,7 @@ public abstract class StoreMessage extends StoreFile {
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%d\"|", this.getMessageSize());
 		if (!storeFolder.getStoreExtractor().isRoot())
 			storeFolder.getStoreExtractor().getPSExtractList().format("\"Attached\"");
-		if (appointment!=null){
+		if (appointment != null) {
 			String bdString, edString;
 			if (appointment.beginDate != null)
 				bdString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.beginDate);
@@ -693,9 +707,8 @@ public abstract class StoreMessage extends StoreFile {
 			else
 				edString = "[Date/HeureInconnues]";
 			storeFolder.getStoreExtractor().getPSExtractList().format("|\"%s\"|\"%s\"|\"%s\"",
-					filterHyphen(appointment.location),bdString,edString);
-		}
-		else {
+					filterHyphen(appointment.location), bdString, edString);
+		} else {
 			storeFolder.getStoreExtractor().getPSExtractList().format("|||", this.getMessageSize());
 		}
 		storeFolder.getStoreExtractor().getPSExtractList().println("");
@@ -785,7 +798,7 @@ public abstract class StoreMessage extends StoreFile {
 		// put in metadata
 		if (getStoreExtractor().options.extractFileTextMetadata
 				&& (!((textExtract == null) || textExtract.isEmpty()))) {
-			attachmentNode.addMetadata("TextContent", textExtract, true);
+			attachmentNode.addMetadata("TextContent", purifyMetadataText(textExtract), true);
 		}
 
 		if (writeFlag)
@@ -868,6 +881,10 @@ public abstract class StoreMessage extends StoreFile {
 			} else if (writeFlag) {
 				// standard attachment file
 				extractFileOrInlineAttachment(messageNode, a, writeFlag);
+				if (a.creationDate!=null)
+					attachedMessagedateRange.extendRange(a.creationDate);
+				if (a.modificationDate!=null)
+					attachedMessagedateRange.extendRange(a.modificationDate);
 			}
 		}
 		if (attachedFlag && writeFlag) {
@@ -1057,8 +1074,8 @@ public abstract class StoreMessage extends StoreFile {
 			return false;
 		if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
 			return false;
-//		if (attachments.size() > 0)
-//			return false;
+		// if (attachments.size() > 0)
+		// return false;
 		return true;
 	}
 
