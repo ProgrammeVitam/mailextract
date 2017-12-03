@@ -71,10 +71,10 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	/**
 	 * Creates the root folder.
 	 *
+	 * @param content
+	 *            the embedded message
 	 * @param storeExtractor
-	 *            Operation store extractor
-	 * @param pstFolder
-	 *            Root native libpst folder
+	 *            the store extractor
 	 * @param rootArchiveUnit
 	 *            Root ArchiveUnit
 	 * @return the LP store folder
@@ -94,7 +94,7 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
 		lpStoreMessage.analyzeMessage();
 		dateRange.extendRange(lpStoreMessage.getSentDate());
 		lpStoreMessage.extractMessage(writeFlag);
@@ -146,7 +146,7 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#hasMessages()
 	 */
 	@Override
-	public boolean hasMessages() throws ExtractionException {
+	public boolean hasElements() throws ExtractionException {
 		return true;
 	}
 
@@ -167,7 +167,7 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderMessages(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException {
 		lpStoreMessage.countMessage();
 	}
 

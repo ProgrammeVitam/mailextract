@@ -46,6 +46,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The Class CharsetUtils for RTF used charsets decoding.
+ */
 public class CharsetUtils {
 
     private static final Pattern CHARSET_NAME_PATTERN =
@@ -120,17 +123,17 @@ public class CharsetUtils {
                 isSupportedICU = icuCharset.getMethod("isSupported", String.class);
             } catch (Throwable t) {
             }
-            // TODO: would be nice to somehow log that we
-            // successfully found ICU
         }
     }
 
     /**
-     * Safely return whether <charsetName> is supported, without throwing exceptions
-     * 
-     * @param charsetName Name of charset (can be null)
-     * @return true if the character set is supported
-     */
+	 * Safely return whether <charsetName> is supported, without throwing
+	 * exceptions.
+	 *
+	 * @param charsetName
+	 *            Name of charset (can be null)
+	 * @return true if the character set is supported
+	 */
     public static boolean isSupported(String charsetName) {
         try {
             if (isSupportedICU != null && ((Boolean) isSupportedICU.invoke(null, charsetName)).booleanValue()) {
@@ -149,12 +152,13 @@ public class CharsetUtils {
     }
 
     /**
-     * Handle various common charset name errors, and return something
-     * that will be considered valid (and is normalized)
-     * 
-     * @param charsetName name of charset to process
-     * @return potentially remapped/cleaned up version of charset name
-     */
+	 * Handle various common charset name errors, and return something that will
+	 * be considered valid (and is normalized).
+	 *
+	 * @param charsetName
+	 *            name of charset to process
+	 * @return potentially remapped/cleaned up version of charset name
+	 */
     public static String clean(String charsetName) {
         try {
             return forName(charsetName).name();
@@ -163,10 +167,15 @@ public class CharsetUtils {
         }
     }
 
-    /** Returns Charset impl, if one exists.  This method
-     *  optionally uses ICU4J's CharsetICU.forNameICU,
-     *  if it is found on the classpath, else only uses
-     *  JDK's builtin Charset.forName. */
+    /**
+	 * Returns Charset impl, if one exists. This method optionally uses ICU4J's
+	 * CharsetICU.forNameICU, if it is found on the classpath, else only uses
+	 * JDK's builtin Charset.forName.
+	 *
+	 * @param name
+	 *            the name
+	 * @return the charset
+	 */
     public static Charset forName(String name) {
         if (name == null) {
             throw new IllegalArgumentException();

@@ -27,17 +27,41 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
+/**
+ * StoreExtractorOptions class for all extraction options.
+ */
 public class StoreExtractorOptions {
+	
+	/** The keep only deep empty folders flag. */
 	public boolean keepOnlyDeepEmptyFolders;
+	
+	/** The drop empty folders flag. */
 	public boolean dropEmptyFolders;
+	
+	/** The warning msg problem flag. */
 	public boolean warningMsgProblem;
+	
+	/** The names length. */
 	public int namesLength;
+	
+	/** The extract list flag. */
 	public boolean extractList;
+	
+	/** The extract message text version file flag. */
 	public boolean extractMessageTextFile;
+	
+	/** The extract message text metadata flag. */
 	public boolean extractMessageTextMetadata;
+	
+	/** The extract attachment file text version file flag. */
 	public boolean extractFileTextFile;
+	
+	/** The extract attachment file text metadata flag. */
 	public boolean extractFileTextMetadata;
 
+	/**
+	 * Instantiates a new store extractor options.
+	 */
 	public StoreExtractorOptions() {
 		keepOnlyDeepEmptyFolders = false;
 		dropEmptyFolders = false;
@@ -50,6 +74,28 @@ public class StoreExtractorOptions {
 		extractFileTextMetadata = false;
 	}
 
+	/**
+	 * Instantiates a new store extractor options.
+	 *
+	 * @param keepOnlyDeepEmptyFolders
+	 *            the keep only deep empty folders
+	 * @param dropEmptyFolders
+	 *            the drop empty folders
+	 * @param warningMsgProblem
+	 *            the warning msg problem
+	 * @param namesLength
+	 *            the names length
+	 * @param extractList
+	 *            the extract list
+	 * @param extractMessageTextFile
+	 *            the extract message text file
+	 * @param extractMessageTextMetadata
+	 *            the extract message text metadata
+	 * @param extractFileTextFile
+	 *            the extract file text file
+	 * @param extractFileTextMetadata
+	 *            the extract file text metadata
+	 */
 	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
 			int namesLength, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
 			boolean extractFileTextFile, boolean extractFileTextMetadata) {

@@ -50,7 +50,8 @@ import javax.mail.URLName;
 import java.io.PrintStream;
 
 /**
- * Abstract factory class for operation context on a defined mailbox.
+ * Abstract factory class for operation context on a defined mailbox or mail
+ * file.
  * 
  * <p>
  * The {@link #createStoreExtractor createStoreExtractor} call create a
@@ -62,59 +63,72 @@ import java.io.PrintStream;
  * The StoreExtractor use sub class extractors to manage different protocols or
  * formats (called schemes). There are defaults sub class for:
  * <ul>
- * <li>IMAP/IMAPS server with user/password login</li>
+ * <li>IMAP/IMAPS/POP3 (GIMAP experimental) server with user/password login</li>
  * <li>Thunderbird directory containing mbox files and .sbd directory
  * hierarchy</li>
+ * <li>mbox file</li>
+ * <li>eml file</li>
  * <li>Outlook pst file</li>
  * <li>Msg file</li>
- * <li>eml file</li>
- * <li>mbox file</li>
  * </ul>
  * Notice: you have to call {@link #initDefaultExtractors initDefaultExtractors}
- * method before any usage to benefit from these extractors.
+ * method before any usage to benefit from these existing extractors, and you
+ * can add new ones with {@link #addExtractionRelation addExtractionRelation},
+ * and they will be automatically used when needed.
  * 
  * <p>
  * The extraction generate on disk a directories/files structure convenient for
  * SEDA archive packet (NF Z44-022), which is:
  * <ul>
  * <li>each folder is extracted as a directory named "Folder#'UniqID': 'name'",
- * with uniqID being a unique ID innerly generated and name being the first 32
- * characters of the folder name UTF-8 encoded. The folder descriptive metadata
- * is in the file named manifest.json (json/UTF-8 encoded) in its directory. It
+ * with uniqID being a unique ID innerly generated and name being the n first
+ * characters of the folder name UTF-8 encoded (n is defined by the option
+ * namesLength, default being 12). The folder descriptive metadata is in the
+ * file named ArchiveUnitContent.xml (XML/UTF-8 encoded) in its directory. It
  * represent the folder ArchiveUnit with no objects</li>
  * <li>each message is extracted in a directory named "Message#'UniqID':
- * 'name'", with name being the first 32 characters of the folder name UTF-8
- * encoded. It represent the message ArchiveUnit with no objects. In this
- * message directory, there's:
+ * 'name'", with name being the n first characters of the message title UTF-8
+ * encoded. It represent the message ArchiveUnit. In this message directory,
+ * there's:
  * <ul>
- * <li>the message descriptive metadata file (manifest.json),</li>
- * <li>one directory by attachment (if any) named "__Attachment#'UniqID':
- * 'name'__" with the name being the firts 32 characters of the attachment
- * filename and the starting and ending "__" indicating that this folder
- * represent an ArchiveUnit with objects. In this folder are :</li>
+ * <li>the message descriptive metadata file (ArchiveUnitContent.xml),</li>
+ * <li>one directory for each special attachments being extractible stores
+ * (attached messages or attached files formatted in eml, msg, pst...) (if any)
  * <ul>
- * <li>the attachment descriptive metadata file (manifest.json), and</li>
- * <li>the attachment binary file, being a final object, is named according the
+ * <li>if simple message, it's named "Message#'UniqID': 'name'", with name being
+ * the n first characters of the message title UTF-8 encoded, and contents the
+ * message extraction,</li>
+ * <li>if complex extraction, it's named "Container#'UniqID': 'name'", with name
+ * being the n first characters of the attachment name (if non default to
+ * 'infile') UTF-8 encoded, and contents the container descriptive metadata file
+ * (ArchiveUnitContent.xml) and the hierarchy of extracted folders, messages,
+ * attachments...</li>
+ * </ul>
+ * <li>one directory by attachment (if any) named "Attachment#'UniqID': 'name'"
+ * with the name being the n first characters of the attachment filename. In
+ * this folder are :</li>
+ * <ul>
+ * <li>the attachment descriptive metadata file (ArchiveUnitContent.xml),
+ * and</li>
+ * <li>the attachment binary file, being a final object, named according the
  * format "'ObjectType'-'Version'-'filename'", with in this case ObjectType
  * being "BinaryMaster", version being "1", filename being the attachment file
  * name with extension if any.</li>
+ * <li>the text version of attachment binary file, if option is set, named
+ * according the format "'ObjectType'-'Version'-'filename'", with in this case
+ * ObjectType being "TextContent", version being "1", filename being the
+ * attachment file name with extension if any.</li>
  * </ul>
- * <li>one directory for the message body named "__Body__" with the starting and
- * ending "__" indicating that this folder represent an ArchiveUnit with
- * objects. In this folder are :</li>
- * <ul>
- * <li>the message object descriptive metadata file (manifest.json),
- * <li>the message body binary file, being a final object, named
- * "BinaryMaster_1_object" (no filename), and</li>
- * <li>the message body text content, being a final object, named
- * "TextContent_1_object" (no filename).</li>
+ * <li>the message body in eml format file, being a final object, named
+ * "BinaryMaster_1_'messageID'" with the messageID being the n first characters
+ * of the uniq messageID , and</li>
+ * <li>the message body in text format file, if option is set, being a final
+ * object, named "TextContent_1_'messageID'" with the messageID being the n
+ * first characters of the uniq messageID.</li>
  * </ul>
  * </ul>
- * </ul>
- * Note: when CONST_NAMES_SHORTENED option is enabled, during the name
- * generation the directory type is reduced to it's first character (Folder to
- * F, Message to M...) and not 32 but only 8 characters from objects names are
- * used
+ * Note: any folder's name is modified with starting and ending "__" when the
+ * ArchiveUnit, the folder represents, contains an object.
  * <p>
  * For detailed information on descritptive metadata collected see
  * {@link StoreFolder} and {@link StoreMessage}.
@@ -159,13 +173,10 @@ public abstract class StoreExtractor {
 	// StoreExtractor definition parameters
 
 	/**
-	 * Scheme defining specific store extractor (imap| thunderbird| pst|
-	 * mbox|...)
+	 * Scheme defining specific store extractor (imap| imaps| pop3| thunderbird|
+	 * mbox| eml| pst| msg| experimental gimap)...)
 	 */
 	protected String scheme;
-
-	// /** Server:port of target store ((hostname|ip)[:port]) **/
-	// protected String authority;
 
 	/** Hostname of target store in ((hostname|ip)[:port]) *. */
 	protected String host;
@@ -188,9 +199,6 @@ public abstract class StoreExtractor {
 	 */
 	protected String storeFolder;
 
-	// /** Path and name of the extraction directory */
-	// protected String destRootPath, destName;
-
 	/** Path of the directory where will be the extraction directory. */
 	protected String destRootPath;
 
@@ -204,7 +212,7 @@ public abstract class StoreExtractor {
 	protected String description;
 
 	// private fields for global statictics
-	private int totalMessagesCount;
+	private int totalElementsCount;
 	private int totalAttachedMessagesCount;
 	private int totalFoldersCount;
 	private long totalRawSize;
@@ -240,7 +248,7 @@ public abstract class StoreExtractor {
 	 *            the extractor
 	 */
 	@SuppressWarnings("rawtypes")
-	protected static void addExtractionRelation(String mimeType, String scheme, boolean isContainer, Class extractor) {
+	public static void addExtractionRelation(String mimeType, String scheme, boolean isContainer, Class extractor) {
 		// if there is a file mimetype for this scheme
 		if (mimeType != null)
 			mimeTypeSchemeMap.put(mimeType, scheme);
@@ -339,7 +347,7 @@ public abstract class StoreExtractor {
 
 		this.totalFoldersCount = 0;
 		this.totalAttachedMessagesCount = 0;
-		this.totalMessagesCount = 0;
+		this.totalElementsCount = 0;
 		this.totalRawSize = 0;
 
 		this.rootStoreExtractor = rootStoreExtractor;
@@ -443,32 +451,32 @@ public abstract class StoreExtractor {
 	}
 
 	/**
-	 * Increment the messages total count.
+	 * Increment the elements total count.
 	 *
-	 * @param count
-	 *            the count
+	 * @param inc
+	 *            the increment
 	 */
-	public void addTotalMessagesCount(int count) {
-		totalMessagesCount += count;
+	public void addTotalElementsCount(int inc) {
+		totalElementsCount += inc;
 	}
 
 	/**
-	 * Gets the total count of all analyzed messages.
+	 * Gets the total count of all analyzed elements.
 	 *
-	 * @return the message count
+	 * @return the elements count
 	 */
-	public int getTotalMessagesCount() {
-		return totalMessagesCount;
+	public int getTotalElementsCount() {
+		return totalElementsCount;
 	}
 
 	/**
 	 * Increment the attached messages total count.
 	 *
-	 * @param count
-	 *            the count
+	 * @param inc
+	 *            the inc
 	 */
-	public void addTotalAttachedMessagesCount(int count) {
-		totalAttachedMessagesCount += count;
+	public void addTotalAttachedMessagesCount(int inc) {
+		totalAttachedMessagesCount += inc;
 	}
 
 	/**
@@ -499,17 +507,17 @@ public abstract class StoreExtractor {
 	/**
 	 * Add to total raw size.
 	 *
-	 * @param messageSize
-	 *            the message size
+	 * @param elementSize
+	 *            the element size
 	 */
-	public void addTotalRawSize(long messageSize) {
-		totalRawSize += messageSize;
+	public void addTotalRawSize(long elementSize) {
+		totalRawSize += elementSize;
 	}
 
 	/**
-	 * Gets the total raw size of all analyzed messages.
+	 * Gets the total raw size of all analyzed elements.
 	 * <p>
-	 * The "raw" size is the sum of the size of messages as in the mailbox, the
+	 * The "raw" size is the sum of the size of elements as in the store, the
 	 * extraction will be larger (up to x2)
 	 *
 	 * @return the total raw size
@@ -561,7 +569,6 @@ public abstract class StoreExtractor {
 	 *
 	 * @param rootFolder
 	 *            the new root folder
-	 * @return the root StoreFolder
 	 */
 	public void setRootFolder(StoreFolder rootFolder) {
 		rootAnalysisMBFolder = rootFolder;
@@ -586,7 +593,8 @@ public abstract class StoreExtractor {
 	}
 
 	/**
-	 * Create a store extractor as a factory creator.
+	 * Create a store extractor for the declared scheme in url as a factory
+	 * creator.
 	 *
 	 * @param urlString
 	 *            the url string
@@ -624,30 +632,9 @@ public abstract class StoreExtractor {
 
 	/**
 	 * Create an internal depth store extractor as a factory creator.
-	 *
-	 * @param urlString
-	 *            the url string
-	 * @param storeFolder
-	 *            Path of the extracted folder in the account mail box, can be
-	 *            null if default root folder
-	 * @param destPathString
-	 *            the dest path string
-	 * @param options
-	 *            Options (flag composition of CONST_)
-	 * @param rootStoreExtractor
-	 *            the creating store extractor in nested extraction, or null if
-	 *            root one
-	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @param psExtractList
-	 *            the ps extract list
-	 * @return the store extractor, constructed as a non abstract subclass
-	 * @throws ExtractionException
-	 *             Any unrecoverable extraction exception (access trouble, major
-	 *             format problems...)
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
+	private static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
 			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger,
 			PrintStream psExtractList) throws ExtractionException {
 
@@ -731,11 +718,11 @@ public abstract class StoreExtractor {
 		Instant end = Instant.now();
 		String size = Double.toString(Math.round(((double) getTotalRawSize()) * 100.0 / (1024.0 * 1024.0)) / 100.0);
 		getLogger().info("Terminated in " + Duration.between(start, end).toString() + " writing "
-				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalMessagesCount())
+				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
 				+ " messages, for a total size of " + size + " MBytes and "
 				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
 		System.out.println("Terminated in " + Duration.between(start, end).toString() + " writing "
-				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalMessagesCount())
+				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
 				+ " messages, for a total size of " + size + " MBytes and "
 				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
 
@@ -746,12 +733,12 @@ public abstract class StoreExtractor {
 	 * 
 	 * <p>
 	 * Warning: listing with detailed information is a potentially expensive
-	 * operation, especially when accessing distant account, as all messages are
+	 * operation, especially when accessing distant account, as all elements are
 	 * inspected (in the case of a distant account that mean also
 	 * downloaded...).
 	 *
 	 * @param stats
-	 *            true if detailed information (number and raw size of messages
+	 *            true if detailed information (number and raw size of elements
 	 *            in each folder) is asked for
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
@@ -776,7 +763,7 @@ public abstract class StoreExtractor {
 		tmp = String.format("Terminated in %s listing %d folders", time, getFolderTotalCount());
 		if (stats) {
 			tmp += String.format(" with %d messages, for %.2f MBytes, and %d attached messages",
-					getTotalMessagesCount(), ((double) getTotalRawSize()) / (1024.0 * 1024.0),
+					getTotalElementsCount(), ((double) getTotalRawSize()) / (1024.0 * 1024.0),
 					getTotalAttachedMessagesCount());
 		}
 
@@ -828,5 +815,24 @@ public abstract class StoreExtractor {
 				return false;
 		}
 		return true;
+	}
+	
+	/**
+	 * Gets the attachment in which is the embedded object.
+	 *
+	 * @return the attachment
+	 */
+	abstract public StoreMessageAttachment getAttachment();
+
+	/**
+	 * Gets the scheme if this content can be managed by this StoreExtractor, or
+	 * null
+	 *
+	 * @param content
+	 *            the content
+	 * @return the scheme
+	 */
+	public static String getVerifiedScheme(byte[] content) {
+		return null;
 	}
 }

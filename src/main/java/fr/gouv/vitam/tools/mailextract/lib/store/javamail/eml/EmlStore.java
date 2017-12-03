@@ -34,7 +34,6 @@ import javax.mail.*;
 
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMEmbeddedStore;
 
-// TODO: Auto-generated Javadoc
 /**
  * JavaMail Store for eml uniq message file.
  * <p>
@@ -152,13 +151,11 @@ public class EmlStore extends Store implements JMEmbeddedStore {
 			throw new MessagingException("eml: only one root simulated folder, no " + url.getFile() + " folder");
 	}
 
-	@Override
 	public void setObjectContent(Object objectContent) {
 		if (objectContent instanceof byte[])
 			this.objectContent = (byte[]) objectContent;
 	}
 
-	@Override
 	public Object getObjectContent() {
 		return objectContent;
 	}

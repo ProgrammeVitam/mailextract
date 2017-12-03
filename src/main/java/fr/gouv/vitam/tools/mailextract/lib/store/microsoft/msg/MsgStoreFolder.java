@@ -35,7 +35,7 @@ import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
- * The Class MsgStoreFolder.
+ * StoreFolder sub-class for mail boxes extracted through POI HSMF library.
  */
 public class MsgStoreFolder extends StoreFolder {
 
@@ -84,7 +84,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasMessages()
 	 */
-	public boolean hasMessages() throws ExtractionException {
+	public boolean hasElements() throws ExtractionException {
 		return (true);
 	}
 
@@ -104,7 +104,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages(boolean)
 	 */
 	@Override
-	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
 		msgStoreMessage.analyzeMessage();
 		dateRange.extendRange(msgStoreMessage.getSentDate());
 		msgStoreMessage.extractMessage(writeFlag);
@@ -159,7 +159,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * (boolean)
 	 */
 	@Override
-	protected void doListFolderMessages(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException {
 		msgStoreMessage.analyzeMessage();
 		dateRange.extendRange(msgStoreMessage.getSentDate());
 		msgStoreMessage.extractMessage(false);

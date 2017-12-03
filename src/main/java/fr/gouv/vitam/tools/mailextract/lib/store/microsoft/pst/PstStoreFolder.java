@@ -112,7 +112,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
 		PSTMessage message;
 
 		try {
@@ -186,7 +186,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#hasMessages()
 	 */
 	@Override
-	public boolean hasMessages() throws ExtractionException {
+	public boolean hasElements() throws ExtractionException {
 		try {
 			return pstFolder.getEmailCount() > 0;
 		} catch (IOException e) {
@@ -213,7 +213,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderMessages(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException {
 		PSTMessage message;
 
 		try {

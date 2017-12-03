@@ -49,8 +49,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 /**
  * MailExtractThread class for the real extraction command
  * <p>
- * Thread is needed for result to be seen in the console text area. It's then
- * possible to launch multiple extraction in parallel
+ * Thread for one extraction treatment writing to stdout in the console text area.
  */
 public class MailExtractThread extends Thread {
 
@@ -107,8 +106,10 @@ public class MailExtractThread extends Thread {
 	 *            the action number (LIST, STAT, EXTRACT)
 	 * @param protocol
 	 *            the protocol
-	 * @param server
-	 *            the server
+	 * @param host
+	 *            the host
+	 * @param port
+	 *            the port
 	 * @param user
 	 *            the user
 	 * @param password

@@ -1,4 +1,7 @@
 /**
- * Provides all classes to use JavaMail library.
+ * Provides all classes to extract stores with JavaMail library.
+ * <p>
+ * For now, IMAP and Thunderbird mbox, eml structure through MailExtract application,
+ * could also be used for POP3 and Gmail, via StoreExtractor (not tested).
  */
 package fr.gouv.vitam.tools.mailextract.lib.store.javamail;

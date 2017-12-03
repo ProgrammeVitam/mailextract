@@ -25,13 +25,6 @@
  * accept its terms.
  */
 
-/**
- * This is strongly inspired by RTFParser in Tika 1.17
- * under http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Conform with MSDN directives to de-encapsulate HTML from RTF
- * https://msdn.microsoft.com/en-us/library/ee159984(v=exchg.80).aspx
- */
 
 package fr.gouv.vitam.tools.mailextract.lib.formattools.rtf;
 
@@ -52,10 +45,16 @@ import java.util.regex.Pattern;
 
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
-// TODO: Auto-generated Javadoc
 /**
- * The Class HTMLFromRTFextractor.
+ * The Class HTMLFromRTFextractor for desencapsulating text and html from rtf.
+ * <p>
+ * This is strongly inspired by RTFParser in Tika 1.17
+ * under http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Conform with MSDN directives to de-encapsulate HTML from RTF
+ * https://msdn.microsoft.com/en-us/library/ee159984(v=exchg.80).aspx
  */
+
 public class HTMLFromRTFExtractor {
 
 	// Input management

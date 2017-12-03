@@ -1,6 +1,6 @@
 /**
- * Provides all core classes and method to deal with identification and format
- * conversion tools .
+ * Provides all classes and methods to deal with identification and format
+ * conversion tools.
  * <p>
  * Use Tika library (https://tika.apache.org/) and Siegfried
  * (http://www.itforarchivists.com/siegfried)

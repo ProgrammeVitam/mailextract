@@ -65,7 +65,8 @@ import joptsimple.OptionSet;
  * <li>IMAP or IMAPS server with user/password login</li>
  * <li>Thunderbird directory containing mbox files and .sbd directory
  * hierarchy</li>
- * <li>Outlook pst file</li>
+ * <li>Mbox or Eml file</li>
+ * <li>Outlook pst or Msg file</li>
  * </ul>
  * 
  * <p>
@@ -132,16 +133,32 @@ import joptsimple.OptionSet;
  * <td>keep only empty folders not at root level</td>
  * </tr>
  * <tr>
+ * <td>--nameslength</td>
+ * <td>generate short directories and files names</td>
+ * </tr>
+ * <tr>
  * <td>--extractlist</td>
  * <td>generate a csv list of all extracts</td>
  * </tr>
- *<tr>
- * <td>--verbatim</td>
- * <td>event level to log</td>
+ * <tr>
+ * <td>--extractmessagetextfile</td>
+ * <td>extract a file with text version of messages</td>
  * </tr>
  * <tr>
- * <td>--nameslength</td>
- * <td>generate short directories and files names</td>
+ * <td>--extractmessagetextmetadata</td>
+ * <td>put message text in metadata</td>
+ * </tr>
+ * <tr>
+ * <td>--extractfiletextfile</td>
+ * <td>extract a file with text version of attachment files</td>
+ * </tr>
+ * <tr>
+ * <td>--extractfiletextmetadata</td>
+ * <td>put attachment file text in metadata</td>
+ * </tr>
+ * <tr>
+ * <td>--verbatim</td>
+ * <td>event level to log</td>
  * </tr>
  * <tr>
  * <td>--warning</td>
@@ -241,10 +258,9 @@ public class MailExtractApp {
 		String logLevel;
 
 		// outputs
-		Logger logger=null;
+		Logger logger = null;
 		PrintStream psExtractList;
 
-		// FIXME vérification des paramètres
 		// prepare parsing with jopt
 		OptionParser parser = createOptionParser();
 		OptionSet options = null;
@@ -267,7 +283,7 @@ public class MailExtractApp {
 
 		}
 
-		// non specific option parsing
+		// non protocol specific option parsing
 		if (options.has("verbatim"))
 			logLevel = (String) options.valueOf("verbatim");
 		else if (options.has("l") || options.has("z") || (!options.has("l") && !options.has("z") && !options.has("x")))
@@ -280,10 +296,6 @@ public class MailExtractApp {
 			System.err.println("unknown log level");
 			System.exit(1);
 		}
-		if (options.has("type"))
-			protocol = (String) options.valueOf("type");
-		else
-			protocol = "";
 		if (options.has("nameslength")) {
 			try {
 				namesLength = Integer.parseInt((String) options.valueOf("nameslength"));
@@ -294,10 +306,17 @@ public class MailExtractApp {
 			}
 		}
 
+		// identify protocol option
+		if (options.has("type"))
+			protocol = (String) options.valueOf("type");
+		else
+			protocol = "";
+
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength,options.has("extractlist"),options.has("extractmessagetextfile"),
-				options.has("extractmessagetextmetadata"),options.has("extractfiletextfile"),options.has("extractfiletextmetadata"));
+				options.has("warning"), namesLength, options.has("extractlist"), options.has("extractmessagetextfile"),
+				options.has("extractmessagetextmetadata"), options.has("extractfiletextfile"),
+				options.has("extractfiletextmetadata"));
 
 		// specific option parsing for local type extraction
 		switch (protocol) {
@@ -366,7 +385,7 @@ public class MailExtractApp {
 
 		// init default store extractors
 		StoreExtractor.initDefaultExtractors();
-		
+
 		// if no do option graphic version
 		if (!options.has("l") && !options.has("z") && !options.has("x")) {
 			new MailExtractGraphicApp(protocol, host, port, user, password, container, folder, destRootPath, destName,
@@ -384,17 +403,18 @@ public class MailExtractApp {
 			try {
 				logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
 				if (options.has("extractlist"))
-					psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
-				else 
-					psExtractList=null;
-				
+					psExtractList = new PrintStream(
+							new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
+				else
+					psExtractList = null;
+
 				if (user == null || user.isEmpty())
 					destName = "unknown_extract";
 				else
 					destName = user;
 				String urlString = StoreExtractor.composeStoreURL(protocol, server, user, password, container);
 				storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger,psExtractList);
+						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
 				if (options.has("l") || options.has("z")) {
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {
@@ -449,18 +469,18 @@ public class MailExtractApp {
 	// try if possible to log in the store extractor logger all the information
 	// about the fatal error
 	private final static void logFatalError(Exception e, StoreExtractor storeExtractor, Logger logger) {
-		if (logger==null)
-			logger=Logger.getGlobal();
+		if (logger == null)
+			logger = Logger.getGlobal();
 		logger.severe("Terminated with unrecoverable error");
 		if (!e.getMessage().isEmpty())
 			logger.severe(e.getMessage());
 		logger.severe(getPrintStackTrace(e));
 		if (storeExtractor == null
-				|| storeExtractor.getFolderTotalCount() + storeExtractor.getTotalMessagesCount() == 0)
+				|| storeExtractor.getFolderTotalCount() + storeExtractor.getTotalElementsCount() == 0)
 			logger.severe("No writing done");
 		else
 			logger.severe("Partial writing done " + Integer.toString(storeExtractor.getFolderTotalCount())
-					+ " folders and " + Integer.toString(storeExtractor.getTotalMessagesCount()) + " messages");
+					+ " folders and " + Integer.toString(storeExtractor.getTotalElementsCount()) + " messages");
 
 	}
 

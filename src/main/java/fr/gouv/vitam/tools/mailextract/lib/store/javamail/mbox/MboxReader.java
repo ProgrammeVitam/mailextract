@@ -70,7 +70,7 @@ public class MboxReader {
 	 * @param logger
 	 *            Operation store extractor logger
 	 * @param file
-	 *            File
+	 *            File containing the mbox formatted data
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
@@ -86,12 +86,12 @@ public class MboxReader {
 	 *
 	 * @param logger
 	 *            Operation store extractor logger
-	 * @param file
-	 *            File
+	 * @param source
+	 *            Byte array containing the mbox formatted data
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
-	public MboxReader(Logger logger, byte[] source) throws IOException {
+	public MboxReader(Logger logger, byte[] source) {
 		this.logger = logger;
 		sifs = new SharedByteArrayInputStream(source);
 	}

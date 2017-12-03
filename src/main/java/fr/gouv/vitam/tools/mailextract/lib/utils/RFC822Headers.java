@@ -40,10 +40,22 @@ import javax.mail.internet.MimeUtility;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 
+/**
+ * RFC822Headers class for extending JavaMail InternetHeaders with common
+ * extraction methods.
+ */
 public class RFC822Headers extends InternetHeaders {
 
+	/** The message. */
 	StoreMessage message;
-	
+
+	/**
+	 * Gets the bais.
+	 *
+	 * @param headersString
+	 *            the headers string
+	 * @return the bais
+	 */
 	static ByteArrayInputStream getBAIS(String headersString) {
 		if (headersString == null)
 			headersString = "";
@@ -52,12 +64,29 @@ public class RFC822Headers extends InternetHeaders {
 		return bais;
 	}
 
-	public RFC822Headers(String headersString,StoreMessage message) throws MessagingException {
+	/**
+	 * Instantiates a new RFC 822 headers.
+	 *
+	 * @param headersString
+	 *            the headers string
+	 * @param message
+	 *            the message
+	 * @throws MessagingException
+	 *             the messaging exception
+	 */
+	public RFC822Headers(String headersString, StoreMessage message) throws MessagingException {
 		super(getBAIS(headersString), true);
 		// no use to close on ByteArrayInputStream
-		this.message=message;
+		this.message = message;
 	}
 
+	/**
+	 * Gets the header value.
+	 *
+	 * @param line
+	 *            the line
+	 * @return the header value
+	 */
 	// utility function to get the value part of an header string
 	public static String getHeaderValue(String line) {
 		int i = line.indexOf(':');
@@ -73,6 +102,11 @@ public class RFC822Headers extends InternetHeaders {
 		return line.substring(j);
 	}
 
+	/**
+	 * Gets the references.
+	 *
+	 * @return the references
+	 */
 	public List<String> getReferences() {
 		List<String> result = null;
 		String refHeader = getHeader("References", " ");
@@ -132,6 +166,13 @@ public class RFC822Headers extends InternetHeaders {
 		return result;
 	}
 
+	/**
+	 * Gets the address header.
+	 *
+	 * @param name
+	 *            the name
+	 * @return the address header
+	 */
 	public List<String> getAddressHeader(String name) {
 		List<String> result = null;
 		String addressHeaderString = null;

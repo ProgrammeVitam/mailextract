@@ -40,11 +40,10 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
- * StoreExtractor sub-class for message file extracted through POI library.
+ * StoreExtractor sub-class for message file extracted through POI HSMF library.
  * <p>
  * The POI Apache is a pure java library for the reading Microsoft documents.
  * It's used to access the formatted msg file.
@@ -57,7 +56,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * Excel solution (for Excel 97-2008). We have a complete API for porting other
  * OOXML and OLE2 formats and welcome others to participate.
  */
-public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
+public class MsgStoreExtractor extends StoreExtractor {
 
 	/**
 	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
@@ -88,7 +87,7 @@ public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *            the root store extractor
 	 * @param logger
 	 *            the logger
-	 * @param osExtractList 
+	 * @param psExtractList 
 	 * @throws ExtractionException
 	 *             the extraction exception
 	 */
@@ -116,10 +115,8 @@ public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *
 	 * @param attachment
 	 *            the attachment
-	 * @param scheme
-	 *            the scheme
-	 * @param destPathString
-	 *            the dest path string
+	 * @param rootNode
+	 *            the ArchiveUnit node representing this container
 	 * @param options
 	 *            the options
 	 * @param rootStoreExtractor
@@ -151,7 +148,7 @@ public class MsgStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor#getAttachment()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#getAttachment()
 	 */
 	@Override
 	public StoreMessageAttachment getAttachment() {

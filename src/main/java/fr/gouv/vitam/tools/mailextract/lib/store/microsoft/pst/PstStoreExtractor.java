@@ -48,7 +48,6 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -65,7 +64,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
+public class PstStoreExtractor extends StoreExtractor {
 
 	/**
 	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
@@ -80,6 +79,7 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	// Attachment to complete with decoded form
 	private StoreMessageAttachment attachment;
 
+	/** The store file. */
 	// Temporary store file
 	File storeFile;
 
@@ -103,7 +103,8 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @param osExtractList 
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -195,8 +196,8 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *
 	 * @param attachment
 	 *            the attachment
-	 * @param destPathString
-	 *            the dest path string
+	 * @param rootNode
+	 *            the ArchiveUnit node representing this container
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -204,6 +205,8 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -277,6 +280,9 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#endStoreExtractor()
+	 */
 	@Override
 	public void endStoreExtractor() throws ExtractionException {
 		try {
@@ -289,13 +295,24 @@ public class PstStoreExtractor extends StoreExtractor implements EmbeddedStoreEx
 			throw new ExtractionException("mailextract.pst: Can't delete temporary file tmpstore");
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#getAttachment()
+	 */
 	@Override
 	public StoreMessageAttachment getAttachment() {
 		return attachment;
 	}
 
+	/** The Constant PST_MN. */
 	static final byte[] PST_MN = new byte[] { 0x21, 0x42, 0x44, 0x4e };
 
+	/**
+	 * Gets the verified scheme.
+	 *
+	 * @param content
+	 *            the content
+	 * @return the verified scheme
+	 */
 	public static String getVerifiedScheme(byte[] content) {
 		if (hasMagicNumber(content, PST_MN)) {
 			return "pst";

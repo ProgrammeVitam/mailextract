@@ -39,6 +39,7 @@ import javax.swing.SwingUtilities;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 
+// TODO: Auto-generated Javadoc
 /**
  * MailExtractGraphicApp class for the graphic application.
  */
@@ -66,8 +67,10 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	 *
 	 * @param protocol
 	 *            the protocol
-	 * @param server
-	 *            the server
+	 * @param host
+	 *            the host
+	 * @param port
+	 *            the port
 	 * @param user
 	 *            the user
 	 * @param password
@@ -82,6 +85,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	 *            the dest name
 	 * @param storeExtractorOptions
 	 *            the store extractor options
+	 * @param logLevel
+	 *            the log level
 	 * @param local
 	 *            the local
 	 */
@@ -291,6 +296,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 					destName, storeExtractorOptions, logLevel).start();
 	}
 
+	/** The loglevel strings. */
 	String[] loglevelStrings = { "OFF", "SEVERE", "WARNING", "INFO", "FINE", "FINER", "FINEST" };
 
 	// get the global parameters from the graphic fields

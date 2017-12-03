@@ -43,7 +43,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
 /**
  * StoreMessage sub-class for mail boxes extracted through JavaMail library.
  * <p>
- * For now, IMAP and Thunderbird mbox structure through MailExtract application,
+ * For now, IMAP and Thunderbird mbox, eml structure through MailExtract application,
  * could also be used for POP3 and Gmail, via StoreExtractor (not tested).
  */
 public class JMStoreMessage extends StoreMessage {
@@ -68,7 +68,6 @@ public class JMStoreMessage extends StoreMessage {
 	public JMStoreMessage(StoreFolder mBFolder, MimeMessage message) throws ExtractionException {
 		super(mBFolder);
 		this.message = message;
-//		this.nature = StoreMessage.MESSAGE;
 	}
 
 	/*

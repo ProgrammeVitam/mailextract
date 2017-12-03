@@ -45,32 +45,78 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
+/**
+ * StoreMessage sub-class for mail boxes extracted through POI HSMF library.
+ */
 public class MsgStoreMessage extends MicrosoftStoreMessage {
 
+	/** The message. */
 	MAPIMessage message;
 
+	/** The size. */
 	long size;
 
+	/** The msg conversation index. */
 	MsgConversationIndex msgConversationIndex;
 
+	/** The Constant EMBEDDED_MESSAGE. */
 	static final String EMBEDDED_MESSAGE = "msg.embeddedmsg";
 
+	/** The Constant CONVERSATION_INDEX. */
 	public static final int CONVERSATION_INDEX = 0x0071;
+	
+	/** The Constant SMTP_TRANSPORT_HEADER. */
 	public static final int SMTP_TRANSPORT_HEADER = 0x007d;
+	
+	/** The Constant SUBJECT. */
 	public static final int SUBJECT = 0x0037;
+	
+	/** The Constant INTERNET_MESSAGE_ID. */
 	public static final int INTERNET_MESSAGE_ID = 0x1035;
+	
+	/** The Constant SENDER_NAME. */
 	public static final int SENDER_NAME = 0x0c1a;
+	
+	/** The Constant SENT_REPRESENTING_NAME. */
 	public static final int SENT_REPRESENTING_NAME = 0x0042;
+	
+	/** The Constant SENDER_ADDR_TYPE. */
 	public static final int SENDER_ADDR_TYPE = 0x0c1e;
+	
+	/** The Constant SENDER_EMAIL_ADDRESS. */
 	public static final int SENDER_EMAIL_ADDRESS = 0x0c1f;
+	
+	/** The Constant SENT_REPRESENTING_ADDR_TYPE. */
 	public static final int SENT_REPRESENTING_ADDR_TYPE = 0x0064;
+	
+	/** The Constant SENT_REPRESENTING_EMAIL_ADDRESS. */
 	public static final int SENT_REPRESENTING_EMAIL_ADDRESS = 0x0065;
+	
+	/** The Constant RETURN_PATH. */
 	public static final int RETURN_PATH = 0x1046;
+	
+	/** The Constant MESSAGE_DELIVERY_TIME. */
 	public static final int MESSAGE_DELIVERY_TIME = 0x0e06;
+	
+	/** The Constant CLIENT_SUBMIT_TIME. */
 	public static final int CLIENT_SUBMIT_TIME = 0x0039;
+	
+	/** The Constant IN_REPLY_TO_ID. */
 	public static final int IN_REPLY_TO_ID = 0x1042;
+	
+	/** The Constant MESSAGE_SIZE. */
 	public static final int MESSAGE_SIZE = 0x0e08;
 
+	/**
+	 * Instantiates a new msg store message.
+	 *
+	 * @param mBFolder
+	 *            the m B folder
+	 * @param message
+	 *            the message
+	 * @param size
+	 *            the size
+	 */
 	public MsgStoreMessage(StoreFolder mBFolder, MAPIMessage message, long size) {
 		super(mBFolder);
 		this.message = message;
@@ -87,6 +133,9 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeMessageSize()
+	 */
 	@Override
 	protected long getNativeMessageSize() {
 		return size;
@@ -141,132 +190,210 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSmtpTransportHeader()
+	 */
 	@Override
 	protected String getNativeSmtpTransportHeader() {
 		return getStringItem(SMTP_TRANSPORT_HEADER);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSubject()
+	 */
 	@Override
 	protected String getNativeSubject() {
 		return getStringItem(SUBJECT);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeInternetMessageId()
+	 */
 	@Override
 	protected String getNativeInternetMessageId() {
 		return getStringItem(INTERNET_MESSAGE_ID);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderName()
+	 */
 	@Override
 	protected String getNativeSenderName() {
 		return getStringItem(SENDER_NAME);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingName()
+	 */
 	@Override
 	protected String getNativeSentRepresentingName() {
 		return getStringItem(SENT_REPRESENTING_NAME);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderAddrType()
+	 */
 	@Override
 	protected String getNativeSenderAddrType() {
 		return getStringItem(SENDER_ADDR_TYPE);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderEmailAddress()
+	 */
 	@Override
 	protected String getNativeSenderEmailAddress() {
 		return getStringItem(SENDER_EMAIL_ADDRESS);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingAddrType()
+	 */
 	@Override
 	protected String getNativeSentRepresentingAddrType() {
 		return getStringItem(SENT_REPRESENTING_ADDR_TYPE);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingEmailAddress()
+	 */
 	@Override
 	protected String getNativeSentRepresentingEmailAddress() {
 		return getStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeReturnPath()
+	 */
 	@Override
 	protected String getNativeReturnPath() {
 		return getStringItem(RETURN_PATH);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeMessageDeliveryTime()
+	 */
 	@Override
 	protected Date getNativeMessageDeliveryTime() {
 		return getDateItem(MESSAGE_DELIVERY_TIME);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeClientSubmitTime()
+	 */
 	@Override
 	protected Date getNativeClientSubmitTime() {
 		return getDateItem(CLIENT_SUBMIT_TIME);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeInReplyToId()
+	 */
 	@Override
 	protected String getNativeInReplyToId() {
 		return getStringItem(IN_REPLY_TO_ID);
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#hasNativeConversationIndex()
+	 */
 	@Override
 	protected boolean hasNativeConversationIndex() {
 		return msgConversationIndex != null;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCIDeliveryTime()
+	 */
 	@Override
 	protected Date getNativeCIDeliveryTime() {
 		return msgConversationIndex.getDeliveryTime();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCIGuid()
+	 */
 	@Override
 	protected UUID getNativeCIGuid() {
 		return msgConversationIndex.getGuid();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCINumberOfResponseLevels()
+	 */
 	@Override
 	protected int getNativeCINumberOfResponseLevels() {
 		return msgConversationIndex.getResponseLevels().size();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCIResponseLevelDeltaCode(int)
+	 */
 	@Override
 	protected short getNativeCIResponseLevelDeltaCode(int responseLevelNumber) {
 		return msgConversationIndex.getResponseLevels().get(responseLevelNumber).deltaCode;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCIResponseLevelTimeDelta(int)
+	 */
 	@Override
 	protected long getNativeCIResponseLevelTimeDelta(int responseLevelNumber) {
 		return msgConversationIndex.getResponseLevels().get(responseLevelNumber).timeDelta;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeCIResponseLevelRandom(int)
+	 */
 	@Override
 	protected short getNativeCIResponseLevelRandom(int responseLevelNumber) {
 		return msgConversationIndex.getResponseLevels().get(responseLevelNumber).random;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeNumberOfRecipients()
+	 */
 	@Override
 	protected int getNativeNumberOfRecipients() {
 		return message.getRecipientDetailsChunks().length;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeRecipientsSmtpAddress(int)
+	 */
 	@Override
 	protected String getNativeRecipientsSmtpAddress(int recipientNumber) {
 		return message.getRecipientDetailsChunks()[recipientNumber].recipientSMTPChunk.getValue();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeRecipientsEmailAddress(int)
+	 */
 	@Override
 	protected String getNativeRecipientsEmailAddress(int recipientNumber) {
 		return message.getRecipientDetailsChunks()[recipientNumber].recipientEmailChunk.getValue();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeRecipientsDisplayName(int)
+	 */
 	@Override
 	protected String getNativeRecipientsDisplayName(int recipientNumber) {
 		return message.getRecipientDetailsChunks()[recipientNumber].recipientNameChunk.getValue();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeRecipientsType(int)
+	 */
 	@Override
 	protected int getNativeRecipientsType(int recipientNumber) {
 		return (int) message.getRecipientDetailsChunks()[recipientNumber].getProperties()
 				.get(MAPIProperty.RECIPIENT_TYPE).get(0).getValue();
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeBodyText()
+	 */
 	@Override
 	protected String getNativeBodyText() {
 		String result;
@@ -278,6 +405,9 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeBodyHTML()
+	 */
 	@Override
 	protected String getNativeBodyHTML() {
 		String result;
@@ -289,6 +419,9 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeRTFBody()
+	 */
 	@Override
 	protected String getNativeRTFBody() {
 		String result;
@@ -300,11 +433,17 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getEmbeddedMessageScheme()
+	 */
 	@Override
 	protected String getEmbeddedMessageScheme() {
 		return EMBEDDED_MESSAGE;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeAttachments()
+	 */
 	@Override
 	protected MicrosoftStoreMessageAttachment[] getNativeAttachments() {
 		MsgStoreMessageAttachment[] msgAttachments;
@@ -317,6 +456,9 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return msgAttachments;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeAppointmentInformation()
+	 */
 	@Override
 	protected void analyzeAppointmentInformation() {
 		// TODO Auto-generated method stub

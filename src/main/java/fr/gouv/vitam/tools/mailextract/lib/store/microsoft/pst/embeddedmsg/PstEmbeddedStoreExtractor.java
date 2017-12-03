@@ -36,7 +36,6 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -54,7 +53,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Thanks to Richard Johnson http://github.com/rjohnsondev
  */
-public class PstEmbeddedStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor{
+public class PstEmbeddedStoreExtractor extends StoreExtractor {
 
 	/**
 	 * Subscribes at StoreExtractor level all schemes treated by this specific store extractor.
@@ -74,8 +73,8 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor implements Embedde
 	 *
 	 * @param attachment
 	 *            the attachment
-	 * @param destPathString
-	 *            the dest path string
+	 * @param rootNode
+	 *            the ArchiveUnit node representing this container
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param rootStoreExtractor
@@ -83,7 +82,8 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor implements Embedde
 	 *            root one
 	 * @param logger
 	 *            Logger used (from {@link java.util.logging.Logger})
-	 * @param osExtractList 
+	 * @param psExtractList
+	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
@@ -97,6 +97,9 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor implements Embedde
 		setRootFolder(PstEmbeddedStoreFolder.createRootFolder((PSTMessage)attachment.getStoreContent(),this,rootNode));
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#getAttachment()
+	 */
 	@Override
 	public StoreMessageAttachment getAttachment() {
 		return attachment;

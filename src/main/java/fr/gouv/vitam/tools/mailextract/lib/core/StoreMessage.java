@@ -45,12 +45,11 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeUtility;
-import fr.gouv.vitam.tools.mailextract.lib.formattools.Canonicalizator;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.TikaExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.rtf.HTMLFromRTFExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
-import fr.gouv.vitam.tools.mailextract.lib.nodes.Person;
+import fr.gouv.vitam.tools.mailextract.lib.nodes.MetadataPerson;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
@@ -74,17 +73,13 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
  * <li>Message unique ID given by the sending server (OriginatingSystmId
  * metadata),</li>
  * <li>Sent date (SentDate metadata),</li>
- * <li>Received date (ReceivedDate metadata),</li> In the descriptive metadata
- * is also added the DescriptionLevel, which is Item for message, for Body and
- * for Attachements.
- * <p>
- * Metadata information extracted for study
+ * <li>Received date (ReceivedDate metadata),</li>
  * <li>Message unique ID of the message replied to (and in some implementation
  * forwarded) by the current message (OriginatingSystemIdReplyTo metadata),</li>
- * <li>List of message unique ID of messages in the same thread of forward and
- * reply (OriginatingSystemId-References metadata),</li>
- * <li>List of "Sender" addresses, address of the person sending the mail, for
- * example a secretary for his boss (Sender metadata),</li>
+ * <li>Message body textual content</li> In the descriptive metadata is also
+ * added the DescriptionLevel, which is Item for message and for Attachements.
+ * <p>
+ * Metadata information extracted for study
  * <li>List of "Reply-To" addresses (ReplyTo metadata),</li>
  * <li>List of "Return-Path" addresses, more reliable information given by the
  * first mail relay server (ReturnPath metadata),</li>
@@ -100,7 +95,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
  * All values can be null, it then express that the metadata is not defined for
  * this message.
  */
-public abstract class StoreMessage extends StoreFile {
+public abstract class StoreMessage extends StoreElement {
 
 	/** Store folder. containing this message. **/
 	protected StoreFolder storeFolder;
@@ -373,7 +368,14 @@ public abstract class StoreMessage extends StoreFile {
 	}
 
 	/**
-	 * Detect embedded store attachments not determine during parsing.
+	 * Detect embedded store attachments not identified during parsing.
+	 * <p>
+	 * It use for this, the list of mimetypes that can be treated by known store
+	 * extractors. This list is constructed using
+	 * {@link fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#addExtractionRelation
+	 * StoreExtractor.addExtractionRelation}, and a default one is set calling
+	 * {@link fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#initDefaultExtractors
+	 * StoreExtractor.initDefaultExtractors}
 	 */
 	protected void detectStoreAttachments() {
 		String mimeType;
@@ -415,9 +417,7 @@ public abstract class StoreMessage extends StoreFile {
 	protected abstract byte[] getNativeMimeContent();
 
 	/**
-	 * Gets the appointment information if any in the message, or null.
-	 *
-	 * @return the appointment information
+	 * Analyze the appointment information if any in the message, or null.
 	 */
 	protected abstract void analyzeAppointmentInformation();
 
@@ -443,9 +443,6 @@ public abstract class StoreMessage extends StoreFile {
 		analyzeSubject();
 		if ((subject == null) || subject.isEmpty())
 			subject = "[SubjectVide]";
-
-		if (subject.equals("Déroulé V2"))
-			System.out.println("Here");
 
 		// header content extraction
 		prepareAnalyze();
@@ -527,7 +524,8 @@ public abstract class StoreMessage extends StoreFile {
 		}
 	}
 
-	// get the String rid of all characters that may cause problems in xml metadata
+	// get the String rid of all characters that may cause problems in xml
+	// metadata
 	private static String purifyMetadataText(String in) {
 		String result;
 
@@ -540,11 +538,11 @@ public abstract class StoreMessage extends StoreFile {
 
 	/**
 	 * Create the Archive Unit structures with all content and metadata needed,
-	 * and then write them on disk if writeFlag is true
+	 * and then write them on disk if writeFlag is true.
 	 * <p>
 	 * This is "the" method where the extraction structure and content is mainly
-	 * defined (see also {@link StoreFolder#extractFolder extractFolder} and
-	 * {@link StoreExtractor#extractAllFolders extractAllFolders}).
+	 * defined (see also {@link StoreFolder#extractFolder StoreFolder.extractFolder} and
+	 * {@link StoreExtractor#extractAllFolders StoreFolder.extractAllFolders}).
 	 * 
 	 * @param writeFlag
 	 *            write or not flag (no write used for stats)
@@ -559,7 +557,7 @@ public abstract class StoreMessage extends StoreFile {
 
 		if (messageID.equals("<20CBF48095D47140B58E9F5202ADD9800BD0837C71@KIARA.cab.travail.gouv.fr>"))
 			System.out.println("Got it!");
-	
+
 		// create message unit
 		if ((subject == null) || subject.trim().isEmpty())
 			subject = "[Vide]";
@@ -601,11 +599,8 @@ public abstract class StoreMessage extends StoreFile {
 
 			messageNode.addEventMetadata(appointment.identifier, "RDV Début", bdString,
 					"Localisation : " + appointment.location);
-			messageNode.addEventMetadata(appointment.identifier, "RDV Fin", edString, "Localisation : " + appointment.location);
-			// System.out.println("Identifier="+appointment.identifier);
-			// System.out.println("Location="+appointment.location);
-			// System.out.println("Beg="+DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("Europe/Paris")).format(appointment.beginDate));
-			// System.out.println("End="+DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("Europe/Paris")).format(appointment.endDate));
+			messageNode.addEventMetadata(appointment.identifier, "RDV Fin", edString,
+					"Localisation : " + appointment.location);
 		}
 
 		// reply-to messageID
@@ -623,12 +618,12 @@ public abstract class StoreMessage extends StoreFile {
 		// purify textContent and put in metadata
 		if ((textContent != null) && (!textContent.isEmpty())) {
 			if (getStoreExtractor().options.extractMessageTextFile)
-				messageNode.addObject(Canonicalizator.getInstance().toSimpleText(textContent), messageID + ".txt",
+				messageNode.addObject(HTMLTextExtractor.getInstance().htmlStringtoString(textContent), messageID + ".txt",
 						"TextContent", 1);
 			if (getStoreExtractor().options.extractMessageTextMetadata) {
-//				// break HTML tags in metadata if any
-//				textContent = textContent.replace("<", "< ");
-//				textContent = textContent.replace("&lt;", "&lt; ");
+				// // break HTML tags in metadata if any
+				// textContent = textContent.replace("<", "< ");
+				// textContent = textContent.replace("&lt;", "&lt; ");
 				messageNode.addMetadata("TextContent", purifyMetadataText(textContent), true);
 			}
 		}
@@ -677,7 +672,7 @@ public abstract class StoreMessage extends StoreFile {
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
 				(receivedDate == null ? "" : sdf.format(receivedDate)));
 		if ((from != null) && !from.isEmpty()) {
-			Person p = new Person(from);
+			MetadataPerson p = new MetadataPerson(from);
 			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.birthName),
 					filterHyphen(p.identifier));
 		}
@@ -689,7 +684,7 @@ public abstract class StoreMessage extends StoreFile {
 		if (replyTo == null)
 			storeFolder.getStoreExtractor().getPSExtractList().format("\"\"|");
 		else {
-			Person p = new Person(replyTo.get(0));
+			MetadataPerson p = new MetadataPerson(replyTo.get(0));
 			storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(p.identifier));
 		}
 		storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(storeFolder.getFullName()));
@@ -717,7 +712,7 @@ public abstract class StoreMessage extends StoreFile {
 
 	private String personStringListToIndentifierString(List<String> sList) {
 		String result = "";
-		Person p;
+		MetadataPerson p;
 		boolean first = true;
 
 		if (sList != null) {
@@ -726,7 +721,7 @@ public abstract class StoreMessage extends StoreFile {
 					first = false;
 				else
 					result += ", ";
-				p = new Person(s);
+				p = new MetadataPerson(s);
 				result += p.identifier;
 			}
 		}
@@ -810,7 +805,6 @@ public abstract class StoreMessage extends StoreFile {
 	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
 			StoreMessageAttachment a, boolean writeFlag) throws ExtractionException {
 		StoreExtractor extractor;
-		// ArchiveUnit subRootNode;
 
 		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(a.attachmentStoreScheme);
 		if (storeExtractorClass == null) {
@@ -820,10 +814,14 @@ public abstract class StoreMessage extends StoreFile {
 		} else {
 			Boolean b = StoreExtractor.schemeContainerMap.get(a.attachmentStoreScheme);
 			if (b) {
-				rootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container", "Conteneur attaché");
+				rootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container",
+						(a.name == null ? "Infile" : a.name));
 				rootNode.addMetadata("DescriptionLevel", "Item", true);
-				rootNode.addMetadata("Title", "Conteneur " + a.attachmentStoreScheme, true);
-				rootNode.addMetadata("Description", "Extraction d'un conteneur " + a.attachmentStoreScheme, true);
+				rootNode.addMetadata("Title",
+						"Conteneur " + a.attachmentStoreScheme + (a.name == null ? "" : " " + a.name), true);
+				rootNode.addMetadata("Description",
+						"Extraction d'un conteneur " + a.attachmentStoreScheme + (a.name == null ? "" : " " + a.name),
+						true);
 			}
 			try {
 				extractor = (StoreExtractor) storeExtractorClass
@@ -849,26 +847,26 @@ public abstract class StoreMessage extends StoreFile {
 			extractor.writeTargetLog();
 			extractor.getRootFolder().extractFolderAsRoot(writeFlag);
 			getStoreExtractor().addTotalAttachedMessagesCount(
-					extractor.getTotalMessagesCount() + extractor.getTotalAttachedMessagesCount());
+					extractor.getTotalElementsCount() + extractor.getTotalAttachedMessagesCount());
 			attachedMessagedateRange.extendRange(extractor.getRootFolder().getDateRange());
 			extractor.endStoreExtractor();
+			if (extractor.getRootFolder().dateRange.isDefined()) {
+				rootNode.addMetadata("StartDate",
+						DateRange.getISODateString(extractor.getRootFolder().dateRange.getStart()), true);
+				rootNode.addMetadata("EndDate",
+						DateRange.getISODateString(extractor.getRootFolder().dateRange.getEnd()), true);
+			}
+			if (writeFlag)
+				rootNode.write();
 		}
 	}
 
 	/** Extract all message attachments. */
 	private final void extractMessageAttachments(ArchiveUnit messageNode, boolean writeFlag)
 			throws ExtractionException {
-		ArchiveUnit rootNode;
 		DateRange attachedMessagedateRange;
 		boolean attachedFlag = false;
 
-		// prepare an ArchiveUnit to keep all attached message that can be
-		// recursively extracted
-		rootNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Container",
-				"Liste de conteneurs attachés");
-		rootNode.addMetadata("DescriptionLevel", "Item", true);
-		rootNode.addMetadata("Title", "Messages attachés", true);
-		rootNode.addMetadata("Description", "Ensemble des conteneurs attachés joint au message " + messageID, true);
 		attachedMessagedateRange = new DateRange();
 
 		for (StoreMessageAttachment a : attachments) {
@@ -876,24 +874,24 @@ public abstract class StoreMessage extends StoreFile {
 			if (a.attachmentType == StoreMessageAttachment.STORE_ATTACHMENT) {
 				// recursive extraction of a message in attachment...
 				logMessageWarning("mailextract: Attached message extraction");
-				extractStoreAttachment(rootNode, attachedMessagedateRange, a, writeFlag);
+				extractStoreAttachment(messageNode, attachedMessagedateRange, a, writeFlag);
 				attachedFlag = true;
 			} else if (writeFlag) {
 				// standard attachment file
 				extractFileOrInlineAttachment(messageNode, a, writeFlag);
-				if (a.creationDate!=null)
+				if (a.creationDate != null)
 					attachedMessagedateRange.extendRange(a.creationDate);
-				if (a.modificationDate!=null)
+				if (a.modificationDate != null)
 					attachedMessagedateRange.extendRange(a.modificationDate);
+				attachedFlag = true;
 			}
 		}
 		if (attachedFlag && writeFlag) {
 			if (attachedMessagedateRange.isDefined()) {
-				rootNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
+				messageNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
 						true);
-				rootNode.addMetadata("EndDate", DateRange.getISODateString(attachedMessagedateRange.getEnd()), true);
+				messageNode.addMetadata("EndDate", DateRange.getISODateString(attachedMessagedateRange.getEnd()), true);
 			}
-			rootNode.write();
 		}
 	}
 
@@ -907,8 +905,8 @@ public abstract class StoreMessage extends StoreFile {
 	 */
 	public void countMessage() throws ExtractionException {
 		// accumulate in folder statistics
-		storeFolder.incFolderMessagesCount();
-		storeFolder.addFolderMessagesRawSize(getMessageSize());
+		storeFolder.incFolderElementsCount();
+		storeFolder.addFolderElementsRawSize(getMessageSize());
 	}
 
 	/**

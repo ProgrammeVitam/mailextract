@@ -34,22 +34,16 @@ import javax.activation.MimeTypeParseException;
 
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
+// TODO: Auto-generated Javadoc
 /**
- * Utility class to encapsulate an attachment file with content and metadata
- * (for now only filename) size and filename.
+ * Utility class to encapsulate an attachment file with content and metadata.
  */
 public class StoreMessageAttachment {
 
-	// /** Binary raw content. */
-	// byte[] rawContent;
-	//
-	// /** other object content. */
-	// Object objectContent;
-	//
 	/** Attachment content. */
 	Object attachmentContent;
 
-	/** Attachment store scheme or null if only an attachment file */
+	/** Attachment store scheme or null if only an attachment file. */
 	String attachmentStoreScheme;
 
 	/** Name. */
@@ -58,10 +52,10 @@ public class StoreMessageAttachment {
 	/** File dates. */
 	Date creationDate, modificationDate;
 
-	/** Type of attachment **/
+	/** Type of attachment *. */
 	String mimeType;
 
-	/** Content-ID **/
+	/** Content-ID *. */
 	String contentID;
 
 	/** Attachment type. */
@@ -82,13 +76,13 @@ public class StoreMessageAttachment {
 	 * Instantiates a new attachment with binary content.
 	 * 
 	 * <p>
-	 * The MimeType is normalized to application/* if unknown
+	 * The MimeType is normalized to application/* if type unknown and application/octet-stream if all unknown
 	 * </p>
 	 *
 	 * @param storeContent
 	 *            Object to be used by the store extractor or byte[] if simple
 	 *            binary
-	 * @param storeScheme
+	 * @param attachmentStoreScheme
 	 *            Store scheme defining store extractor or "file" if simple
 	 *            binary
 	 * @param name
@@ -100,7 +94,7 @@ public class StoreMessageAttachment {
 	 * @param mimeType
 	 *            MimeType
 	 * @param contentID
-	 *            Mime multipart content ID usefull for inline
+	 *            Mime multipart content ID useful for inline
 	 * @param attachmentType
 	 *            Type of attachment (inline, simple file, another store...)
 	 */
@@ -117,6 +111,13 @@ public class StoreMessageAttachment {
 		setMimeType(mimeType);
 	}
 
+	/**
+	 * Gets the raw attachment content.
+	 *
+	 * @return the raw attachment content
+	 * @throws ExtractionException
+	 *             the extraction exception
+	 */
 	public byte[] getRawAttachmentContent() throws ExtractionException {
 		if (attachmentContent instanceof byte[])
 			return (byte[]) attachmentContent;
@@ -124,26 +125,59 @@ public class StoreMessageAttachment {
 			throw new ExtractionException("mailextract: this attachment has no binary form");
 	}
 
-	 public String getScheme() {
+	 /**
+	 * Gets the scheme.
+	 *
+	 * @return the scheme
+	 */
+ 	public String getScheme() {
 	 return attachmentStoreScheme;
 	 }
 	
+	/**
+	 * Gets the store content, either byte[] or a specific objet treated by the extractor.
+	 *
+	 * @return the store content
+	 */
 	public Object getStoreContent() {
 		return attachmentContent;
 	}
 
+	/**
+	 * Sets the name.
+	 *
+	 * @param name
+	 *            the new name
+	 */
 	public void setName(String name) {
 		this.name = name;
 	}
 
+	/**
+	 * Gets the name.
+	 *
+	 * @return the name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Sets the store content, either byte[] or a specific objet treated by the extractor.
+	 *
+	 * @param attachmentContent
+	 *            the new store content
+	 */
 	public void setStoreContent(Object attachmentContent) {
 		this.attachmentContent = attachmentContent;
 	}
 
+	/**
+	 * Sets the mime type.
+	 *
+	 * @param mimeType
+	 *            the new mime type
+	 */
 	public void setMimeType(String mimeType) {
 		// verify valid MimeType and replace if not
 		try {

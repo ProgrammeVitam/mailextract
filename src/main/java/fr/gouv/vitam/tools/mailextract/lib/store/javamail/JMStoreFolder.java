@@ -43,7 +43,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 /**
  * StoreFolder sub-class for mail boxes extracted through JavaMail library.
  * <p>
- * For now, IMAP and Thunderbird mbox structure through MailExtract application,
+ * For now, IMAP and Thunderbird mbox, eml structure through MailExtract application,
  * could also be used for POP3 and Gmail, via StoreExtractor (not tested).
  */
 public class JMStoreFolder extends StoreFolder {
@@ -94,7 +94,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages(boolean)
 	 */
 	@Override
-	protected void doExtractFolderMessages(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
 		int msgtotal;
 		Message message;
 
@@ -172,7 +172,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder#hasMessages()
 	 */
 	@Override
-	public boolean hasMessages() throws ExtractionException {
+	public boolean hasElements() throws ExtractionException {
 		try {
 			return (folder.getType() & Folder.HOLDS_MESSAGES) != 0;
 		} catch (MessagingException e) {
@@ -202,7 +202,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * (boolean)
 	 */
 	@Override
-	protected void doListFolderMessages(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException {
 		int msgtotal;
 		Message message;
 

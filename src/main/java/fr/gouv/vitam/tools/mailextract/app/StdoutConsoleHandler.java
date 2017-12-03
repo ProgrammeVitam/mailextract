@@ -41,6 +41,6 @@ public class StdoutConsoleHandler extends ConsoleHandler {
 	 * java.util.logging.StreamHandler#setOutputStream(java.io.OutputStream)
 	 */
 	protected void setOutputStream(OutputStream out) throws SecurityException {
-		super.setOutputStream(System.out); // kitten killed here :-(
+		super.setOutputStream(System.out); 
 	}
 }

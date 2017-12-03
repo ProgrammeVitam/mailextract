@@ -34,7 +34,6 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreFolder;
-import fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 import java.io.PrintStream;
@@ -43,14 +42,13 @@ import java.net.URLDecoder;
 import java.util.Properties;
 import java.util.logging.Logger;
 
-// TODO: Auto-generated Javadoc
 /**
  * StoreExtractor sub-class for mail boxes extracted through JavaMail library.
  * <p>
- * For now, IMAP and Thunderbird mbox structure through MailExtract application,
+ * For now, IMAP and Thunderbird mbox, eml structure through MailExtract application,
  * could also be used for POP3 and Gmail, via StoreExtractor (not tested).
  */
-public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExtractor {
+public class JMStoreExtractor extends StoreExtractor {
 	private Store store;
 	
 	/**
@@ -251,7 +249,7 @@ public class JMStoreExtractor extends StoreExtractor implements EmbeddedStoreExt
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.gouv.vitam.tools.mailextract.lib.store.types.EmbeddedStoreExtractor#getAttachment()
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#getAttachment()
 	 */
 	@Override
 	public StoreMessageAttachment getAttachment() {

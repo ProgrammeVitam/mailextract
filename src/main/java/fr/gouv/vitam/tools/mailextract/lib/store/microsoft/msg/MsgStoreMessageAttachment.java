@@ -39,13 +39,11 @@ import org.apache.poi.hsmf.datatypes.PropertyValue;
 import org.apache.poi.hsmf.datatypes.StoragePropertiesChunk;
 import org.apache.poi.hsmf.datatypes.StringChunk;
 
-
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 /**
- * Class containing attachment information.
- * 
- * @author Richard Johnson
+ * Class MsgStoreMessageAttachment for attachment information
+ * (MicrosoftStoreMessageAttachment) implementation in POI HSMF format.
  */
 public class MsgStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 
@@ -68,7 +66,7 @@ public class MsgStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 				if (lVal == null)
 					size = 0;
 				else
-					size = (int)lVal.get(0).getValue();
+					size = (int) lVal.get(0).getValue();
 
 				lVal = mapProp.get(MAPIProperty.ATTACH_METHOD);
 				if (lVal == null)
@@ -89,9 +87,8 @@ public class MsgStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 					if (cal != null)
 						modificationTime = cal.getTime();
 				}
-			}
-			else if ((chunk instanceof StringChunk) && (chunk.getChunkId()==MAPIProperty.DISPLAY_NAME.id)){
-				displayName=((StringChunk) chunk).getValue();
+			} else if ((chunk instanceof StringChunk) && (chunk.getChunkId() == MAPIProperty.DISPLAY_NAME.id)) {
+				displayName = ((StringChunk) chunk).getValue();
 			}
 		}
 		byteArray = attachmentChunks.getEmbeddedAttachmentObject();

@@ -33,8 +33,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Class to hold decoded PidTagConversationIndex
- * inspired by the libpst code
+ * Class MsgConversationIndex to hold decoded PidTagConversationIndex inspired
+ * by the libpst code.
+ *
  * @author Nick Buller
  */
 public class MsgConversationIndex {
@@ -46,51 +47,116 @@ public class MsgConversationIndex {
     private UUID guid;
     private List<MicrosoftResponseLevel> responseLevels = new ArrayList<>();
 
+    /**
+	 * Gets the delivery time.
+	 *
+	 * @return the delivery time
+	 */
     public Date getDeliveryTime() {
         return this.deliveryTime;
     }
 
+    /**
+	 * Gets the guid.
+	 *
+	 * @return the guid
+	 */
     public UUID getGuid() {
         return this.guid;
     }
 
+    /**
+	 * Gets the response levels.
+	 *
+	 * @return the response levels
+	 */
     public List<MicrosoftResponseLevel> getResponseLevels() {
         return this.responseLevels;
     }
 
+    /* (non-Javadoc)
+     * @see java.lang.Object#toString()
+     */
     @Override
     public String toString() {
         return this.guid + "@" + this.deliveryTime + " " + this.responseLevels.size() + " ResponseLevels";
     }
 
+    /**
+	 * The Class MicrosoftResponseLevel.
+	 */
     public class MicrosoftResponseLevel {
+        
+        /** The delta code. */
         short deltaCode;
+        
+        /** The time delta. */
         long timeDelta;
+        
+        /** The random. */
         short random;
 
+        /**
+		 * Instantiates a new microsoft response level.
+		 *
+		 * @param deltaCode
+		 *            the delta code
+		 * @param timeDelta
+		 *            the time delta
+		 * @param random
+		 *            the random
+		 */
         public MicrosoftResponseLevel(final short deltaCode, final long timeDelta, final short random) {
             this.deltaCode = deltaCode;
             this.timeDelta = timeDelta;
             this.random = random;
         }
 
+        /**
+		 * Gets the delta code.
+		 *
+		 * @return the delta code
+		 */
         public short getDeltaCode() {
             return this.deltaCode;
         }
 
+        /**
+		 * Gets the time delta.
+		 *
+		 * @return the time delta
+		 */
         public long getTimeDelta() {
             return this.timeDelta;
         }
 
+        /**
+		 * Gets the random.
+		 *
+		 * @return the random
+		 */
         public short getRandom() {
             return this.random;
         }
 
+        /**
+		 * With offset.
+		 *
+		 * @param anchorDate
+		 *            the anchor date
+		 * @return the date
+		 */
         public Date withOffset(final Date anchorDate) {
             return new Date(anchorDate.getTime() + this.timeDelta);
         }
     }
 
+    /**
+	 * Instantiates a new msg conversation index.
+	 *
+	 * @param rawConversationIndex
+	 *            the raw conversation index
+	 */
     protected MsgConversationIndex(final byte[] rawConversationIndex) {
         if (rawConversationIndex != null && rawConversationIndex.length >= MINIMUM_HEADER_SIZE) {
             this.decodeHeader(rawConversationIndex);

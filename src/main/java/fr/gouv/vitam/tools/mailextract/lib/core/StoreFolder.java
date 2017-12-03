@@ -35,21 +35,21 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
- * Abstract class for a mail box folder.
+ * Abstract class for a store content folder.
  * <p>
  * It defines high-level methods for extracting and listing recursively folders
  * using low-level methods from the non-abstract sub-classes, according to
  * folder inner organisation. Each subclass has to be able to run through
- * folders and to get messages.
+ * folders and to get leafs.
  * <p>
  * The descriptive metadata kept for a folder are:
  * <ul>
  * <li>folder name (Title metadata),</li>
- * <li>the minimum of all the SentDate of messages in this folder or in one of
- * it's descendant, (StartDate metadata),</li>
- * <li>the maximum of all the SentDate of messages in this folder or in one of
- * it's descendant, (EndDate metadata),</li> There's also a DescriptionLevel
- * defined as RecordGrp.
+ * <li>the minimum of all the SentDate of leafs in this folder or in one of it's
+ * descendant, (StartDate metadata),</li>
+ * <li>the maximum of all the SentDate of leafs in this folder or in one of it's
+ * descendant, (EndDate metadata),</li> There's also a DescriptionLevel defined
+ * as RecordGrp.
  * </ul>
  */
 public abstract class StoreFolder {
@@ -71,15 +71,15 @@ public abstract class StoreFolder {
 	/**
 	 * Folder date range.
 	 * <p>
-	 * It is computed as the min and max of all the dates of messages in the
-	 * folder sub-hierarchy.
+	 * It is computed as the min and max of all the dates of leafs in the folder
+	 * sub-hierarchy.
 	 **/
 	protected DateRange dateRange;
 
 	// private fields for folder statistics
-	private int folderMessagesCount;
+	private int folderElementsCount;
 	private int folderSubFoldersCount;
-	private long folderMessagesRawSize;
+	private long folderElementsRawSize;
 
 	/**
 	 * Instantiates a new store folder.
@@ -96,7 +96,7 @@ public abstract class StoreFolder {
 	/**
 	 * Finalize store folder.
 	 * <p>
-	 * Called at the end of the subclass MailBoxFolder construction to add the
+	 * Called at the end of the subclass StoreFolder construction to add the
 	 * folder {@link ArchiveUnit} with the name depending on father and on the
 	 * subclass folder inner name.
 	 *
@@ -178,19 +178,19 @@ public abstract class StoreFolder {
 	public abstract String getName();
 
 	/**
-	 * Increment folder messages count.
+	 * Increment folder elements count.
 	 */
-	public void incFolderMessagesCount() {
-		folderMessagesCount++;
+	public void incFolderElementsCount() {
+		folderElementsCount++;
 	}
 
 	/**
-	 * Gets the folder messages count.
+	 * Gets the folder elements count.
 	 *
-	 * @return the folder messages count
+	 * @return the folder elements count
 	 */
-	public int getFolderMessagesCount() {
-		return folderMessagesCount;
+	public int getFolderElementsCount() {
+		return folderElementsCount;
 	}
 
 	/**
@@ -210,36 +210,36 @@ public abstract class StoreFolder {
 	}
 
 	/**
-	 * Adds to the folder messages raw size.
+	 * Adds to the folder elements raw size.
 	 *
 	 * @param rawSize
-	 *            the raw size
+	 *            the elements raw size
 	 */
-	public void addFolderMessagesRawSize(long rawSize) {
-		folderMessagesRawSize += rawSize;
+	public void addFolderElementsRawSize(long rawSize) {
+		folderElementsRawSize += rawSize;
 	}
 
 	/**
-	 * Gets the folder messages raw size.
+	 * Gets the folder elements raw size.
 	 * <p>
-	 * The "raw" size is the sum of the size of messages in this specific
-	 * folder, not in subfolders.
+	 * The "raw" size is the sum of the size of elements (messages or files) in
+	 * this specific folder, not in subfolders.
 	 *
-	 * @return the folder messages raw size
+	 * @return the folder elements raw size
 	 */
-	public long getFolderMessagesRawSize() {
-		return folderMessagesRawSize;
+	public long getFolderElementsRawSize() {
+		return folderElementsRawSize;
 	}
 
 	/**
-	 * Checks if this folder contains messages.
+	 * Checks if this folder contains elements (messages or files).
 	 *
 	 * @return true, if successful
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 **/
-	public abstract boolean hasMessages() throws ExtractionException;
+	public abstract boolean hasElements() throws ExtractionException;
 
 	/**
 	 * Checks if this folder contains subfolders.
@@ -252,7 +252,7 @@ public abstract class StoreFolder {
 	public abstract boolean hasSubfolders() throws ExtractionException;
 
 	/**
-	 * Extract all messages and subfolders as {@link #extractFolder
+	 * Extract all elements and subfolders as {@link #extractFolder
 	 * extractFolder} for the root folder.
 	 * <p>
 	 * There's a special treatment of the Unit Node for root metadata,
@@ -266,24 +266,24 @@ public abstract class StoreFolder {
 	public void extractFolderAsRoot(boolean writeFlag) throws ExtractionException {
 		// log process on folder
 		logFolder("mailextract: Extract folder /");
-		// extract all messages in the folder to the unit directory
-		extractFolderMessages(writeFlag);
+		// extract all elements in the folder to the unit directory
+		extractFolderElements(writeFlag);
 		// extract all subfolders in the folder to the unit directory
 		extractSubFolders(0, writeFlag);
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
-		storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
-		storeExtractor.addTotalRawSize(getFolderMessagesRawSize());
+		storeExtractor.addTotalElementsCount(getFolderElementsCount());
+		storeExtractor.addTotalRawSize(getFolderElementsRawSize());
 	}
 
 	/**
-	 * Extract all messages and subfolders.
+	 * Extract all elements and subfolders.
 	 * <p>
 	 * This is a method where the extraction structure and content is partially
 	 * defined (see also {@link StoreMessage#extractMessage extractMessage} and
 	 * {@link StoreExtractor#extractAllFolders extractAllFolders})
 	 * <p>
-	 * It writes on the disk, recursively, all the messages and subfolders in
+	 * It writes on the disk, recursively, all the elements and subfolders in
 	 * this folder. For the detailed structure of extraction see class
 	 * {@link StoreExtractor}.
 	 * 
@@ -300,19 +300,17 @@ public abstract class StoreFolder {
 		// log process on folder
 		logFolder("mailextract: Extract folder /" + getFullName());
 
-		// extract all messages in the folder to the unit directory
-		extractFolderMessages(writeFlag);
+		// extract all elements in the folder to the unit directory
+		extractFolderElements(writeFlag);
 		// extract all subfolders in the folder to the unit directory
 		extractSubFolders(level, writeFlag);
-		if ((folderMessagesCount + folderSubFoldersCount != 0) || ((!storeExtractor.options.dropEmptyFolders)
+		if ((folderElementsCount + folderSubFoldersCount != 0) || ((!storeExtractor.options.dropEmptyFolders)
 				&& !(level == 1 && storeExtractor.options.keepOnlyDeepEmptyFolders))) {
 			// get specific folder metadata to the unit
 			// compute and add to the folder ArchiveUnit the expected folder
 			// metadata
 			folderArchiveUnit.addMetadata("DescriptionLevel", "RecordGrp", true);
 			folderArchiveUnit.addMetadata("Title", getName(), true);
-			// folderArchiveUnit.addMetadata("Description", "Dossier de
-			// messagerie :" + getFullName(), true);
 			if (dateRange.isDefined()) {
 				folderArchiveUnit.addMetadata("StartDate", DateRange.getISODateString(dateRange.getStart()), true);
 				folderArchiveUnit.addMetadata("EndDate", DateRange.getISODateString(dateRange.getEnd()), true);
@@ -324,33 +322,32 @@ public abstract class StoreFolder {
 			logFolder("mailextract: Empty folder " + getFullName() + " is droped");
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
-		storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
-		storeExtractor.addTotalRawSize(getFolderMessagesRawSize());
+		storeExtractor.addTotalElementsCount(getFolderElementsCount());
+		storeExtractor.addTotalRawSize(getFolderElementsRawSize());
 
 		return result;
 	}
 
 	// encapsulate the subclasses real processing method
-	private void extractFolderMessages(boolean writeFlag) throws ExtractionException {
-		folderMessagesCount = 0;
-		folderMessagesRawSize = 0;
-		if (hasMessages())
-			doExtractFolderMessages(writeFlag);
+	private void extractFolderElements(boolean writeFlag) throws ExtractionException {
+		folderElementsCount = 0;
+		folderElementsRawSize = 0;
+		if (hasElements())
+			doExtractFolderElements(writeFlag);
 	}
 
 	/**
-	 * Extract folder messages (protocol specific).
+	 * Extract folder elements (extractor specific).
 	 * <p>
-	 * It extracts folder messages, count these messages with
-	 * {@link #incFolderMessagesCount incFolderMessagesCount}, and accumulate
-	 * their raw size with {@link #addFolderMessagesRawSize
-	 * addFolderMessagesRawSize}.
+	 * It extracts folder elements, count these elements with
+	 * {@link #incFolderElementsCount incFolderElementsCount}, and accumulate their
+	 * raw size with {@link #addFolderElementsRawSize addFolderElementsRawSize}.
 	 *
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doExtractFolderMessages(boolean writeFlag) throws ExtractionException;
+	protected abstract void doExtractFolderElements(boolean writeFlag) throws ExtractionException;
 
 	// encapsulate the subclasses real processing method
 	private void extractSubFolders(int level, boolean writeFlag) throws ExtractionException {
@@ -380,8 +377,8 @@ public abstract class StoreFolder {
 	 * <p>
 	 * It lists on the console, one by line, the complete list of folders from
 	 * the root folder defined in store extractor. If statistics are required,
-	 * at the beginning of each line is added the number of messages directly in
-	 * the folder and the raw size of theese messages.
+	 * at the beginning of each line is added the number of elements directly in
+	 * the folder and the raw size of theese elements.
 	 * 
 	 * @param stats
 	 *            if true, add folder statistics
@@ -399,11 +396,11 @@ public abstract class StoreFolder {
 		// log process on folder
 		logFolder("mailextract: List folder /" + fullName);
 		if (stats) {
-			// inspect all messages in the folder for statistics
-			listFolderMessages(stats);
+			// inspect all elements in the folder for statistics
+			listFolderElements(stats);
 			// expose this folder statistics
-			tmp = String.format("%5d messages   %7.2f MBytes    /%s", folderMessagesCount,
-					((double) folderMessagesRawSize) / (1024.0 * 1024.0), fullName);
+			tmp = String.format("%5d éléments   %7.2f MBytes    /%s", folderElementsCount,
+					((double) folderElementsRawSize) / (1024.0 * 1024.0), fullName);
 			System.out.println(tmp);
 			logFolder("mailextract: " + tmp);
 		} else {
@@ -415,32 +412,32 @@ public abstract class StoreFolder {
 		// accumulate in store extractor statistics out of recursion
 		storeExtractor.incTotalFoldersCount();
 		if (stats) {
-			storeExtractor.addTotalMessagesCount(getFolderMessagesCount());
-			storeExtractor.addTotalRawSize(getFolderMessagesRawSize());
+			storeExtractor.addTotalElementsCount(getFolderElementsCount());
+			storeExtractor.addTotalRawSize(getFolderElementsRawSize());
 		}
 	}
 
 	// encapsulate the subclasses real processing method
-	private void listFolderMessages(boolean stats) throws ExtractionException {
-		folderMessagesCount = 0;
-		folderMessagesRawSize = 0;
-		if (hasMessages())
-			doListFolderMessages(stats);
+	private void listFolderElements(boolean stats) throws ExtractionException {
+		folderElementsCount = 0;
+		folderElementsRawSize = 0;
+		if (hasElements())
+			doListFolderElements(stats);
 	}
 
 	/**
-	 * List folder messages (protocol specific).
+	 * List folder elements (protocol specific).
 	 * <p>
-	 * If stats where asked for, this method is invoked for counting messages
-	 * with {@link #incFolderMessagesCount incFolderMessagesCount}, and
-	 * accumulating raw size with {@link #addFolderMessagesRawSize
-	 * addFolderMessagesRawSize}.
+	 * If stats where asked for, this method is invoked for counting elements
+	 * with {@link #incFolderElementsCount incFolderElementsCount}, and
+	 * accumulating raw size with {@link #addFolderElementsRawSize
+	 * addFolderElementsRawSize}.
 	 *
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doListFolderMessages(boolean stats) throws ExtractionException;
+	protected abstract void doListFolderElements(boolean stats) throws ExtractionException;
 
 	// encapsulate the subclasses real processing method
 	private void listSubFolders(boolean stats) throws ExtractionException {

@@ -111,8 +111,8 @@ public class TikaExtractor {
 			try {
 				result = tika.detect(rawContent);
 			} catch (Exception e) {
-				// if any problem in identification tools, considered not a
-				// message
+				// if any problem in identification tools, default mimetype
+				result="application/octet-stream";
 			}
 			logger.setLevel(memLevel);
 		}

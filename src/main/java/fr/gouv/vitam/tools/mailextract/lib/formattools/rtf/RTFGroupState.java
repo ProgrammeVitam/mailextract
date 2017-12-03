@@ -25,21 +25,18 @@
  * accept its terms.
  */
 
-/**
- * This is strongly inspired from RTFParser in Tika 1.17
- * under http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Conform with MSDN directives to de-encapsulate HTML from RTF
- * https://msdn.microsoft.com/en-us/library/ee159984(v=exchg.80).aspx
- */
 
 package fr.gouv.vitam.tools.mailextract.lib.formattools.rtf;
 
 import java.nio.charset.Charset;
 
 /**
- * The Class RTFGroupState Holds all state associated with current RTF group
+ * The Class RTFGroupState holds all state associated with current RTF group.
+ * <p>
+ * This is strongly inspired from RTFParser in Tika 1.17
+ * under http://www.apache.org/licenses/LICENSE-2.0
  */
+
 class RTFGroupState {
 
 	/** The uc skip. */

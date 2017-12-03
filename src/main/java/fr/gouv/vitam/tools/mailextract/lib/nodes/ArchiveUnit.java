@@ -155,6 +155,9 @@ public class ArchiveUnit {
 
 	/**
 	 * Force the ArchiveUnit as an ArchiveUnit with objects.
+	 *
+	 * @param b
+	 *            the new object unit
 	 */
 	public void setObjectUnit(boolean b) {
 		forceMessageUnit = true;
@@ -287,12 +290,12 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addPersonMetadata(String key, String value, boolean mandatory) {
-		Person p;
+		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
 
 		if ((value != null) && !value.isEmpty()) {
-			p = new Person(value);
+			p = new MetadataPerson(value);
 			mlMetaData = new MetadataXMLList();
 			mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
 			mlMetaData.addMetadataXMLNode(mvMetaData);
@@ -307,14 +310,16 @@ public class ArchiveUnit {
 	}
 
 	/**
-	 * Adds an event value
-	 * 
-	 * @param key
-	 *            Metadata key
-	 * @param value
-	 *            Person value
-	 * @param mandatory
-	 *            Mandatory flag
+	 * Adds an event value.
+	 *
+	 * @param identifier
+	 *            the event identifier
+	 * @param type
+	 *            the event type
+	 * @param dateTime
+	 *            the event date time
+	 * @param detail
+	 *            the event detail
 	 */
 	public void addEventMetadata(String identifier, String type, String dateTime, String detail) {
 		MetadataXMLNode mvMetaData;
@@ -356,13 +361,13 @@ public class ArchiveUnit {
 	 *            Mandatory flag
 	 */
 	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) {
-		Person p;
+		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
 
 		if ((valuesList != null) && (valuesList.size() != 0)) {
 			for (String s : valuesList) {
-				p = new Person(s);
+				p = new MetadataPerson(s);
 				mlMetaData = new MetadataXMLList();
 				mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
 				mlMetaData.addMetadataXMLNode(mvMetaData);

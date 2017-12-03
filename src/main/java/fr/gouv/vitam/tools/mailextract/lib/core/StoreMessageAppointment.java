@@ -45,6 +45,18 @@ public class StoreMessageAppointment {
 	/** Received date. **/
 	protected ZonedDateTime endDate;
 
+	/**
+	 * Instantiates a new appointment information.
+	 *
+	 * @param identifier
+	 *            the identifier
+	 * @param location
+	 *            the location
+	 * @param beginDate
+	 *            the begin date
+	 * @param endDate
+	 *            the end date
+	 */
 	public StoreMessageAppointment(String identifier, String location, ZonedDateTime beginDate, ZonedDateTime endDate) {
 		this.identifier=identifier;
 		this.location=location;

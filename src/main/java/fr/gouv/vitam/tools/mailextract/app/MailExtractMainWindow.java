@@ -49,7 +49,7 @@ import javax.swing.SwingConstants;
 
 /**
  * MailExtractMainWindow class for the main window with all parameters field and
- * console text area
+ * console text area.
  */
 public class MailExtractMainWindow extends JFrame {
 
@@ -144,15 +144,21 @@ public class MailExtractMainWindow extends JFrame {
 
 	/** The text extraction flags. */
 	JCheckBox extractmessagetextfileCheckBox;
+	
+	/** The extractmessagetextmetadata check box. */
 	JCheckBox extractmessagetextmetadataCheckBox;
+	
+	/** The extractfiletextfile check box. */
 	JCheckBox extractfiletextfileCheckBox;
+	
+	/** The extractfiletextmetadata check box. */
 	JCheckBox extractfiletextmetadataCheckBox;
 
 	/** The console text area. */
 	JTextArea consoleTextArea;
 	private JScrollPane scrollPane;
 
-	/** The proposed log level */
+	/** The proposed log level. */
 	String[] loglevelGraphicStrings = { "OFF", "ERREUR FATALE", "AVERTISSEMENT", "INFO PROCESS", "INFO DOSSIERS",
 			"INFO MESSAGES", "DETAIL MESSAGES" };
 	private JPanel panel;
@@ -192,7 +198,6 @@ public class MailExtractMainWindow extends JFrame {
 		setBounds(0, 0, 800, 600);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		GridBagLayout gridBagLayout = new GridBagLayout();
-		//gridBagLayout.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0 };
 		gridBagLayout.columnWeights = new double[] { 1.0, 1, 1, 1};
 		gridBagLayout.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		getContentPane().setLayout(gridBagLayout);

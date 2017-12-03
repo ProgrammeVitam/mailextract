@@ -29,28 +29,68 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft;
 
 import java.util.Date;
 
+/**
+ * MicrosoftStoreMessageAttachment class for attachment in Microsoft formats.
+ */
 public class MicrosoftStoreMessageAttachment {
 
+	/** The Constant ATTACHMENT_METHOD_NONE. */
 	public static final int ATTACHMENT_METHOD_NONE = 0;
+	
+	/** The Constant ATTACHMENT_METHOD_BY_VALUE. */
 	public static final int ATTACHMENT_METHOD_BY_VALUE = 1;
+	
+	/** The Constant ATTACHMENT_METHOD_BY_REFERENCE. */
 	public static final int ATTACHMENT_METHOD_BY_REFERENCE = 2;
+	
+	/** The Constant ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE. */
 	public static final int ATTACHMENT_METHOD_BY_REFERENCE_RESOLVE = 3;
+	
+	/** The Constant ATTACHMENT_METHOD_BY_REFERENCE_ONLY. */
 	public static final int ATTACHMENT_METHOD_BY_REFERENCE_ONLY = 4;
+	
+	/** The Constant ATTACHMENT_METHOD_EMBEDDED. */
 	public static final int ATTACHMENT_METHOD_EMBEDDED = 5;
+	
+	/** The Constant ATTACHMENT_METHOD_OLE. */
 	public static final int ATTACHMENT_METHOD_OLE = 6;
 
+	/** The byte array. */
 	public byte[] byteArray;
+	
+	/** The filename. */
 	public String filename = "";
+	
+	/** The creation time. */
 	public Date creationTime;
+	
+	/** The modification time. */
 	public Date modificationTime;
+	
+	/** The embedded message. */
 	public Object embeddedMessage;
+	
+	/** The attach method. */
 	public int attachMethod;
+	
+	/** The size. */
 	public int size;
+	
+	/** The long filename. */
 	public String longFilename = "";
+	
+	/** The display name. */
 	public String displayName = "";
+	
+	/** The mime tag. */
 	public String mimeTag = "";
+	
+	/** The content id. */
 	public String contentId = "";
 
+	/**
+	 * Instantiates a new microsoft store message attachment.
+	 */
 	public MicrosoftStoreMessageAttachment() {
 	}
 

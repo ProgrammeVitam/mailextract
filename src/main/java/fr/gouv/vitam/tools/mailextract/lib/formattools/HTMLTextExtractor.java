@@ -32,6 +32,7 @@ import org.jsoup.helper.StringUtil;
 import org.jsoup.nodes.Element;
 import org.jsoup.nodes.Node;
 import org.jsoup.nodes.TextNode;
+import org.jsoup.parser.Parser;
 import org.jsoup.select.NodeTraversor;
 import org.jsoup.select.NodeVisitor;
 
@@ -92,6 +93,32 @@ public class HTMLTextExtractor {
 		
 		return result;
 	}
+	
+	/**
+	 * Canonicalize an html encoded String, removing escape entities (even mixed and
+	 * multiples).
+	 *
+	 * @param in
+	 *            the input html string
+	 * @return decoded text, or empty string if none
+	 */
+	public String htmlStringtoString(String in) {
+		String result;
+
+		if (in == null)
+			result = "";
+		else {
+			// unescape all HTML entities, multiple times if needed
+			result = in;
+			do {
+				in = result;
+				result = Parser.unescapeEntities(in, true);
+			} while (!result.equals(in));
+
+		}
+		return result;
+	}
+
 }
 
 // the formatting rules, implemented in a breadth-first DOM traverse
