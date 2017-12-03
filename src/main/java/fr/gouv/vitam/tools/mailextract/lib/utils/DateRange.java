@@ -50,7 +50,7 @@ public class DateRange {
 
 	private static SimpleDateFormat writeformat;
 	static {
-		writeformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.s'Z'");
+		writeformat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
 		writeformat.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 

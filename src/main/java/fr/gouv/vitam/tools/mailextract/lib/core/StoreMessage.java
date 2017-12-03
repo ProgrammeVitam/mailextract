@@ -805,6 +805,7 @@ public abstract class StoreMessage extends StoreElement {
 	private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
 			StoreMessageAttachment a, boolean writeFlag) throws ExtractionException {
 		StoreExtractor extractor;
+		Boolean isContainerScheme=false;
 
 		Class storeExtractorClass = StoreExtractor.schemeStoreExtractorClassMap.get(a.attachmentStoreScheme);
 		if (storeExtractorClass == null) {
@@ -812,8 +813,8 @@ public abstract class StoreMessage extends StoreElement {
 					+ " , extracting unit in path " + rootNode.getFullName());
 			extractor = null;
 		} else {
-			Boolean b = StoreExtractor.schemeContainerMap.get(a.attachmentStoreScheme);
-			if (b) {
+			isContainerScheme = StoreExtractor.schemeContainerMap.get(a.attachmentStoreScheme);
+			if (isContainerScheme) {
 				rootNode = new ArchiveUnit(getStoreExtractor(), rootNode, "Container",
 						(a.name == null ? "Infile" : a.name));
 				rootNode.addMetadata("DescriptionLevel", "Item", true);
@@ -850,7 +851,7 @@ public abstract class StoreMessage extends StoreElement {
 					extractor.getTotalElementsCount() + extractor.getTotalAttachedMessagesCount());
 			attachedMessagedateRange.extendRange(extractor.getRootFolder().getDateRange());
 			extractor.endStoreExtractor();
-			if (extractor.getRootFolder().dateRange.isDefined()) {
+			if (extractor.getRootFolder().dateRange.isDefined() && isContainerScheme) {
 				rootNode.addMetadata("StartDate",
 						DateRange.getISODateString(extractor.getRootFolder().dateRange.getStart()), true);
 				rootNode.addMetadata("EndDate",
@@ -888,9 +889,9 @@ public abstract class StoreMessage extends StoreElement {
 		}
 		if (attachedFlag && writeFlag) {
 			if (attachedMessagedateRange.isDefined()) {
-				messageNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
-						true);
-				messageNode.addMetadata("EndDate", DateRange.getISODateString(attachedMessagedateRange.getEnd()), true);
+//				messageNode.addMetadata("StartDate", DateRange.getISODateString(attachedMessagedateRange.getStart()),
+//						true);
+//				messageNode.addMetadata("EndDate", DateRange.getISODateString(attachedMessagedateRange.getEnd()), true);
 			}
 		}
 	}
