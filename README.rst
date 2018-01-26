@@ -2,6 +2,8 @@
 VITAM TOOLS-MAILEXTRACT
 =======================
 
+English version `here <eng.README.rst>`_.
+
 Ce projet propose une application permettant l'exportation de boites de messagerie locales ou distantes (class MailExtractApp) et l'ensemble de classes permettant l'implémentation de la fonction ailleurs (usage de la classe StoreExtractor).
 
 Le code a été développé dans le cadre du programme Vitam, programme archivage numérique du gouvernement français (http://www.programmevitam.fr et https://github.com/ProgrammeVitam)
