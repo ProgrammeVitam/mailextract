@@ -98,6 +98,15 @@ public class TikaExtractor {
 		return s;
 	}
 
+	/**
+	 * Gets the mime type of the file raw content.
+	 *
+	 * @param rawContent
+	 *            the raw content
+	 * @return the mime type
+	 * @throws ExtractionException
+	 *             if text extract was not possible
+	 */
 	public String getMimeType(byte[] rawContent) throws ExtractionException {
 		String result = null;
 		Level memLevel;

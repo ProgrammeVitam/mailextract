@@ -42,8 +42,8 @@ import org.apache.poi.hsmf.datatypes.StringChunk;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 /**
- * Class MsgStoreMessageAttachment for attachment information
- * (MicrosoftStoreMessageAttachment) implementation in POI HSMF format.
+ * Class for attachment information (MicrosoftStoreMessageAttachment)
+ * implementation in POI HSMF format.
  */
 public class MsgStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 

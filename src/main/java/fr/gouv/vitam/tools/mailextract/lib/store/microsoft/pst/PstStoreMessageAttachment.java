@@ -37,10 +37,8 @@ import com.pff.PSTException;
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 /**
- * Class PstStoreMessageAttachment for attachment information
- * (MicrosoftStoreMessageAttachment) implementation in pst format.
- * 
- * @author Richard Johnson
+ * Class for attachment information (MicrosoftStoreMessageAttachment)
+ * implementation in pst format.
  */
 public class PstStoreMessageAttachment extends MicrosoftStoreMessageAttachment {
 

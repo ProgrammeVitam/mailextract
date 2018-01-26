@@ -45,7 +45,7 @@ import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessageAttachment;
 
 /**
- * StoreMessage sub-class for mail boxes extracted through pst library.
+ * StoreMessage sub-class for mail boxes extracted through libpst library.
  */
 public class PstStoreMessage extends MicrosoftStoreMessage {
 

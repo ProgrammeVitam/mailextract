@@ -33,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Class MsgConversationIndex to hold decoded PidTagConversationIndex inspired
+ * Class to hold decoded PidTagConversationIndex inspired
  * by the libpst code.
  *
  * @author Nick Buller

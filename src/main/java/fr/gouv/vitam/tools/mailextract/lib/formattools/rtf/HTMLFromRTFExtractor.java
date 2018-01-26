@@ -321,7 +321,7 @@ public class HTMLFromRTFExtractor {
 		ANSICPG_MAP.put(10081, MAC_TURKISH); // Mac Turkish
 		ANSICPG_MAP.put(57002, X_ISCII91); // Devanagari
 
-		// TODO: in theory these other charsets are simple
+		// in theory these other charsets are simple
 		// shifts off of Devanagari, so we could impl that
 		// here:
 		ANSICPG_MAP.put(57003, WINDOWS_57003); // Bengali
@@ -605,7 +605,6 @@ public class HTMLFromRTFExtractor {
 				} else {
 					// DOC ERROR: font change referenced a
 					// non-table'd font number
-					// TODO: log a warning? Throw an exc?
 					globalGroupState.fontCharset = null;
 				}
 				break;

@@ -215,11 +215,11 @@ public class MailExtractApp {
 		parser.accepts("dropemptyfolders", "drop empty folders");
 		parser.accepts("keeponlydeep", "keep only empty folders not at root level");
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
-		parser.accepts("nameslength", "generate short directories and files names").withRequiredArg();
-		parser.accepts("extractlist", "generate a csv list of all extracts");
-		parser.accepts("extractmessagetextfile", "extract a text version of messages");
+		parser.accepts("nameslength", "length limit for directories and files generated names").withRequiredArg();
+		parser.accepts("extractlist", "generate a csv list of all extracts with a selection of metadata, inluding appointments");
+		parser.accepts("extractmessagetextfile", "extract a text file version of messages");
 		parser.accepts("extractmessagetextmetadata", "put message text in metadata");
-		parser.accepts("extractfiletextfile", "extract a text version of files");
+		parser.accepts("extractfiletextfile", "extract a text file version of attachment files");
 		parser.accepts("extractfiletextmetadata", "put file text in metadata");
 		parser.accepts("warning",
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");

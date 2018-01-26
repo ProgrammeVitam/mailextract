@@ -55,7 +55,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
 
 /**
- * Abstract class for store file which is a mail box message.
+ * Abstract class for store element which is a mail box message.
  * <p>
  * It defines all information (descriptive metadata and objects) to collect from
  * a message and the method to generate directory/files structure from this

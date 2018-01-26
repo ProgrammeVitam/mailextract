@@ -34,7 +34,7 @@ import java.util.*;
  * Class for automatic computation of start and end date of folders.
  * <p>
  * The start and end date of a folder are the min and max dates of all messages
- * it and all its descendants contain, or, what is the same, of all the messages
+ * and all its descendants contain, or, what is the same, of all the messages
  * it directly contains and of the start and end dates of all its subfolders.
  */
 public class DateRange {

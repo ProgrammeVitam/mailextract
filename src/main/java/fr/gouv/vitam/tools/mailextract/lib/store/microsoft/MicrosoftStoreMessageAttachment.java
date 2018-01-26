@@ -30,7 +30,7 @@ package fr.gouv.vitam.tools.mailextract.lib.store.microsoft;
 import java.util.Date;
 
 /**
- * MicrosoftStoreMessageAttachment class for attachment in Microsoft formats.
+ * Class for attachment in Microsoft formats.
  */
 public class MicrosoftStoreMessageAttachment {
 

@@ -4,10 +4,10 @@
 
 	<groupId>fr.gouv.vitam.tools</groupId>
 	<artifactId>mailextract</artifactId>
-	<version>0.25.1</version>
+	<version>0.26</version>
 
 	<name>mailextract</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/ProgrammeVitam</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -184,4 +184,8 @@
 			</plugin>
 		</plugins>
 	</build>
+	<description>This project implement a local or distant mail box extraction application (class MailExtractApp) and the really operational class (class StoreExtractor) that can be used elsewhere.
+
+This code has been developed for the &quot;Programme Vitam&quot;, French government Digital Archives Management System project (http://www.programmevitam.fr et https://github.com/ProgrammeVitam).
+</description>
 </project>

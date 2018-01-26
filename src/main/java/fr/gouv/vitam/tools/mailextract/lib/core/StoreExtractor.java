@@ -139,9 +139,11 @@ import java.io.PrintStream;
  * warning about extraction problems and items dropped (WARNING), information
  * about global process (INFO), list of treated folders (FINE), list of treated
  * messages (FINER), problems with some expected metadata (FINEST).
- * 
  * <p>
- * Note: Metadata values are, for now, hardcoded in french
+ * It's also possible (ruled by option) to generate a csv file with one line by
+ * extracted message with a selection of metadata, including appointment details
+ * <p>
+ * Note: Default or generated metadata values are, for now, hardcoded in french
  */
 public abstract class StoreExtractor {
 
@@ -816,7 +818,7 @@ public abstract class StoreExtractor {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Gets the attachment in which is the embedded object.
 	 *

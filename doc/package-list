@@ -1,14 +1,1 @@
-fr.gouv.vitam.tools.mailextract.app
 fr.gouv.vitam.tools.mailextract.lib.core
-fr.gouv.vitam.tools.mailextract.lib.formattools
-fr.gouv.vitam.tools.mailextract.lib.formattools.rtf
-fr.gouv.vitam.tools.mailextract.lib.nodes
-fr.gouv.vitam.tools.mailextract.lib.store.javamail
-fr.gouv.vitam.tools.mailextract.lib.store.javamail.eml
-fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox
-fr.gouv.vitam.tools.mailextract.lib.store.javamail.thunderbird
-fr.gouv.vitam.tools.mailextract.lib.store.microsoft
-fr.gouv.vitam.tools.mailextract.lib.store.microsoft.msg
-fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst
-fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg
-fr.gouv.vitam.tools.mailextract.lib.utils

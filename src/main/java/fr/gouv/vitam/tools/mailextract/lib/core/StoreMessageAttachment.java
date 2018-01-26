@@ -34,7 +34,6 @@ import javax.activation.MimeTypeParseException;
 
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
-// TODO: Auto-generated Javadoc
 /**
  * Utility class to encapsulate an attachment file with content and metadata.
  */

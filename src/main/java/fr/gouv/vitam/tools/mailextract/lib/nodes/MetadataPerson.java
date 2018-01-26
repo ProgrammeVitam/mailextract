@@ -32,7 +32,7 @@ import java.io.UnsupportedEncodingException;
 import javax.mail.internet.MimeUtility;
 
 /**
- * The Class Person.
+ * Class for extracting a Person metadata from an address.
  */
 public class MetadataPerson {
 

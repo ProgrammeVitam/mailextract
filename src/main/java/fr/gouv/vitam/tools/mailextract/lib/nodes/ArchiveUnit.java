@@ -46,7 +46,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  * <p>
  * Other classes create Archive Units on the fly with extracted information and
  * content. This class write on disk representation with convenient
- * directory/file structure and manifest.json files for metadata.
+ * directory/file structure and ArchiveUnitContent.xml files for metadata.
  * <p>
  * All the files, if not pure binary, are UTF-8 encoded, as the file names.
  */
@@ -95,17 +95,15 @@ public class ArchiveUnit {
 	/**
 	 * Instantiates a new archive unit.
 	 * <p>
-	 * Name is reduced to 32 characters (8 if NAMES_SHORTENED option is
-	 * enabled), and Archive Unit directory name is generated as
-	 * "'unitType'#'UniqID':'name' (with unitType first character only if
-	 * NAMES_SHORTENED option is enabled)
+	 * Name is reduced as defined by options, and Archive Unit directory name is generated as
+	 * "'unitType'#'UniqID':'name'
 	 * 
 	 * @param storeExtractor
 	 *            Operation store extractor
 	 * @param father
 	 *            Father Archive Unit
 	 * @param unitType
-	 *            Unit type (Folder| Message| Attachment)
+	 *            Unit type (Folder| Message| Attachment...)
 	 * @param name
 	 *            Name of the Archive Unit
 	 */
@@ -506,7 +504,6 @@ public class ArchiveUnit {
 
 		len = storeExtractor.getOptions().namesLength + 20;
 
-		// TODO: best filter
 		result = result.replaceAll("[^\\p{IsAlphabetic}\\p{Digit}\\.]", "-");
 
 		if (result.length() > len)
@@ -515,7 +512,7 @@ public class ArchiveUnit {
 		return result + extension;
 	}
 
-	// create a unique name for an typed archive unit reduced if needed
+	// create a unique name for an typed archive unit reduced as defined by options
 	private String normalizeUniqUnitname(String type, String filename) {
 		String result = "";
 		int len;

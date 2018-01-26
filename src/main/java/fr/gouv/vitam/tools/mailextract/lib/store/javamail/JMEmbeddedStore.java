@@ -27,9 +27,23 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.javamail;
 
+/**
+ * Interface implemented on JavaMail extractor that can to extract embedded message (only eml).
+ */
 public interface JMEmbeddedStore {
 
+	/**
+	 * Sets the object content.
+	 *
+	 * @param objectContent
+	 *            the new object content
+	 */
 	abstract public void setObjectContent(Object objectContent);
 	
+	/**
+	 * Gets the object content.
+	 *
+	 * @return the object content
+	 */
 	abstract public Object getObjectContent();
 }
