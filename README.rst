@@ -31,10 +31,12 @@ C'est un projet maven standard (archétype quickstart) avec une documentation ja
 
 * Launch4j
  
-Pour fonctionner sur un système Linux 64bits, vous devez installer les bibliothèques 32bits. Pour Ubuntu (en version 16.04 LTS)
+Pour fonctionner sur un système Linux 64bits, vous devez installer les bibliothèques 32bits. Pour Ubuntu (en version 16.04 LTS):
 
 $ sudo dpkg --add-architecture i386
+
 $ sudo apt-get update
+
 $ sudo apt-get install lib32z1 lib32ncurses5 libbz2-1.0:i386
 
 * java-libpst
