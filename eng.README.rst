@@ -22,13 +22,30 @@ It uses :
 
 Note: For now it can't extract S/MIME (ciphered and/or signed) messages.
 
-It's a standard maven project (quickstart archetype) with full javadoc (in /doc)
 
-*You can see under the manual for the application (and see what the StoreExtractor class can do...)*
+Compilation directives
+----------------------
+
+It's a standard maven project (quickstart archetype) with full javadoc (in /doc).
+
+* Launch4j
+ 
+To work on 64bits Linux system, you have to install 32bits libraries. With Ubuntu (used on 16.04 LTS)
+
+$ sudo dpkg --add-architecture i386
+$ sudo apt-get update
+$ sudo apt-get install lib32z1 lib32ncurses5 libbz2-1.0:i386
+
+* java-libpst
+
+You have to add the java-libpst library to your local maven repo, compiling the develop branch 
+in https://github.com/rjohnsondev/java-libpst and installing the package...
+
 
 **BEWARE**: This application has been developed to study the extraction technology and the result archives organisation, as a proof of concept.
 It doesn't respect the design and coding rules of VITAM program (
 Elle n'a pas été développée selon les règles standard de développement du programme VITAM (especially there is no unitary test).
+
 **IT SHOULD NOT BE USED IN REAL PRODUCTION AS IS**
 
 Launching

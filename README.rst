@@ -24,12 +24,27 @@ Il utilise :
 
 Note: Pour l'instant il ne permet pas d'extraire de messages S/MIME (chiffrés ou signés).
 
+Directives de compilation
+-------------------------
+
 C'est un projet maven standard (archétype quickstart) avec une documentation javadoc complète (dans le répertoire /doc).  
 
-*Vous pouvez voir ci-dessous le manuel de l'application (et voir les fonctions accessibles par StoreExtractor)*
+* Launch4j
+ 
+Pour fonctionner sur un système Linux 64bits, vous devez installer les bibliothèques 32bits. Pour Ubuntu (en version 16.04 LTS)
+
+$ sudo dpkg --add-architecture i386
+$ sudo apt-get update
+$ sudo apt-get install lib32z1 lib32ncurses5 libbz2-1.0:i386
+
+* java-libpst
+
+Vous devez ajouter la bibliothèque java-libpst à votre repo maven local, en compilant la branche "develop" 
+sur https://github.com/rjohnsondev/java-libpst et en installant le package...
 
 **ATTENTION**: Cette application a été développée pour étudier la technique d'extraction des messageries et l'organisation du résultat sous forme d'archive, au titre de preuve de concept.
 Elle n'a pas été développée selon les règles standard de développement du programme VITAM (en particulier il n'y a pas de test unitaire).
+
 **ELLE NE DOIT PAS ETRE UTILISEE EN PRODUCTION EN L'ETAT**
 
 Lancement
