@@ -39,7 +39,6 @@ import javax.swing.SwingUtilities;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 
-// TODO: Auto-generated Javadoc
 /**
  * MailExtractGraphicApp class for the graphic application.
  */
