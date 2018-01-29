@@ -1,10 +1,20 @@
-# Compiled source #
-###################
+# Build folders & artifacts
 windows\*.exe
-target\*.jar
+windows/*.exe
+target
+.apt_generated
+.class
 
-<<<<<<< HEAD
-/target/
-=======
->>>>>>> 8d328ee977f48c30f4c8398ef40d446a2cfc8c37
-/.apt_generated/
+# IDE : intellij
+*.iml
+.idea
+build
+
+# IDE : vscode
+.vscode
+
+# IDE : eclipse
+.classpath
+.project
+.settings
+
