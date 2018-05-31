@@ -45,8 +45,7 @@ in https://github.com/rjohnsondev/java-libpst and installing the package...
 
 
 **BEWARE**: This application has been developed to study the extraction technology and the result archives organisation, as a proof of concept.
-It doesn't respect the design and coding rules of VITAM program (
-Elle n'a pas été développée selon les règles standard de développement du programme VITAM (especially there is no unitary test).
+It doesn't respect the design and coding rules of VITAM program (especially there is no unitary test).
 
 **IT SHOULD NOT BE USED IN REAL PRODUCTION AS IS**
 
