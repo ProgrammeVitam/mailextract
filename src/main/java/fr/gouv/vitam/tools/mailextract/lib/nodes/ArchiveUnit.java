@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
 /**
@@ -169,8 +170,12 @@ public class ArchiveUnit {
 	public String getName() {
 		if (!forceMessageUnit && (objects.isEmpty()))
 			return name;
-		else
-			return "__" + name + "__";
+		else {
+			if (storeExtractor.getOptions().model==StoreExtractorOptions.MODEL_V1)
+				return "__" + name + "__";
+			else 
+				return name;		
+		}
 	}
 
 	/**
@@ -471,7 +476,11 @@ public class ArchiveUnit {
 		MetadataXMLNode contentmetadata = new MetadataXMLNode("Content", contentmetadatalist);
 
 		// write unit metadata file
-		writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes());
+		if (storeExtractor.getOptions().model==StoreExtractorOptions.MODEL_V1)
+			writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes());
+		else 
+			writeFile(dirPath, "__ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes());
+
 
 		// write objects files
 		if (!objects.isEmpty()) {

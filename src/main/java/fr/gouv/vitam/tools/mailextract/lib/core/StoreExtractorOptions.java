@@ -32,32 +32,38 @@ package fr.gouv.vitam.tools.mailextract.lib.core;
  */
 public class StoreExtractorOptions {
 	
+	public static final int MODEL_V1=1;
+	public static final int MODEL_V2=2;
+
 	/** The keep only deep empty folders flag. */
 	public boolean keepOnlyDeepEmptyFolders;
-	
+
 	/** The drop empty folders flag. */
 	public boolean dropEmptyFolders;
-	
+
 	/** The warning msg problem flag. */
 	public boolean warningMsgProblem;
-	
+
 	/** The names length. */
 	public int namesLength;
-	
+
 	/** The extract list flag. */
 	public boolean extractList;
-	
+
 	/** The extract message text version file flag. */
 	public boolean extractMessageTextFile;
-	
+
 	/** The extract message text metadata flag. */
 	public boolean extractMessageTextMetadata;
-	
+
 	/** The extract attachment file text version file flag. */
 	public boolean extractFileTextFile;
-	
+
 	/** The extract attachment file text metadata flag. */
 	public boolean extractFileTextMetadata;
+
+	/** The model of extraction on disk. */
+	public int model;
 
 	/**
 	 * Instantiates a new store extractor options.
@@ -72,33 +78,26 @@ public class StoreExtractorOptions {
 		extractMessageTextMetadata = false;
 		extractFileTextFile = false;
 		extractFileTextMetadata = false;
+		model = 2;
 	}
 
 	/**
 	 * Instantiates a new store extractor options.
 	 *
-	 * @param keepOnlyDeepEmptyFolders
-	 *            the keep only deep empty folders
-	 * @param dropEmptyFolders
-	 *            the drop empty folders
-	 * @param warningMsgProblem
-	 *            the warning msg problem
-	 * @param namesLength
-	 *            the names length
-	 * @param extractList
-	 *            the extract list
-	 * @param extractMessageTextFile
-	 *            the extract message text file
-	 * @param extractMessageTextMetadata
-	 *            the extract message text metadata
-	 * @param extractFileTextFile
-	 *            the extract file text file
-	 * @param extractFileTextMetadata
-	 *            the extract file text metadata
+	 * @param keepOnlyDeepEmptyFolders   the keep only deep empty folders
+	 * @param dropEmptyFolders           the drop empty folders
+	 * @param warningMsgProblem          the warning msg problem
+	 * @param namesLength                the names length
+	 * @param extractList                the extract list
+	 * @param extractMessageTextFile     the extract message text file
+	 * @param extractMessageTextMetadata the extract message text metadata
+	 * @param extractFileTextFile        the extract file text file
+	 * @param extractFileTextMetadata    the extract file text metadata
+	 * @param model 					 the model
 	 */
 	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
 			int namesLength, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
-			boolean extractFileTextFile, boolean extractFileTextMetadata) {
+			boolean extractFileTextFile, boolean extractFileTextMetadata, int model) {
 		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
 		this.dropEmptyFolders = dropEmptyFolders;
 		this.warningMsgProblem = warningMsgProblem;
@@ -108,6 +107,6 @@ public class StoreExtractorOptions {
 		this.extractMessageTextMetadata = extractMessageTextMetadata;
 		this.extractFileTextFile = extractFileTextFile;
 		this.extractFileTextMetadata = extractFileTextMetadata;
-
+		this.model = model;
 	}
 }

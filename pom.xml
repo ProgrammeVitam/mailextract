@@ -4,7 +4,7 @@
 
 	<groupId>fr.gouv.vitam.tools</groupId>
 	<artifactId>mailextract</artifactId>
-	<version>0.26</version>
+	<version>0.9</version>
 
 	<name>mailextract</name>
 	<url>https://github.com/ProgrammeVitam</url>

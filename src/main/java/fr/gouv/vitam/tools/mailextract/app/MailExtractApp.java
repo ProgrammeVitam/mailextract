@@ -91,32 +91,32 @@ import joptsimple.OptionSet;
  * <td>help</td>
  * </tr>
  * <tr>
- * <td>--type</td>
+ * <td>--type x/td>
  * <td>type of local container to extract (thunderbird|outlook|eml|mbox) or
  * protocol for server access (imap|imaps|pop3...)</td>
  * </tr>
  * <tr>
- * <td>--user</td>
- * <td>user account name (also used for destination extraction naming)</td>
+ * <td>--user x</td>
+ * <td>user account name(also used for destination extraction naming)</td>
  * </tr>
  * <tr>
- * <td>--password</td>
+ * <td>--password x</td>
  * <td>password</td>
  * </tr>
  * <tr>
- * <td>--server</td>
- * <td>mail server [HostName|IP](:port)</td>
+ * <td>--server [HostName|IP](:port)</td>
+ * <td>mail server</td>
  * </tr>
  * <tr>
- * <td>--container</td>
+ * <td>--container x</td>
  * <td>mail container directory for mbox or file for pst</td>
  * </tr>
  * <tr>
- * <td>--folder</td>
+ * <td>--folder x</td>
  * <td>specific mail folder used as root for extraction or listing</td>
  * </tr>
  * <tr>
- * <td>--rootdir</td>
+ * <td>--rootdir x</td>
  * <td>root (default current directory) for output to root/username
  * directory</td>
  * </tr>
@@ -133,8 +133,8 @@ import joptsimple.OptionSet;
  * <td>keep only empty folders not at root level</td>
  * </tr>
  * <tr>
- * <td>--nameslength</td>
- * <td>generate short directories and files names</td>
+ * <td>--nameslength x</td>
+ * <td>generate directories and files names with x characters max</td>
  * </tr>
  * <tr>
  * <td>--extractlist</td>
@@ -157,7 +157,11 @@ import joptsimple.OptionSet;
  * <td>put attachment file text in metadata</td>
  * </tr>
  * <tr>
- * <td>--verbatim</td>
+ * <td>--model x</td>
+ * <td>model of extraction on disk 1 or 2 (default 2)</td>
+ * </tr>
+ * <tr>
+ * <td>--verbatim x</td>
  * <td>event level to log</td>
  * </tr>
  * <tr>
@@ -216,11 +220,14 @@ public class MailExtractApp {
 		parser.accepts("keeponlydeep", "keep only empty folders not at root level");
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
 		parser.accepts("nameslength", "length limit for directories and files generated names").withRequiredArg();
-		parser.accepts("extractlist", "generate a csv list of all extracts with a selection of metadata, inluding appointments");
+		parser.accepts("extractlist",
+				"generate a csv list of all extracts with a selection of metadata, inluding appointments");
 		parser.accepts("extractmessagetextfile", "extract a text file version of messages");
 		parser.accepts("extractmessagetextmetadata", "put message text in metadata");
 		parser.accepts("extractfiletextfile", "extract a text file version of attachment files");
 		parser.accepts("extractfiletextmetadata", "put file text in metadata");
+		parser.accepts("model", "model of extraction on disk 1 or 2 (default 2)").withRequiredArg();
+		;
 		parser.accepts("warning",
 				"generate warning when there's a problem on a message (otherwise log at FINEST level)");
 		parser.accepts("x", "extract account");
@@ -233,16 +240,12 @@ public class MailExtractApp {
 	/**
 	 * The main method for both command and graphic version.
 	 *
-	 * @param args
-	 *            the arguments
-	 * @throws ClassNotFoundException
-	 *             the class not found exception
-	 * @throws InstantiationException
-	 *             the instantiation exception
-	 * @throws IllegalAccessException
-	 *             the illegal access exception
-	 * @throws UnsupportedLookAndFeelException
-	 *             the unsupported look and feel exception
+	 * @param args the arguments
+	 * @throws ClassNotFoundException          the class not found exception
+	 * @throws InstantiationException          the instantiation exception
+	 * @throws IllegalAccessException          the illegal access exception
+	 * @throws UnsupportedLookAndFeelException the unsupported look and feel
+	 *                                         exception
 	 */
 	public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
 			IllegalAccessException, UnsupportedLookAndFeelException {
@@ -253,6 +256,7 @@ public class MailExtractApp {
 		String protocol = "", host = "localhost", user = "", password = "", container = "", folder = "";
 		int port = -1;
 		int namesLength = 12;
+		int model = 2;
 		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
 		String logLevel;
@@ -306,6 +310,19 @@ public class MailExtractApp {
 			}
 		}
 
+		if (options.has("model")) {
+			try {
+				model = Integer.parseInt((String) options.valueOf("model"));
+
+			} catch (NumberFormatException e) {
+				System.err.println("the model argument must be numeric");
+				System.exit(1);
+			}
+			if ((model != 1) && (model != 2))
+				System.err.println("the model argument must 1 or 2");
+			System.exit(1);
+		}
+
 		// identify protocol option
 		if (options.has("type"))
 			protocol = (String) options.valueOf("type");
@@ -316,7 +333,7 @@ public class MailExtractApp {
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
 				options.has("warning"), namesLength, options.has("extractlist"), options.has("extractmessagetextfile"),
 				options.has("extractmessagetextmetadata"), options.has("extractfiletextfile"),
-				options.has("extractfiletextmetadata"));
+				options.has("extractfiletextmetadata"),model);
 
 		// specific option parsing for local type extraction
 		switch (protocol) {
