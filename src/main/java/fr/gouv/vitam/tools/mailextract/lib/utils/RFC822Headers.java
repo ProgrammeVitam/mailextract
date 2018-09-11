@@ -60,7 +60,13 @@ public class RFC822Headers extends InternetHeaders {
 		if (headersString == null)
 			headersString = "";
 		headersString += "\n\n";
-		ByteArrayInputStream bais = new ByteArrayInputStream(headersString.getBytes());
+		ByteArrayInputStream bais=null;
+		try {
+			bais = new ByteArrayInputStream(headersString.getBytes("UTF-8"));
+		} catch (UnsupportedEncodingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return bais;
 	}
 
