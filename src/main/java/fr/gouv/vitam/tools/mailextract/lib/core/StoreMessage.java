@@ -616,7 +616,7 @@ public abstract class StoreMessage extends StoreElement {
 			textContent = HTMLTextExtractor.getInstance().act(bodyContent[HTML_BODY]);
 
 		// purify textContent and put in metadata
-		if ((textContent != null) && (!textContent.isEmpty())) {
+		if ((textContent != null) && (!textContent.trim().isEmpty())) {
 			if (getStoreExtractor().options.extractMessageTextFile)
 				messageNode.addObject(HTMLTextExtractor.getInstance().htmlStringtoString(textContent), messageID + ".txt",
 						"TextContent", 1);
@@ -787,7 +787,7 @@ public abstract class StoreMessage extends StoreElement {
 			logMessageWarning("mailextract: Can't extract text content from attachment " + attachment.name);
 		}
 		// put in file
-		if (getStoreExtractor().options.extractFileTextFile && (!((textExtract == null) || textExtract.isEmpty()))) {
+		if (getStoreExtractor().options.extractFileTextFile && (!((textExtract == null) || textExtract.trim().isEmpty()))) {
 			attachmentNode.addObject(textExtract.getBytes(), attachment.name + ".txt", "TextContent", 1);
 		}
 		// put in metadata
