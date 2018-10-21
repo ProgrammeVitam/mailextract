@@ -1,5 +1,4 @@
 # Build folders & artifacts
-windows\*.exe
 windows/*.exe
 target
 .apt_generated
