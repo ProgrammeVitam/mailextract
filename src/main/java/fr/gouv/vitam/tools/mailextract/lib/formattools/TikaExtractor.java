@@ -89,8 +89,8 @@ public class TikaExtractor {
 		try {
 			if (rawContent.length > 0)
 				s = tika.parseToString(new ByteArrayInputStream(rawContent));
-		} catch (IOException | TikaException e) {
-			throw new ExtractionException("mailextract.formattools: Can't extract text content");
+		} catch (Throwable e) {
+			throw new ExtractionException("mailextract.formattools: Can't extract text content\n->"+e.getMessage());
 		} finally {
 			logger.setLevel(memLevel);
 		}
