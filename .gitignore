@@ -1,5 +1,6 @@
 # Build folders & artifacts
 windows/*.exe
+doc/
 target
 .apt_generated
 .class
