@@ -28,6 +28,7 @@
 package fr.gouv.vitam.tools.mailextract.lib.nodes;
 
 import fr.gouv.vitam.tools.mailextract.lib.formattools.HTMLTextExtractor;
+import org.apache.commons.text.StringEscapeUtils;
 
 /**
  * Class for a XML string value in metadata
@@ -63,7 +64,7 @@ public class MetadataXMLString extends MetadataXML {
 	 * Write the value in XML format.
 	 * <p>
 	 * The String is UTF-8 encoded with \r,\n,\t escaped and <,&,>,' and " XML
-	 * encoded, and with no other entity encoding
+	 * encoded, and stripped from illegal characters.
 	 * 
 	 * @param depth
 	 *            Depth used for tabulation (no use for this tree Metadata
@@ -71,30 +72,6 @@ public class MetadataXMLString extends MetadataXML {
 	 * @return the string
 	 */
 	public String writeXML(int depth) {
-		return toXML(value);
-	}
-	
-	/**
-	 * Canonicalize a String, removing escape entities (even mixed and
-	 * multiples) and xml encode.
-	 */
-	private String toXML(String in) {
-		String result;
-
-		if (in == null)
-			result = "";
-		else {
-			// unescape all HTML entities, multiple times if needed
-			result = HTMLTextExtractor.getInstance().htmlStringtoString(in);
-
-			// then xml encoding at minimal level with UTF8 coding
-			result = result.replace("&", "&amp;");
-			result = result.replace("\"", "&quot;");
-			result = result.replace("'", "&apos;");
-			result = result.replace("<", "&lt;");
-			result = result.replace(">", "&gt;");
-		}
-
-		return result;
+		return StringEscapeUtils.escapeXml10(value);
 	}
 }
