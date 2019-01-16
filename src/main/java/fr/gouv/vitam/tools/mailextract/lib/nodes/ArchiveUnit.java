@@ -489,7 +489,10 @@ public class ArchiveUnit {
 					filename = "undefined";
 				else
 					filename = o.filename;
-				writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "_" + filename, o.rawContent);
+				if (storeExtractor.getOptions().model==StoreExtractorOptions.MODEL_V1)
+					writeFile(dirPath, o.usage + "_" + Integer.toString(o.version) + "_" + filename, o.rawContent);
+				else
+					writeFile(dirPath, "__" + o.usage + "_" + Integer.toString(o.version) + "__" + filename, o.rawContent);
 			}
 		}
 	}
