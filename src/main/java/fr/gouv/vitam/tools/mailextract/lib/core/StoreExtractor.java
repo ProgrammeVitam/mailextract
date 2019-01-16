@@ -113,22 +113,22 @@ import java.io.PrintStream;
  * or, in V2 model, __ArchiveUnitMetadata),
  * and</li>
  * <li>the attachment binary file, being a final object, named according the
- * format "'ObjectType'_'Version'_'filename'" or, in V2 model,
+ * format "__'ObjectType'_'Version'_'filename'" or, in V2 model,
  * "__'ObjectType'_'Version'__'filename'", with in this case ObjectType
  * being "BinaryMaster", version being "1", filename being the attachment file
  * name with extension if any.</li>
  * <li>the text version of attachment binary file, if option is set, named
- * according the format "'ObjectType'_'Version'_'filename'" or, in V2 model,
+ * according the format "__'ObjectType'_'Version'_'filename'" or, in V2 model,
  *  * "__'ObjectType'_'Version'__'filename'", with in this case
  * ObjectType being "TextContent", version being "1", filename being the
  * attachment file name with extension if any.</li>
  * </ul>
  * <li>the message body in eml format file, being a final object, named
- * "BinaryMaster_1_'messageID'", or in V2 model, "__BinaryMaster_1__'messageID'"
+ * "__BinaryMaster_1_'messageID'", or in V2 model, "__BinaryMaster_1__'messageID'"
  * with the messageID being the n first characters
  * of the uniq messageID , and</li>
  * <li>the message body in text format file, if option is set, being a final
- * object, named "TextContent_1_'messageID'", or in V2 model,
+ * object, named "__TextContent_1_'messageID'", or in V2 model,
  * "__TextContent_1__'messageID'" with the messageID being the n
  * first characters of the uniq messageID.</li>
  * </ul>
