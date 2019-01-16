@@ -84,14 +84,15 @@ import java.io.PrintStream;
  * with uniqID being a unique ID innerly generated and name being the n first
  * characters of the folder name UTF-8 encoded (n is defined by the option
  * namesLength, default being 12). The folder descriptive metadata is in the
- * file named ArchiveUnitContent.xml (XML/UTF-8 encoded) in its directory. It
+ * file named ArchiveUnitContent.xml or, in V2 model, __ArchiveUnitMetadata (XML/UTF-8 encoded) in its directory. It
  * represent the folder ArchiveUnit with no objects</li>
  * <li>each message is extracted in a directory named "Message#'UniqID':
  * 'name'", with name being the n first characters of the message title UTF-8
  * encoded. It represent the message ArchiveUnit. In this message directory,
  * there's:
  * <ul>
- * <li>the message descriptive metadata file (ArchiveUnitContent.xml),</li>
+ * <li>the message descriptive metadata file (ArchiveUnitContent.xml or,
+ * in V2 model, __ArchiveUnitMetadata),</li>
  * <li>one directory for each special attachments being extractible stores
  * (attached messages or attached files formatted in eml, msg, pst...) (if any)
  * <ul>
@@ -101,29 +102,34 @@ import java.io.PrintStream;
  * <li>if complex extraction, it's named "Container#'UniqID': 'name'", with name
  * being the n first characters of the attachment name (if non default to
  * 'infile') UTF-8 encoded, and contents the container descriptive metadata file
- * (ArchiveUnitContent.xml) and the hierarchy of extracted folders, messages,
- * attachments...</li>
+ * (ArchiveUnitContent.xml or, in V2 model, __ArchiveUnitMetadata) and
+ * the hierarchy of extracted folders, messages, attachments...</li>
  * </ul>
  * <li>one directory by attachment (if any) named "Attachment#'UniqID': 'name'"
  * with the name being the n first characters of the attachment filename. In
  * this folder are :</li>
  * <ul>
- * <li>the attachment descriptive metadata file (ArchiveUnitContent.xml),
+ * <li>the attachment descriptive metadata file (ArchiveUnitContent.xml
+ * or, in V2 model, __ArchiveUnitMetadata),
  * and</li>
  * <li>the attachment binary file, being a final object, named according the
- * format "'ObjectType'-'Version'-'filename'", with in this case ObjectType
+ * format "__'ObjectType'_'Version'_'filename'" or, in V2 model,
+ * "__'ObjectType'_'Version'__'filename'", with in this case ObjectType
  * being "BinaryMaster", version being "1", filename being the attachment file
  * name with extension if any.</li>
  * <li>the text version of attachment binary file, if option is set, named
- * according the format "'ObjectType'-'Version'-'filename'", with in this case
+ * according the format "__'ObjectType'_'Version'_'filename'" or, in V2 model,
+ *  * "__'ObjectType'_'Version'__'filename'", with in this case
  * ObjectType being "TextContent", version being "1", filename being the
  * attachment file name with extension if any.</li>
  * </ul>
  * <li>the message body in eml format file, being a final object, named
- * "BinaryMaster_1_'messageID'" with the messageID being the n first characters
+ * "__BinaryMaster_1_'messageID'", or in V2 model, "__BinaryMaster_1__'messageID'"
+ * with the messageID being the n first characters
  * of the uniq messageID , and</li>
  * <li>the message body in text format file, if option is set, being a final
- * object, named "TextContent_1_'messageID'" with the messageID being the n
+ * object, named "__TextContent_1_'messageID'", or in V2 model,
+ * "__TextContent_1__'messageID'" with the messageID being the n
  * first characters of the uniq messageID.</li>
  * </ul>
  * </ul>
