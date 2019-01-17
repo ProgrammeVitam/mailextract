@@ -36,20 +36,17 @@ import javax.mail.internet.MimeUtility;
  */
 public class MetadataPerson {
 
-	/** The first name. */
-	public String firstName;
-	
-	/** The birth name. */
-	public String birthName;
+	/** The full name. */
+	public String fullName;
 	
 	/** The identifier. */
 	public String identifier;
 
 	/**
-	 * Construct a person from an address encoded. Example TOTO John
+	 * Construct a person from an address encoded. Example: TOTO John
 	 * Do<toto@sample.fr>" is extracted as:
 	 * <p>
-	 * FirstName="John Do", BirthName="John Do", Identifier="toto@sample.fr"
+	 * FullName="TOTO John Do", Identifier="toto@sample.fr"
 	 * <p>
 	 * 
 	 * @param s
@@ -61,8 +58,7 @@ public class MetadataPerson {
 
 		if ((s == null) || s.isEmpty()) {
 			identifier = "[Vide]";
-			birthName = "[Vide]";
-			firstName = "[Vide]";
+			fullName = "[Vide]";
 			return;
 		}
 
@@ -88,8 +84,7 @@ public class MetadataPerson {
 				// Don't care
 			}
 
-		firstName = name;
-		birthName = name;
+		fullName = name;
 		return;
 	}
 }
