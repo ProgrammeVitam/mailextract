@@ -84,7 +84,7 @@ public class MetadataPerson {
 				// Don't care
 			}
 
-		fullName = name;
+		fullName = name.replaceAll("\\."," ");
 		return;
 	}
 }
