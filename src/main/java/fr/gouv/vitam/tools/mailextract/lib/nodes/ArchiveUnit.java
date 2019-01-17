@@ -300,9 +300,7 @@ public class ArchiveUnit {
 		if ((value != null) && !value.isEmpty()) {
 			p = new MetadataPerson(value);
 			mlMetaData = new MetadataXMLList();
-			mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
-			mlMetaData.addMetadataXMLNode(mvMetaData);
-			mvMetaData = new MetadataXMLNode("BirthName", p.birthName);
+			mvMetaData = new MetadataXMLNode("FullName", p.fullName);
 			mlMetaData.addMetadataXMLNode(mvMetaData);
 			mvMetaData = new MetadataXMLNode("Identifier", p.identifier);
 			mlMetaData.addMetadataXMLNode(mvMetaData);
@@ -372,9 +370,7 @@ public class ArchiveUnit {
 			for (String s : valuesList) {
 				p = new MetadataPerson(s);
 				mlMetaData = new MetadataXMLList();
-				mvMetaData = new MetadataXMLNode("FirstName", p.firstName);
-				mlMetaData.addMetadataXMLNode(mvMetaData);
-				mvMetaData = new MetadataXMLNode("BirthName", p.birthName);
+				mvMetaData = new MetadataXMLNode("FullName", p.fullName);
 				mlMetaData.addMetadataXMLNode(mvMetaData);
 				mvMetaData = new MetadataXMLNode("Identifier", p.identifier);
 				mlMetaData.addMetadataXMLNode(mvMetaData);

@@ -674,7 +674,7 @@ public abstract class StoreMessage extends StoreElement {
                 (receivedDate == null ? "" : sdf.format(receivedDate)));
         if ((from != null) && !from.isEmpty()) {
             MetadataPerson p = new MetadataPerson(from);
-            storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.birthName),
+            storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.fullName),
                     filterHyphen(p.identifier));
         }
         storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
