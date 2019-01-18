@@ -62,14 +62,9 @@ pipeline {
                 dir('libpst.git') {
                     git([url: 'https://github.com/rjohnsondev/java-libpst.git', branch: 'develop'])
                     // withEnv(["JAVA_TOOL_OPTIONS=-Dhttp.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttp.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttps.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttps.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttp.nonProxyHosts=pic-prod-nexus.vitam-env"]) {
-                    //     //sh '$MVN_COMMAND -f pom.xml clean install deploy'
-                    //     sh '$MVN_BASE --settings ../.ci/settings_internet.xml clean install -DskipTests'
-                    //     // -f pom.xml
+                    //     sh '$MVN_BASE --settings ../.ci/settings_internet.xml clean install -Dmaven.skip.tests=true -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip'
                     // }
-                    withEnv(["JAVA_TOOL_OPTIONS=-Dhttp.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttp.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttps.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttps.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttp.nonProxyHosts=pic-prod-nexus.vitam-env"]) {
-                        sh '$MVN_BASE --settings ../.ci/settings_internet.xml clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip'
-                    }
-                    sh '$MVN_COMMAND -f pom.xml -DskipTests -Dmaven.skip.tests=true $DEPLOY_GOAL'
+                    sh '$MVN_COMMAND -f pom.xml clean install -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip -Dmaven.skip.tests=true $DEPLOY_GOAL'
                 }
 
                 dir('mailextract.git') {
