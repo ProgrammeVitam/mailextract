@@ -55,44 +55,13 @@ pipeline {
             }
         }
 
-        stage("Build mailextract dependency") {
+        stage("Build mailextract") {
             environment {
                 DEPLOY_GOAL = readFile("deploy_goal.txt")
             }
             steps {
-                dir('libpst.git') {
-                     deleteDir()
-                }
-                dir('libpst.git') {
-                    git([url: 'https://github.com/rjohnsondev/java-libpst.git', branch: 'develop'])
-                    // withEnv(["JAVA_TOOL_OPTIONS=-Dhttp.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttp.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttps.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttps.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttp.nonProxyHosts=pic-prod-nexus.vitam-env"]) {
-                    //     sh '$MVN_BASE --settings ../.ci/settings_internet.xml clean install -Dmaven.skip.tests=true -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip'
-                    // }
-                    sh 'cp ../libpst-overwrite/pom.xml pom.xml'
-                    sh '$MVN_COMMAND -f pom.xml clean install -Dmaven.skip.tests=true -DskipTests -Dmaven.javadoc.skip=true -Dgpg.skip $DEPLOY_GOAL'
-
-                }
-
-                dir('mailextract.git') {
-                     deleteDir()
-                }
-                checkout([$class: 'GitSCM',
-                    branches: [[name: 'master']],
-                    doGenerateSubmoduleConfigurations: false,
-                    extensions: [[$class: 'RelativeTargetDirectory', relativeTargetDir: 'mailextract.git']],
-                    submoduleCfg: [],
-                    userRemoteConfigs: [[credentialsId: 'app-jenkins', url: "$MAILEXTRACT_GIT_URL"]]
-                ])
-
-                dir('mailextract.git') {
-                    //sh '$MVN_COMMAND -f pom.xml clean deploy -DskipTests -Dmaven.skip.tests=true'
-
-                    // withEnv(["JAVA_TOOL_OPTIONS=-Dhttp.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttp.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttps.proxyHost=${env.SERVICE_PROXY_HOST} -Dhttps.proxyPort=${env.SERVICE_PROXY_PORT} -Dhttp.nonProxyHosts=pic-prod-nexus.vitam-env"]) {
-                    //     sh '$MVN_BASE --settings ../.ci/settings_internet.xml clean install -DskipTests -Dmaven.skip.tests=true'
-                    // }
                     sh '$MVN_COMMAND -f pom.xml clean install -DskipTests -Dmaven.skip.tests=true $DEPLOY_GOAL'
                     // skipTests as windres is not installed
-                }
             }
         }
     }
