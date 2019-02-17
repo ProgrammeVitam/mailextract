@@ -27,12 +27,14 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
-import java.util.logging.Logger;
-
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.FOLDER;
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
 
 /**
  * Abstract class for a store content folder.
@@ -118,16 +120,16 @@ public abstract class StoreFolder {
 	 *
 	 * @return logger
 	 */
-	public Logger getLogger() {
+	public MailExtractProgressLogger getLogger() {
 		return storeExtractor.getLogger();
 	}
 
 	// log at the folder level considering storeExtractor depth
-	private void logFolder(String msg) {
+	private void logFolder(String msg) throws InterruptedException {
 		if (storeExtractor.isRoot())
-			storeExtractor.getLogger().fine(msg);
+			storeExtractor.getLogger().progressLog(FOLDER,msg);
 		else
-			storeExtractor.getLogger().finer(msg);
+			storeExtractor.getLogger().progressLog(MESSAGE_DETAILS,msg);
 	}
 
 	/**
@@ -263,7 +265,7 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public void extractFolderAsRoot(boolean writeFlag) throws ExtractionException {
+	public void extractFolderAsRoot(boolean writeFlag) throws ExtractionException, InterruptedException {
 		// log process on folder
 		logFolder("mailextract: Extract folder /");
 		// extract all elements in the folder to the unit directory
@@ -294,7 +296,7 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public boolean extractFolder(int level, boolean writeFlag) throws ExtractionException {
+	public boolean extractFolder(int level, boolean writeFlag) throws ExtractionException, InterruptedException {
 		boolean result = false;
 
 		// log process on folder
@@ -329,7 +331,7 @@ public abstract class StoreFolder {
 	}
 
 	// encapsulate the subclasses real processing method
-	private void extractFolderElements(boolean writeFlag) throws ExtractionException {
+	private void extractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		folderElementsCount = 0;
 		folderElementsRawSize = 0;
 		if (hasElements())
@@ -347,10 +349,10 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doExtractFolderElements(boolean writeFlag) throws ExtractionException;
+	protected abstract void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException;
 
 	// encapsulate the subclasses real processing method
-	private void extractSubFolders(int level, boolean writeFlag) throws ExtractionException {
+	private void extractSubFolders(int level, boolean writeFlag) throws ExtractionException, InterruptedException {
 		folderSubFoldersCount = 0;
 		if (hasSubfolders())
 			doExtractSubFolders(level, writeFlag);
@@ -370,7 +372,7 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException;
+	protected abstract void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException, InterruptedException;
 
 	/**
 	 * List all folders with or without statistics.
@@ -386,7 +388,7 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public void listFolder(boolean stats) throws ExtractionException {
+	public void listFolder(boolean stats) throws ExtractionException, InterruptedException {
 		// define a specific name "/" for the root folder
 		String fullName, tmp;
 
@@ -418,7 +420,7 @@ public abstract class StoreFolder {
 	}
 
 	// encapsulate the subclasses real processing method
-	private void listFolderElements(boolean stats) throws ExtractionException {
+	private void listFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		folderElementsCount = 0;
 		folderElementsRawSize = 0;
 		if (hasElements())
@@ -437,10 +439,10 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doListFolderElements(boolean stats) throws ExtractionException;
+	protected abstract void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException;
 
 	// encapsulate the subclasses real processing method
-	private void listSubFolders(boolean stats) throws ExtractionException {
+	private void listSubFolders(boolean stats) throws ExtractionException, InterruptedException {
 		folderSubFoldersCount = 0;
 		if (hasSubfolders())
 			doListSubFolders(stats);
@@ -456,6 +458,6 @@ public abstract class StoreFolder {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	protected abstract void doListSubFolders(boolean stats) throws ExtractionException;
+	protected abstract void doListSubFolders(boolean stats) throws ExtractionException, InterruptedException;
 
 }

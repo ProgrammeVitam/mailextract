@@ -81,31 +81,31 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	// Native message fields access functions
 
-	abstract protected String getNativeSmtpTransportHeader();
+	abstract protected String getNativeSmtpTransportHeader() throws InterruptedException;
 
-	abstract protected String getNativeSubject();
+	abstract protected String getNativeSubject() throws InterruptedException;
 
-	abstract protected String getNativeInternetMessageId();
+	abstract protected String getNativeInternetMessageId() throws InterruptedException;
 
-	abstract protected String getNativeSenderName();
+	abstract protected String getNativeSenderName() throws InterruptedException;
 
-	abstract protected String getNativeSentRepresentingName();
+	abstract protected String getNativeSentRepresentingName() throws InterruptedException;
 
-	abstract protected String getNativeSenderAddrType();
+	abstract protected String getNativeSenderAddrType() throws InterruptedException;
 
-	abstract protected String getNativeSenderEmailAddress();
+	abstract protected String getNativeSenderEmailAddress() throws InterruptedException;
 
-	abstract protected String getNativeSentRepresentingAddrType();
+	abstract protected String getNativeSentRepresentingAddrType() throws InterruptedException;
 
-	abstract protected String getNativeSentRepresentingEmailAddress();
+	abstract protected String getNativeSentRepresentingEmailAddress() throws InterruptedException;
 
-	abstract protected String getNativeReturnPath();
+	abstract protected String getNativeReturnPath() throws InterruptedException;
 
 	abstract protected Date getNativeMessageDeliveryTime();
 
 	abstract protected Date getNativeClientSubmitTime();
 
-	abstract protected String getNativeInReplyToId();
+	abstract protected String getNativeInReplyToId() throws InterruptedException;
 
 	abstract protected long getNativeMessageSize();
 
@@ -161,7 +161,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#prepareHeaders()
 	 */
 	// get the smtp transport header if any
-	protected void prepareAnalyze() {
+	protected void prepareAnalyze() throws InterruptedException {
 		String headerString;
 
 		if (!hasRFC822Headers()) {
@@ -187,7 +187,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeSubject()
 	 */
-	protected void analyzeSubject() {
+	protected void analyzeSubject() throws InterruptedException {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -228,7 +228,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeMessageID()
 	 */
-	protected void analyzeMessageID() {
+	protected void analyzeMessageID() throws InterruptedException {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -274,7 +274,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	// From specific functions
 
 	// get sender name using all possible sources
-	private String getSenderName() {
+	private String getSenderName() throws InterruptedException {
 		String result;
 
 		result = getNativeSenderName();
@@ -288,7 +288,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 
 	// get sender email address using all possible sources (sender and
 	// SentRepresenting field), and using SMTP first
-	private String getSenderEmailAddress() {
+	private String getSenderEmailAddress() throws InterruptedException {
 		String result = "";
 
 		if (getNativeSenderAddrType().equalsIgnoreCase("SMTP"))
@@ -310,7 +310,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeFrom()
 	 */
-	protected void analyzeFrom() {
+	protected void analyzeFrom() throws InterruptedException {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -351,7 +351,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeRecipients()
 	 */
-	protected void analyzeRecipients() {
+	protected void analyzeRecipients() throws InterruptedException {
 		if (hasRFC822Headers()) {
 			// smtp header value
 			recipientTo = rfc822Headers.getAddressHeader("To");
@@ -404,7 +404,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReplyTo()
 	 */
-	protected void analyzeReplyTo() {
+	protected void analyzeReplyTo() throws InterruptedException {
 		List<String> result = null;
 
 		if (hasRFC822Headers()) {
@@ -424,7 +424,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReturnPath()
 	 */
-	protected void analyzeReturnPath() {
+	protected void analyzeReturnPath() throws InterruptedException {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -467,7 +467,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeInReplyToId(
 	 * )
 	 */
-	protected void analyzeInReplyToId() {
+	protected void analyzeInReplyToId() throws InterruptedException {
 		String result = null;
 
 		if (hasRFC822Headers()) {
@@ -573,7 +573,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeAttachments(
 	 * )
 	 */
-	protected void analyzeAttachments() {
+	protected void analyzeAttachments() throws InterruptedException {
 		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
 		int attachmentNumber;
 		try {

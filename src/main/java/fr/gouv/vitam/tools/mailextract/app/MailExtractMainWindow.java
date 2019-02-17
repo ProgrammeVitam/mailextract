@@ -159,8 +159,8 @@ public class MailExtractMainWindow extends JFrame {
 	private JScrollPane scrollPane;
 
 	/** The proposed log level. */
-	String[] loglevelGraphicStrings = { "OFF", "ERREUR FATALE", "AVERTISSEMENT", "INFO PROCESS", "INFO DOSSIERS",
-			"INFO MESSAGES", "DETAIL MESSAGES" };
+	String[] loglevelGraphicStrings = { "OFF", "INFO GLOBALE", "AVERTISSEMENT", "DOSSIERS", "LOT DE MESSAGES",
+			"MESSAGES", "DETAIL MESSAGES" };
 	private JPanel panel;
 
 	/**

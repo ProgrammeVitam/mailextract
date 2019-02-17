@@ -117,7 +117,6 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		try {
 			mainWindow = new MailExtractMainWindow(this);
 			insertOptions();
-			redirectSystemStreams();
 			mainWindow.setVisible(true);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -291,12 +290,12 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (actionNumber == EMPTY_LOG) {
 			mainWindow.consoleTextArea.setText("");
 		} else
-			new MailExtractThread(actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
+			new MailExtractThread(mainWindow,actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
 					destName, storeExtractorOptions, logLevel).start();
 	}
 
 	/** The loglevel strings. */
-	String[] loglevelStrings = { "OFF", "SEVERE", "WARNING", "INFO", "FINE", "FINER", "FINEST" };
+	String[] loglevelStrings = { "OFF", "GLOBAL", "WARNING", "FOLDER", "MESSAGE_GROUP", "MESSAGE", "MESSAGE_DETAILS" };
 
 	// get the global parameters from the graphic fields
 	private void parseParams() {
@@ -384,38 +383,5 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				break;
 			}
 		}
-	}
-
-	// used to update console text area
-	private void updateTextArea(final String text) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				mainWindow.consoleTextArea.append(text);
-			}
-		});
-	}
-
-	// used to redirect out console stream to text area (no err redirection to
-	// avoid tika and other tools errors...)
-	private void redirectSystemStreams() {
-		OutputStream out = new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-				updateTextArea(String.valueOf((char) b));
-			}
-
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				updateTextArea(new String(b, off, len));
-			}
-
-			@Override
-			public void write(byte[] b) throws IOException {
-				write(b, 0, b.length);
-			}
-		};
-
-		System.setOut(new PrintStream(out, true));
-		// System.setErr(new PrintStream(out, true));
 	}
 }

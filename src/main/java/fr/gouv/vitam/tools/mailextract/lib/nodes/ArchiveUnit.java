@@ -35,11 +35,13 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
 
 /**
  * Class for SEDA Archive Unit managing metadata, objects, if any, and on disk
@@ -131,7 +133,7 @@ public class ArchiveUnit {
 	 *
 	 * @return logger
 	 */
-	public Logger getLogger() {
+	public MailExtractProgressLogger getLogger() {
 		return storeExtractor.getLogger();
 	}
 
@@ -194,11 +196,11 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addMetadata(String key, String value, boolean mandatory) {
+	public void addMetadata(String key, String value, boolean mandatory) throws InterruptedException {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, value));
 		else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -221,11 +223,11 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) {
+	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) throws InterruptedException {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
 		else if (mandatory) {
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
 					+ "' in folder '" + rootPath + "'");
 		}
 	}
@@ -264,13 +266,13 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addSameMetadataList(String key, List<String> valuesList, boolean mandatory) {
+	public void addSameMetadataList(String key, List<String> valuesList, boolean mandatory) throws InterruptedException {
 		if ((valuesList != null) && (!valuesList.isEmpty())) {
 			for (String s : valuesList) {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, s));
 			}
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -293,7 +295,7 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addPersonMetadata(String key, String value, boolean mandatory) {
+	public void addPersonMetadata(String key, String value, boolean mandatory) throws InterruptedException {
 		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
@@ -307,7 +309,7 @@ public class ArchiveUnit {
 			mlMetaData.addMetadataXMLNode(mvMetaData);
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -362,7 +364,7 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) {
+	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) throws InterruptedException {
 		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
@@ -378,7 +380,7 @@ public class ArchiveUnit {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 			}
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 

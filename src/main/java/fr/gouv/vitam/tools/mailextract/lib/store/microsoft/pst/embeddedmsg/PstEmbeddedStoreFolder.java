@@ -83,7 +83,7 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		lpStoreMessage.analyzeMessage();
 		dateRange.extendRange(lpStoreMessage.getSentDate());
 		lpStoreMessage.extractMessage(writeFlag);
@@ -156,7 +156,7 @@ public class PstEmbeddedStoreFolder extends StoreFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderElements(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		lpStoreMessage.countMessage();
 	}
 

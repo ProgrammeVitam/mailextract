@@ -36,7 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.logging.Logger;
 
 import javax.mail.Flags;
 import javax.mail.Folder;
@@ -50,6 +49,9 @@ import com.sun.mail.imap.protocol.BASE64MailboxDecoder;
 
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMMimeMessage;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox.MboxReader;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.WARNING;
 
 /**
  * JavaMail Folder for Thunderbird mbox directory/file structure.
@@ -69,7 +71,7 @@ public class ThunderbirdFolder extends Folder {
 	private ThunderbirdStore mstore;
 	private File folderFile;
 	private MboxReader mboxfilereader;
-	private Logger logger = Logger.getGlobal();
+	private MailExtractProgressLogger logger;
 
 	private class MessageFork {
 		long beg, end;
@@ -89,7 +91,7 @@ public class ThunderbirdFolder extends Folder {
 	 * @param logger
 	 *            Store extractor logger
 	 */
-	public void setLogger(Logger logger) {
+	public void setLogger(MailExtractProgressLogger logger) {
 		this.logger = logger;
 	}
 
@@ -212,11 +214,11 @@ public class ThunderbirdFolder extends Folder {
 
 	// test functions used to determine if a folder hold messages and/or
 	// subfolders
-	private boolean isSubFoldersDirectory(File test) {
+	private boolean isSubFoldersDirectory(File test){
 		if (!test.exists() || !test.isDirectory())
 			return false;
 		if (!test.getName().endsWith(".sbd")) {
-			logger.warning(
+			logger.progressLogWithoutInterruption(WARNING,
 					"ThunderMBox: Maybe sub folders directory " + test.getPath() + " without .sbd suffix is ignored");
 			return false;
 		}
@@ -241,7 +243,7 @@ public class ThunderbirdFolder extends Folder {
 			if (firstline == null || !firstline.startsWith("From"))
 				return false;
 		} catch (IOException e) {
-			logger.warning("ThunderMBox: Maybe mailbox file " + test.getPath() + " can't be opened and is ignored");
+			logger.progressLogWithoutInterruption(WARNING,"ThunderMBox: Maybe mailbox file " + test.getPath() + " can't be opened and is ignored");
 		} finally {
 			try {
 				if (reader != null)
@@ -253,7 +255,7 @@ public class ThunderbirdFolder extends Folder {
 		// then verify that an index file exists "fileName".msf
 		test = new File(test.getPath() + ".msf");
 		if (!test.exists())
-			logger.warning(
+			logger.progressLogWithoutInterruption(WARNING,
 					"ThunderMBox: Maybe mailbox file " + test.getPath() + " don't have an index file but is analyzed");
 		return true;
 	}
@@ -337,10 +339,10 @@ public class ThunderbirdFolder extends Folder {
 		HashMap<String, Integer> boxes = new HashMap<String, Integer>();
 		for (int i = 0; i < listOfFiles.length; i++) {
 			// first case directory for sub folders
-			if (isSubFoldersDirectory(listOfFiles[i])) {
-				addFlagHashMap(boxes, getFolderNameFromSubFolderDirectoryName(listOfFiles[i].getName()), HOLDS_FOLDERS);
-				continue;
-			}
+				if (isSubFoldersDirectory(listOfFiles[i])) {
+					addFlagHashMap(boxes, getFolderNameFromSubFolderDirectoryName(listOfFiles[i].getName()), HOLDS_FOLDERS);
+					continue;
+				}
 			// second case thunder mbox file
 			if (isThundebirdMboxFile(listOfFiles[i])) {
 				addFlagHashMap(boxes, getFolderNameFromFileName(listOfFiles[i].getName()), HOLDS_MESSAGES);
@@ -356,7 +358,7 @@ public class ThunderbirdFolder extends Folder {
 			if (listOfFiles[i].isFile() && listOfFiles[i].length() == 0)
 				continue;
 			// then garbage and warning
-			logger.warning("ThunderMBox: Wrong mailbox file " + listOfFiles[i].getName() + " in "
+			logger.progressLogWithoutInterruption(WARNING,"ThunderMBox: Wrong mailbox file " + listOfFiles[i].getName() + " in "
 					+ (folderFullName == null ? "root folder" : "folder " + folderFullName) + " is ignored");
 		}
 
@@ -392,8 +394,9 @@ public class ThunderbirdFolder extends Folder {
 	public boolean exists() {
 		if (folderFullName == null)
 			return true;
-		else
-			return isBox(folderFullName);
+		else {
+				return isBox(folderFullName);
+		}
 	}
 
 	/*
@@ -434,7 +437,7 @@ public class ThunderbirdFolder extends Folder {
 	 */
 	@Override
 	public Folder getFolder(String name) throws MessagingException {
-		return new ThunderbirdFolder(mstore, getSubFolderFullName(name));
+			return new ThunderbirdFolder(mstore, getSubFolderFullName(name));
 	}
 
 	/*

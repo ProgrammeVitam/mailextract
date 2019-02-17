@@ -27,16 +27,19 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.store.javamail.mbox;
 
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
-import java.util.logging.Logger;
 
 import javax.mail.internet.SharedInputStream;
 import javax.mail.util.SharedByteArrayInputStream;
 import javax.mail.util.SharedFileInputStream;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
 
 /**
  * Optimized buffered mbox file reader for Thunderbird mbox file.
@@ -46,7 +49,7 @@ import javax.mail.util.SharedFileInputStream;
  */
 public class MboxReader {
 
-	private Logger logger;
+	private MailExtractProgressLogger logger;
 
 	private String filePath;
 
@@ -74,7 +77,7 @@ public class MboxReader {
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
-	public MboxReader(Logger logger, File file) throws IOException {
+	public MboxReader(MailExtractProgressLogger logger, File file) throws IOException {
 		this.logger = logger;
 		this.filePath = file.getPath();
 		sifs = new SharedFileInputStream(file);
@@ -91,7 +94,7 @@ public class MboxReader {
 	 * @throws IOException
 	 *             Unable to open the file.
 	 */
-	public MboxReader(Logger logger, byte[] source) {
+	public MboxReader(MailExtractProgressLogger logger, byte[] source) {
 		this.logger = logger;
 		sifs = new SharedByteArrayInputStream(source);
 	}
@@ -106,7 +109,7 @@ public class MboxReader {
 	 *
 	 * @return logger
 	 */
-	public Logger getLogger() {
+	public MailExtractProgressLogger getLogger() {
 		return logger;
 	}
 
@@ -209,7 +212,7 @@ public class MboxReader {
 				return true;
 			else if (line.startsWith("From - "))
 				return true;
-			getLogger().finest("mailextract.mbox|thunderbird: Misleading '" + line + "' line in file " + filePath
+			getLogger().progressLogWithoutInterruption(MESSAGE_DETAILS,"mailextract.mbox|thunderbird: Misleading '" + line + "' line in file " + filePath
 					+ " at line " + Integer.toString(lineNum) + " is not considered as a message delimiter");
 			return false;
 		}

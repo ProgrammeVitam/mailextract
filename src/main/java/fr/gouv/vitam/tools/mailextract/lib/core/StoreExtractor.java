@@ -34,6 +34,7 @@ import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.PstStoreExtractor
 import fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg.PstEmbeddedStoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -44,10 +45,12 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.logging.Logger;
 import javax.mail.URLName;
 
 import java.io.PrintStream;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.GLOBAL;
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE;
 
 /**
  * Abstract factory class for operation context on a defined mailbox or mail
@@ -141,10 +144,11 @@ import java.io.PrintStream;
  * <p>
  * The extraction or listing operation is logged on console and file
  * (root/username[-timestamp].log - cf args). At the different levels (using
- * {@link java.util.logging.Logger}) you can have: extraction errors (SEVERE),
- * warning about extraction problems and items dropped (WARNING), information
- * about global process (INFO), list of treated folders (FINE), list of treated
- * messages (FINER), problems with some expected metadata (FINEST).
+ * {@link MailExtractProgressLogger}) you can have: information
+ * about global process and extraction errors (GLOBAL),
+ * warning about extraction problems and items dropped (WARNING), list of
+ * treated folders (FOLDER), accumulated count of treated messages (MESSAGE_GROUP),
+ * list of treated messages (MESSAGE), problems with some expected metadata (MESSAGE_DETAILS).
  * <p>
  * It's also possible (ruled by option) to generate a csv file with one line by
  * extracted message with a selection of metadata, including appointment details
@@ -219,6 +223,9 @@ public abstract class StoreExtractor {
 	/** Extractor context description. */
 	protected String description;
 
+	// message count
+	private int messageCount;
+
 	// private fields for global statictics
 	private int totalElementsCount;
 	private int totalAttachedMessagesCount;
@@ -232,7 +239,7 @@ public abstract class StoreExtractor {
 	private StoreExtractor rootStoreExtractor;
 
 	// private logger
-	private Logger logger;
+	private MailExtractProgressLogger logger;
 
 	// private output stream for extract list, if any
 	private PrintStream psExtractList;
@@ -319,7 +326,7 @@ public abstract class StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -327,7 +334,7 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	protected StoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
 
 		URLName url;
 		url = new URLName(urlString);
@@ -353,6 +360,7 @@ public abstract class StoreExtractor {
 		else
 			this.options = options;
 
+		this.messageCount = 0;
 		this.totalFoldersCount = 0;
 		this.totalAttachedMessagesCount = 0;
 		this.totalElementsCount = 0;
@@ -368,18 +376,18 @@ public abstract class StoreExtractor {
 	/**
 	 * Log the context of the StoreExtractor.
 	 */
-	public void writeTargetLog() {
+	public void writeTargetLog() throws InterruptedException {
 
 		// if root extractor log extraction context
 		if (rootStoreExtractor == null) {
-			getLogger().info(
+			getLogger().progressLog(GLOBAL,
 					"Target store with scheme=" + scheme + (host == null || host.isEmpty() ? "" : "  server=" + host)
 							+ (port == -1 ? "" : ":" + Integer.toString(port))
 							+ (user == null || user.isEmpty() ? "" : " user=" + user)
 							+ (password == null || password.isEmpty() ? "" : " password=" + password)
 							+ (path == null || path.isEmpty() ? "" : " path=" + path)
 							+ (storeFolder == null || storeFolder.isEmpty() ? "" : " store folder=" + storeFolder));
-			getLogger().info("to " + destRootPath + " in " + destName + " directory");
+			getLogger().progressLog(GLOBAL,"to " + destRootPath + " in " + destName + " directory");
 
 			boolean first = true;
 			String optionsLog = "";
@@ -405,14 +413,14 @@ public abstract class StoreExtractor {
 			first = false;
 			if (!first)
 				optionsLog += ", ";
-			optionsLog += "with log level " + getLogger().getLevel();
+			optionsLog += "with log level " + getLogger().getLevelName();
 
-			getLogger().info(optionsLog);
+			getLogger().progressLog(GLOBAL,optionsLog);
 		}
 		// if internal extractor give attachment context
 		else {
-			getLogger().finer("Target attached store scheme=" + scheme);
-			getLogger().finer("to " + destRootPath + " in " + destName + " directory");
+			getLogger().progressLog(MESSAGE,"Target attached store scheme=" + scheme);
+			getLogger().progressLog(MESSAGE,"to " + destRootPath + " in " + destName + " directory");
 		}
 
 	}
@@ -427,7 +435,7 @@ public abstract class StoreExtractor {
 	 *
 	 * @return logger
 	 */
-	public Logger getLogger() {
+	public MailExtractProgressLogger getLogger() {
 		return logger;
 	}
 
@@ -456,6 +464,20 @@ public abstract class StoreExtractor {
 			return uniqID++;
 		else
 			return rootStoreExtractor.getUniqID();
+	}
+
+	/**
+	 * Increment the count of messages directly in the store (not attached...).
+	 */
+	public void incMessageCount() {
+		messageCount ++;
+	}
+
+	/**
+	 * Get the count of messages directly in the store (not attached...).
+	 */
+	public int getMessageCount() {
+		return messageCount;
 	}
 
 	/**
@@ -614,7 +636,7 @@ public abstract class StoreExtractor {
 	 * @param options
 	 *            Options (flag composition of CONST_)
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @return the store extractor, constructed as a non abstract subclass
@@ -623,7 +645,7 @@ public abstract class StoreExtractor {
 	 *             format problems...)
 	 */
 	public static StoreExtractor createStoreExtractor(String urlString, String storeFolder, String destPathString,
-			StoreExtractorOptions options, Logger logger, PrintStream psExtractList) throws ExtractionException {
+			StoreExtractorOptions options, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
 		StoreExtractor storeExtractor;
 
 		storeExtractor = createInternalStoreExtractor(urlString, storeFolder, destPathString, options, null, logger,
@@ -643,7 +665,7 @@ public abstract class StoreExtractor {
 	 */
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	private static StoreExtractor createInternalStoreExtractor(String urlString, String storeFolder,
-			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger,
+			String destPathString, StoreExtractorOptions options, StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger,
 			PrintStream psExtractList) throws ExtractionException {
 
 		StoreExtractor store;
@@ -662,7 +684,7 @@ public abstract class StoreExtractor {
 		} else {
 			try {
 				store = (StoreExtractor) storeExtractorClass.getConstructor(String.class, String.class, String.class,
-						StoreExtractorOptions.class, StoreExtractor.class, Logger.class, PrintStream.class)
+						StoreExtractorOptions.class, StoreExtractor.class, MailExtractProgressLogger.class, PrintStream.class)
 						.newInstance(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,
 								psExtractList);
 			} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException
@@ -692,13 +714,13 @@ public abstract class StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public void extractAllFolders() throws ExtractionException {
+	public void extractAllFolders() throws ExtractionException, InterruptedException {
 		String title;
 
 		Instant start = Instant.now();
 
 		writeTargetLog();
-		getLogger().info("Extraction processed");
+		getLogger().progressLog(GLOBAL,"Extraction processed");
 
 		rootAnalysisMBFolder.extractFolderAsRoot(true);
 
@@ -725,7 +747,7 @@ public abstract class StoreExtractor {
 
 		Instant end = Instant.now();
 		String size = Double.toString(Math.round(((double) getTotalRawSize()) * 100.0 / (1024.0 * 1024.0)) / 100.0);
-		getLogger().info("Terminated in " + Duration.between(start, end).toString() + " writing "
+		getLogger().progressLog(GLOBAL,"Terminated in " + Duration.between(start, end).toString() + " writing "
 				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
 				+ " messages, for a total size of " + size + " MBytes and "
 				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
@@ -752,14 +774,14 @@ public abstract class StoreExtractor {
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
-	public void listAllFolders(boolean stats) throws ExtractionException {
+	public void listAllFolders(boolean stats) throws ExtractionException, InterruptedException {
 		String time, tmp;
 		Duration d;
 
 		Instant start = Instant.now();
 
 		writeTargetLog();
-		getLogger().info("Listing processed");
+		getLogger().progressLog(GLOBAL,"Listing processed");
 
 		rootAnalysisMBFolder.listFolder(stats);
 
@@ -775,8 +797,8 @@ public abstract class StoreExtractor {
 					getTotalAttachedMessagesCount());
 		}
 
+		getLogger().progressLog(GLOBAL,tmp);
 		System.out.println(tmp);
-		getLogger().info(tmp);
 	}
 
 	/**

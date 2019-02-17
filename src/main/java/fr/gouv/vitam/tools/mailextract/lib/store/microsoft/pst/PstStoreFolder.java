@@ -101,7 +101,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		PSTMessage message;
 
 		try {
@@ -131,7 +131,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * int)
 	 */
 	@Override
-	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException {
+	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException, InterruptedException {
 		PstStoreFolder lPMailBoxSubFolder;
 
 		try {
@@ -202,7 +202,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderElements(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		PSTMessage message;
 
 		try {
@@ -226,7 +226,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * boolean)
 	 */
 	@Override
-	protected void doListSubFolders(boolean stats) throws ExtractionException {
+	protected void doListSubFolders(boolean stats) throws ExtractionException, InterruptedException {
 		PstStoreFolder lPMailBoxSubFolder;
 
 		try {

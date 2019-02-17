@@ -117,14 +117,14 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @param size
 	 *            the size
 	 */
-	public MsgStoreMessage(StoreFolder mBFolder, MAPIMessage message, long size) {
+	public MsgStoreMessage(StoreFolder mBFolder, MAPIMessage message, long size) throws InterruptedException {
 		super(mBFolder);
 		this.message = message;
 		this.size = size;
 		getConversationIndex();
 	}
 
-	private void getConversationIndex() {
+	private void getConversationIndex() throws InterruptedException {
 		byte[] byteConversationIndex = getByteItem(CONVERSATION_INDEX);
 		if (byteConversationIndex != null) {
 			msgConversationIndex = new MsgConversationIndex(byteConversationIndex);
@@ -141,7 +141,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return size;
 	}
 
-	private String getStringItem(int item) {
+	private String getStringItem(int item) throws InterruptedException {
 		String result = "";
 		MAPIProperty prop = MAPIProperty.get(item);
 		List<Chunk> lChunk = message.getMainChunks().getAll().get(prop);
@@ -159,7 +159,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 		return result;
 	}
 
-	private byte[] getByteItem(int item) {
+	private byte[] getByteItem(int item) throws InterruptedException {
 		byte[] result = null;
 		MAPIProperty prop = MAPIProperty.get(item);
 		List<Chunk> lChunk = message.getMainChunks().getAll().get(prop);
@@ -194,7 +194,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSmtpTransportHeader()
 	 */
 	@Override
-	protected String getNativeSmtpTransportHeader() {
+	protected String getNativeSmtpTransportHeader() throws InterruptedException {
 		return getStringItem(SMTP_TRANSPORT_HEADER);
 	}
 
@@ -202,7 +202,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSubject()
 	 */
 	@Override
-	protected String getNativeSubject() {
+	protected String getNativeSubject() throws InterruptedException {
 		return getStringItem(SUBJECT);
 	}
 
@@ -210,7 +210,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeInternetMessageId()
 	 */
 	@Override
-	protected String getNativeInternetMessageId() {
+	protected String getNativeInternetMessageId() throws InterruptedException {
 		return getStringItem(INTERNET_MESSAGE_ID);
 	}
 
@@ -218,7 +218,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderName()
 	 */
 	@Override
-	protected String getNativeSenderName() {
+	protected String getNativeSenderName() throws InterruptedException {
 		return getStringItem(SENDER_NAME);
 	}
 
@@ -226,7 +226,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingName()
 	 */
 	@Override
-	protected String getNativeSentRepresentingName() {
+	protected String getNativeSentRepresentingName() throws InterruptedException {
 		return getStringItem(SENT_REPRESENTING_NAME);
 	}
 
@@ -234,7 +234,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderAddrType()
 	 */
 	@Override
-	protected String getNativeSenderAddrType() {
+	protected String getNativeSenderAddrType() throws InterruptedException {
 		return getStringItem(SENDER_ADDR_TYPE);
 	}
 
@@ -242,7 +242,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSenderEmailAddress()
 	 */
 	@Override
-	protected String getNativeSenderEmailAddress() {
+	protected String getNativeSenderEmailAddress() throws InterruptedException {
 		return getStringItem(SENDER_EMAIL_ADDRESS);
 	}
 
@@ -250,7 +250,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingAddrType()
 	 */
 	@Override
-	protected String getNativeSentRepresentingAddrType() {
+	protected String getNativeSentRepresentingAddrType() throws InterruptedException {
 		return getStringItem(SENT_REPRESENTING_ADDR_TYPE);
 	}
 
@@ -258,7 +258,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeSentRepresentingEmailAddress()
 	 */
 	@Override
-	protected String getNativeSentRepresentingEmailAddress() {
+	protected String getNativeSentRepresentingEmailAddress() throws InterruptedException {
 		return getStringItem(SENT_REPRESENTING_EMAIL_ADDRESS);
 	}
 
@@ -266,7 +266,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeReturnPath()
 	 */
 	@Override
-	protected String getNativeReturnPath() {
+	protected String getNativeReturnPath() throws InterruptedException {
 		return getStringItem(RETURN_PATH);
 	}
 
@@ -290,7 +290,7 @@ public class MsgStoreMessage extends MicrosoftStoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.store.microsoft.MicrosoftStoreMessage#getNativeInReplyToId()
 	 */
 	@Override
-	protected String getNativeInReplyToId() {
+	protected String getNativeInReplyToId() throws InterruptedException {
 		return getStringItem(IN_REPLY_TO_ID);
 	}
 

@@ -31,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import javax.mail.Flags;
 import javax.mail.Folder;
@@ -41,6 +40,7 @@ import javax.mail.MethodNotSupportedException;
 import javax.mail.URLName;
 
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMMimeMessage;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 
 /**
  * JavaMail Folder for mbox file structure.
@@ -55,7 +55,7 @@ public class MboxFolder extends Folder {
 	private volatile boolean opened = false;
 	private MboxStore mboxstore;
 	private MboxReader mboxfilereader;
-	private Logger logger = Logger.getGlobal();
+	private MailExtractProgressLogger logger ;
 	private List<MessageFork> messages;
 	private int total; // total number of messages in mailbox
 
@@ -77,7 +77,7 @@ public class MboxFolder extends Folder {
 	 * @param logger
 	 *            Store extractor logger
 	 */
-	public void setLogger(Logger logger) {
+	public void setLogger(MailExtractProgressLogger logger) {
 		this.logger = logger;
 	}
 

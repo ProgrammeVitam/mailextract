@@ -45,6 +45,9 @@ import java.util.logging.SimpleFormatter;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.GLOBAL;
 
 /**
  * MailExtractThread class for the real extraction command
@@ -53,6 +56,9 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
  */
 public class MailExtractThread extends Thread {
 
+	/** The main window. */
+	private MailExtractMainWindow mainWindow;
+
 	/** The action number. */
 	private int actionNumber;
 
@@ -60,45 +66,45 @@ public class MailExtractThread extends Thread {
 	private StoreExtractor storeExtractor;
 
 	/** The logger. */
-	private Logger logger;
+	private MailExtractProgressLogger logger;
 	
 	/** The output stream for extract list, if any. */
 	private PrintStream psExtractList;
 
-	// generate a specific logger at the loglevel defined in constructor and
-	// sending to stdout console instead of stderr console
-	private Logger generateLogger(String fileName, Level logLevel) throws Exception {
-		Logger logger;
-		try {
-			Properties props = System.getProperties();
-			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-			logger = Logger.getLogger(Long.toString(this.getId()));
-			logger.setLevel(logLevel);
-
-			Formatter simpleFormatter;
-			simpleFormatter = new SimpleFormatter();
-
-			if (logLevel != Level.OFF) {
-				Files.createDirectories(Paths.get(fileName).getParent());
-				Handler fileHandler = new FileHandler(fileName);
-				fileHandler.setFormatter(simpleFormatter);
-				fileHandler.setLevel(logLevel);
-				logger.addHandler(fileHandler);
-			}
-
-			Handler consoleHandler = new StdoutConsoleHandler();
-			consoleHandler.setFormatter(simpleFormatter);
-			consoleHandler.setLevel(logLevel);
-			logger.addHandler(consoleHandler);
-
-			// don't use ConsoleHandler at global level
-			logger.setUseParentHandlers(false);
-		} catch (IOException e) {
-			throw new Exception("mailextract: Can't create logger");
-		}
-		return logger;
-	}
-
+//	// generate a specific logger at the loglevel defined in constructor and
+//	// sending to stdout console instead of stderr console
+//	private Logger generateLogger(String fileName, Level logLevel) throws Exception {
+//		Logger logger;
+//		try {
+//			Properties props = System.getProperties();
+//			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
+//			logger = Logger.getLogger(Long.toString(this.getId()));
+//			logger.setLevel(logLevel);
+//
+//			Formatter simpleFormatter;
+//			simpleFormatter = new SimpleFormatter();
+//
+//			if (logLevel != Level.OFF) {
+//				Files.createDirectories(Paths.get(fileName).getParent());
+//				Handler fileHandler = new FileHandler(fileName);
+//				fileHandler.setFormatter(simpleFormatter);
+//				fileHandler.setLevel(logLevel);
+//				logger.addHandler(fileHandler);
+//			}
+//
+//			Handler consoleHandler = new StdoutConsoleHandler();
+//			consoleHandler.setFormatter(simpleFormatter);
+//			consoleHandler.setLevel(logLevel);
+//			logger.addHandler(consoleHandler);
+//
+//			// don't use ConsoleHandler at global level
+//			logger.setUseParentHandlers(false);
+//		} catch (IOException e) {
+//			throw new Exception("mailextract: Can't create logger");
+//		}
+//		return logger;
+//	}
+//
 	/**
 	 * Instantiates a new mail extract thread.
 	 *
@@ -127,14 +133,17 @@ public class MailExtractThread extends Thread {
 	 * @param logLevel
 	 *            the log level
 	 */
-	public MailExtractThread(int actionNumber, String protocol, String host, int port, String user, String password,
+	public MailExtractThread(MailExtractMainWindow mainWindow,int actionNumber, String protocol, String host, int port, String user, String password,
 			String container, String folder, String destRootPath, String destName,
 			StoreExtractorOptions storeExtractorOptions, String logLevel) {
-
-		logger = null;
-
+		this.mainWindow=mainWindow;
 		try {
-			logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
+			MailExtractLogger mel=new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
+			logger = new MailExtractProgressLogger(mel.getLogger(), MailExtractLogger.getLevel(logLevel), (count, log) -> {
+				String newLog = mainWindow.consoleTextArea.getText() + "\n" + log;
+				mainWindow.consoleTextArea.setText(newLog);
+				mainWindow.consoleTextArea.setCaretPosition(newLog.length());
+			}, 100);
 			if (storeExtractorOptions.extractList)
 				psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
 			else 
@@ -150,8 +159,9 @@ public class MailExtractThread extends Thread {
 					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
 			this.actionNumber = actionNumber;
 		} catch (ExtractionException ee) {
-			logger.severe(ee.getMessage());
-		} catch (Exception e) {
+			logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+		}
+		catch (Exception e) {
 			this.actionNumber = 0;
 			System.out.println(getPrintStackTrace(e));
 		}
@@ -180,7 +190,9 @@ public class MailExtractThread extends Thread {
 
 			}
 		} catch (ExtractionException ee) {
-			logger.severe(ee.getMessage());
+			logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+		} 		catch (InterruptedException ie) {
+			logger.progressLogWithoutInterruption(GLOBAL,ie.getMessage());
 		} catch (Exception e) {
 			System.out.println(getPrintStackTrace(e));
 		} finally {
@@ -188,15 +200,10 @@ public class MailExtractThread extends Thread {
 				if (storeExtractor!=null)
 					storeExtractor.endStoreExtractor();
 			} catch (ExtractionException e) {
-				logger.severe(e.getMessage());
+				logger.progressLogWithoutInterruption(GLOBAL,e.getMessage());
 			}
 			if (logger != null) {
-				Handler[] handler = logger.getHandlers();
-				for (Handler h : handler) {
-					h.close();
-					logger.removeHandler(h);
-				}
-				logger = null;
+				logger.close();
 			}
 		}
 	}
