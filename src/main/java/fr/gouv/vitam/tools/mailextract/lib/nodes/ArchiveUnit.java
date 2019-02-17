@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -473,9 +474,9 @@ public class ArchiveUnit {
 
 		// write unit metadata file
 		if (storeExtractor.getOptions().model==StoreExtractorOptions.MODEL_V1)
-			writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes());
+			writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes(StandardCharsets.UTF_8));
 		else 
-			writeFile(dirPath, "__ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes());
+			writeFile(dirPath, "__ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes(StandardCharsets.UTF_8));
 
 
 		// write objects files

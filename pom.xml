@@ -51,7 +51,6 @@
                     </snapshots>
                 </pluginRepository>
             </pluginRepositories>
-
         </profile>
     </profiles>
 
@@ -214,9 +213,8 @@
 								<minVersion>1.7.0</minVersion>
 								<maxVersion></maxVersion>
 								<jdkPreference>preferJre</jdkPreference>
-								<runtimeBits>64/32</runtimeBits>
+								<runtimeBits>64</runtimeBits>
 								<opts>
-									<opt>-Dfile.encoding="UTF-8"</opt>
 									<opt>-Xms1024m</opt>
 								</opts>
 							</jre>
