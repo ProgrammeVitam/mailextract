@@ -556,9 +556,6 @@ public abstract class StoreMessage extends StoreElement {
         // String description = "[Vide]";
         String textContent = null;
 
-        if (messageID.equals("<20CBF48095D47140B58E9F5202ADD9800BD0837C71@KIARA.cab.travail.gouv.fr>"))
-            System.out.println("Got it!");
-
         // create message unit
         if ((subject == null) || subject.trim().isEmpty())
             subject = "[Vide]";
@@ -651,7 +648,7 @@ public abstract class StoreMessage extends StoreElement {
             mimeContent = "".getBytes();
 
         // add object binary master except if empty one
-        if (!isEmptyBodies() || (attachments != null))
+        if (mimeContent != null)
             messageNode.addObject(mimeContent, messageID + ".eml", "BinaryMaster", 1);
 
         if (writeFlag)

@@ -2,7 +2,7 @@
  * Copyright French Prime minister Office/SGMAP/DINSIC/Vitam Program (2015-2019)
  *
  * contact.vitam@culture.gouv.fr
- * 
+ *
  * This software is a computer program whose purpose is to implement a digital archiving back-office system managing
  * high volumetry securely and efficiently.
  *
@@ -535,7 +535,10 @@ public class ArchiveUnit {
 
 		if (result.length() > len)
 			result = result.substring(0, len);
-		result = type + "#" + Integer.toString(storeExtractor.getUniqID()) + "-" + result;
+		int uniqID=storeExtractor.getUniqID();
+		if (uniqID==9789)
+		    System.out.println("Here");
+		result = type + "#" + Integer.toString(uniqID) + "-" + result;
 
 		return result;
 	}
