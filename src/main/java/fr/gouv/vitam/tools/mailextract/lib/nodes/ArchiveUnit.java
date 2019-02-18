@@ -538,8 +538,6 @@ public class ArchiveUnit {
 		if (result.length() > len)
 			result = result.substring(0, len);
 		int uniqID=storeExtractor.getUniqID();
-		if (uniqID==9789)
-		    System.out.println("Here");
 		result = type + "#" + Integer.toString(uniqID) + "-" + result;
 
 		return result;
