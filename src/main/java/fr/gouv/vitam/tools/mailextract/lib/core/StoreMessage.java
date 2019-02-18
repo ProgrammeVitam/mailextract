@@ -687,7 +687,7 @@ public abstract class StoreMessage extends StoreElement {
         storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(subject));
         storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(messageID));
         storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(attachmentsNamesList()));
-        if (replyTo == null)
+        if ((replyTo == null) || replyTo.isEmpty())
             storeFolder.getStoreExtractor().getPSExtractList().format("\"\"|");
         else {
             MetadataPerson p = new MetadataPerson(replyTo.get(0));

@@ -131,7 +131,7 @@
 		<dependency>
 			<groupId>com.pff</groupId>
 			<artifactId>java-libpst</artifactId>
-			<version>0.9.5-SNAPSHOT</version>
+			<version>0.9.5-VITAM</version>
 		</dependency>
 		<dependency>
 			<groupId>net.sf.launch4j</groupId>

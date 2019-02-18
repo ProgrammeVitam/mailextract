@@ -38,8 +38,12 @@ import com.pff.PSTObject;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
+import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.WARNING;
 
 /**
  * StoreFolder sub-class for mail boxes extracted through libpst library.
@@ -94,6 +98,12 @@ public class PstStoreFolder extends StoreFolder {
 		return result;
 	}
 
+	private void logMessageWarning(String msg) throws InterruptedException {
+		if (getStoreExtractor().getOptions().warningMsgProblem)
+			getLogger().progressLog(WARNING,msg);
+		else
+			getLogger().progressLog(MESSAGE_DETAILS,msg);
+	}
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -103,7 +113,7 @@ public class PstStoreFolder extends StoreFolder {
 	@Override
 	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		PSTMessage message;
-
+		int mes=0;
 		try {
 			PSTObject po = pstFolder.getNextChild();
 			message = (PSTMessage) po;
@@ -113,7 +123,19 @@ public class PstStoreFolder extends StoreFolder {
 				dateRange.extendRange(lPStoreMessage.getSentDate());
 				lPStoreMessage.extractMessage(writeFlag);
 				lPStoreMessage.countMessage();
-				po = pstFolder.getNextChild();
+				boolean error;
+				do {
+					try {
+						mes++;
+					po = pstFolder.getNextChild();
+					error=false;
+				}
+				catch (Exception e){
+					error=true;
+					logMessageWarning("mailextract.pst: Wrongly formatted message in pst file skipped");
+				}
+				}
+				while (error && (po!=null));
 				message = (PSTMessage) po;
 			}
 		} catch (IOException e) {
@@ -177,7 +199,7 @@ public class PstStoreFolder extends StoreFolder {
 	@Override
 	public boolean hasElements() throws ExtractionException {
 		try {
-			return pstFolder.getEmailCount() > 0;
+			return (pstFolder.getEmailCount() > 0) || (pstFolder.getContentCount() > 0);
 		} catch (IOException e) {
 			throw new ExtractionException("mailextract.libpst: Can't use pst file");
 		} catch (PSTException e) {
