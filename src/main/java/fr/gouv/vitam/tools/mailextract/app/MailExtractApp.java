@@ -32,6 +32,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Properties;
@@ -216,6 +217,7 @@ public class MailExtractApp {
 		parser.accepts("password", "password").withRequiredArg();
 		parser.accepts("server", "mail server [HostName|IP](:port)").withRequiredArg();
 		parser.accepts("container", "local container directory or file to extract").withRequiredArg();
+		parser.accepts("setchar", "default charset").withRequiredArg();
 		parser.accepts("folder", "specific mail folder").withRequiredArg();
 		parser.accepts("rootdir", "root (default current directory) for output to root/username directory")
 				.withRequiredArg();
@@ -262,7 +264,7 @@ public class MailExtractApp {
 		int model = 2;
 		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
-		String logLevel;
+		String logLevel,defaultCharset;
 
 		// outputs
 		MailExtractProgressLogger logger = null;
@@ -332,9 +334,15 @@ public class MailExtractApp {
 		else
 			protocol = "";
 
+		// identify default charset
+		if (options.has("setchar"))
+			defaultCharset = (String) options.valueOf("setchar");
+		else
+			defaultCharset = Charset.defaultCharset().name();
+
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength, options.has("extractlist"), options.has("extractmessagetextfile"),
+				options.has("warning"), namesLength, defaultCharset, options.has("extractlist"), options.has("extractmessagetextfile"),
 				options.has("extractmessagetextmetadata"), options.has("extractfiletextfile"),
 				options.has("extractfiletextmetadata"),model);
 

@@ -115,6 +115,7 @@ public class PstStoreFolder extends StoreFolder {
 		PSTMessage message;
 		try {
 			PSTObject po = pstFolder.getNextChild();
+			int mes=0;
 			message = (PSTMessage) po;
 			while (message != null) {
 				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
@@ -125,6 +126,9 @@ public class PstStoreFolder extends StoreFolder {
 				boolean error;
                 do {
                     try {
+                        mes++;
+                        if (mes==1023)
+                            System.out.println("Here");
                         po = pstFolder.getNextChild();
                         error = false;
                     } catch (Exception e) {

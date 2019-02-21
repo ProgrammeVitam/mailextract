@@ -109,6 +109,8 @@ public class PstStoreExtractor extends StoreExtractor {
 					"mailExtract.pst: can't open " + path + ", doesn't exist or is not a pst file");
 		}
 
+		pstFile.setGlobalCodepage(options.defaultCharsetName);
+
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
 		PstStoreFolder lPRootMailBoxFolder;
 

@@ -178,6 +178,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 
 		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 
+		mainWindow.charsetComboBox.setSelectedItem(storeExtractorOptions.defaultCharsetName);
+
 		// convert from normalized log level name to the choice list log level
 		for (int i = 0; i < 7; i++) {
 			if (logLevel.equals(loglevelStrings[i])) {
@@ -373,6 +375,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		} catch (NumberFormatException e) {
 			mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 		}
+
+		storeExtractorOptions.defaultCharsetName = (String) mainWindow.charsetComboBox.getSelectedItem();
 
 		// convert from log level name in the choice list to normalized log
 		// level
