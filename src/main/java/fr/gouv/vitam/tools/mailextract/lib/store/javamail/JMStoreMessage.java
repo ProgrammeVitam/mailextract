@@ -529,6 +529,12 @@ public class JMStoreMessage extends StoreMessage {
 		return baos.toByteArray();
 	}
 
+	// replace illegal characters in a filename with "_"
+	// illegal characters : \ / * ? | < >
+	private static String sanitizeFilename(String name) {
+		return name.replaceAll("[:\\\\/*?|<>]", "_");
+	}
+
 	// add one attachment
 	private void addAttachment(List<StoreMessageAttachment> lStoreMessageAttachment, BodyPart bodyPart)
 			throws IOException, MessagingException, ParseException {
@@ -573,7 +579,7 @@ public class JMStoreMessage extends StoreMessage {
 					aType = StoreMessageAttachment.STORE_ATTACHMENT;
 				aMimeType = contenttype.getBaseType();
 				if (aName == null)
-					aName = contenttype.getParameter("name");
+                    aName = contenttype.getParameter("name");
 			} catch (Exception e) {
 				aMimeType = headers[0];
 				if (aMimeType.indexOf(';') != -1)
@@ -594,11 +600,17 @@ public class JMStoreMessage extends StoreMessage {
 		if ((headers != null) && (headers.length != 0))
 			aContentID = headers[0];
 
-		// define a filename if not defined in headers
+		// define a filename if not defined in headers, encode and sanitize it
 		if (aName == null)
 			aName = "noname";
+		else
+		    try {
+            aName=MimeUtility.decodeText(aName);
+            }
+            catch (Exception e){}
+		aName=sanitizeFilename(aName);
 
-		if (aType == StoreMessageAttachment.STORE_ATTACHMENT)
+        if (aType == StoreMessageAttachment.STORE_ATTACHMENT)
 			lStoreMessageAttachment.add(new StoreMessageAttachment(getPartRawContent(bodyPart), "eml",
 					MimeUtility.decodeText(aName), aCreationDate, aModificationDate, aMimeType, aContentID, aType));
 		else

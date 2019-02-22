@@ -1100,36 +1100,6 @@ public abstract class StoreMessage extends StoreElement {
                     }
                 }
 
-                // // de-encapulate HTML from RTF if needed
-                // if (((bodyContent[RTF_BODY] != null) &&
-                // !bodyContent[RTF_BODY].isEmpty())) {
-                // HTMLFromRTFExtractor htmlExtractor = new
-                // HTMLFromRTFExtractor(bodyContent[RTF_BODY]);
-                // if (htmlExtractor.isEncapsulatedTEXTinRTF()) {
-                // String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-                // if ((result != null) && !result.isEmpty()) {
-                // if ((bodyContent[TEXT_BODY] == null) ||
-                // bodyContent[TEXT_BODY].isEmpty()) {
-                // bodyContent[TEXT_BODY] = result;
-                // bodyContent[RTF_BODY] = null;
-                // } else {
-                // result = result.trim();
-                // if (bodyContent[TEXT_BODY].equals(result))
-                // bodyContent[RTF_BODY] = null;
-                // }
-                // }
-                // } else if (htmlExtractor.isEncapsulatedHTMLinRTF()
-                // && ((bodyContent[HTML_BODY] == null) ||
-                // bodyContent[HTML_BODY].isEmpty())) {
-                // String result = htmlExtractor.getDeEncapsulateHTMLFromRTF();
-                // if ((result != null) && !result.isEmpty()) {
-                // bodyContent[HTML_BODY] = result;
-                // bodyContent[RTF_BODY] = null;
-                // }
-                // }
-                //
-                // }
-
                 // determine in which part to add related
                 if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
                     relatedPart = RTF_BODY;
