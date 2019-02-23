@@ -538,6 +538,11 @@ public class ArchiveUnit {
 		if (result.length() > len)
 			result = result.substring(0, len);
 		int uniqID=storeExtractor.getUniqID();
+		if (uniqID==16047)
+			System.out.println("ID Here");
+		if ("TR : JM/SP/mb 44722 - CULTURE / ASSOCIATION PROMOUVOIR (SAW 3D)".equals(filename))
+			System.out.println("Name Here");
+
 		result = type + "#" + Integer.toString(uniqID) + "-" + result;
 
 		return result;

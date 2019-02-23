@@ -209,8 +209,8 @@ public class MailExtractMainWindow extends JFrame {
 		}
 		this.setTitle("MailExtract");
 
-		getContentPane().setPreferredSize(new Dimension(800, 600));
-		setBounds(0, 0, 800, 700);
+		getContentPane().setPreferredSize(new Dimension(800, 800));
+		setBounds(0, 0, 800, 800);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWeights = new double[] { 1.0, 1, 1, 1};

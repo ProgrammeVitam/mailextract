@@ -923,7 +923,7 @@ public abstract class StoreMessage extends StoreElement {
      * @return the mime fake
      */
     public MimeMessage getMimeFake() throws InterruptedException {
-        MimeMessage mime = new FixIDMimeMessage(Session.getDefaultInstance(new Properties()));
+        MimeMessage mime = new NoUpdateMimeMessage(Session.getDefaultInstance(new Properties()));
         try {
             buildMimeHeader(mime);
             buildMimePart(mime);
@@ -990,9 +990,8 @@ public abstract class StoreMessage extends StoreElement {
             // Reply-To
             if (replyTo != null)
                 setAddressList(mime, "Reply-To", replyTo);
-            // Date
-            if (sentDate != null)
-                mime.setSentDate(sentDate);
+            // Date, if null Date is deleted
+            mime.setSentDate(sentDate);
             // Subject
             if (subject != null)
                 mime.setSubject(MimeUtility.encodeText(subject));
@@ -1187,14 +1186,11 @@ public abstract class StoreMessage extends StoreElement {
     }
 
     /**
-     * Prevent update Message-ID
-     *
-     * @author inter6
-     *
+     * Prevent update of Message-ID and of Date header with now date
      */
-    private class FixIDMimeMessage extends MimeMessage {
+    private class NoUpdateMimeMessage extends MimeMessage {
 
-        public FixIDMimeMessage(Session session) {
+        public NoUpdateMimeMessage(Session session) {
             super(session);
         }
 
@@ -1206,8 +1202,12 @@ public abstract class StoreMessage extends StoreElement {
             }
         }
 
-        ;
-
+        @Override
+        protected synchronized void updateHeaders() throws MessagingException {
+            String[] date=getHeader("Date");
+            super.updateHeaders();
+            if (date==null)
+                removeHeader("Date");
+        }
     }
-
 }
