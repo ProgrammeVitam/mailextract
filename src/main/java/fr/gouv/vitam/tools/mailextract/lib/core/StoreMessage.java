@@ -1029,31 +1029,31 @@ public abstract class StoreMessage extends StoreElement {
                         cidName = "unknown";
 
                     // set object and Content-Type
-                    String attachmentName = encodedFilename(a.name, cidName);
+                    String attachmentFilename = encodedFilename(a.name, a.mimeType, cidName);
                     if ((a.mimeType == null) || (a.mimeType.isEmpty()))
                         attachPart.setContent(a.getRawAttachmentContent(),
-                                "application/octet-stream; name=\"" + attachmentName + "\"");
+                                "application/octet-stream; name=\"" + attachmentFilename + "\"");
                     else {
                         if (a.mimeType.startsWith("text")) {
                             String s;
                             s = new String(a.getRawAttachmentContent(), "UTF-8");
-                            attachPart.setContent(s, a.mimeType + "; name=\"" + attachmentName + "\"");
+                            attachPart.setContent(s, a.mimeType + "; name=\"" + attachmentFilename + "\"");
                         } else if (a.mimeType.startsWith("message")) {
                             // bypass datahandler as the rfc822 form is provided
                             RawDataSource rds = new RawDataSource(a.getRawAttachmentContent(), a.mimeType,
-                                    attachmentName);
+                                    attachmentFilename);
                             DataHandler dh = new DataHandler(rds);
                             attachPart.setDataHandler(dh);
                         } else {
                             attachPart.setContent(a.getRawAttachmentContent(),
-                                    a.mimeType + "; name=\"" + attachmentName + "\"");
+                                    a.mimeType + "; name=\"" + attachmentFilename + "\"");
                         }
                     }
                     // set Content-Disposition
                     if (a.attachmentType == StoreMessageAttachment.INLINE_ATTACHMENT)
-                        attachPart.setDisposition("inline; filename=\"" + attachmentName + "\"");
+                        attachPart.setDisposition("inline; filename=\"" + attachmentFilename + "\"");
                     else
-                        attachPart.setDisposition("attachment; filename=\"" + attachmentName + "\"");
+                        attachPart.setDisposition("attachment; filename=\"" + attachmentFilename + "\"");
                     root.addBodyPart(attachPart);
                 }
             }
@@ -1117,7 +1117,7 @@ public abstract class StoreMessage extends StoreElement {
                     // if empty message, construct a fake empty text part
                     if (isEmptyBodies()) {
                         MimeBodyPart part = new MimeBodyPart();
-                        part.setContent("", "text/plain; charset=utf-8");
+                        part.setContent(" ", "text/plain; charset=utf-8");
                         msgMp.addBodyPart(part);
                     }
 
@@ -1169,12 +1169,15 @@ public abstract class StoreMessage extends StoreElement {
         }
     }
 
-    private String encodedFilename(String filename, String ifnone) {
+    private String encodedFilename(String filename, String mimetype, String ifnone) {
         String tmp;
         if ((filename != null) && !filename.trim().isEmpty())
             tmp = filename;
         else
             tmp = ifnone;
+        if ("message/rfc822".equals(mimetype) && (!tmp.endsWith(".eml")))
+            tmp+=".eml";
+
         try {
             return MimeUtility.encodeWord(tmp, "utf-8", "B");
         } catch (UnsupportedEncodingException e) {
