@@ -41,6 +41,8 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
 
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
+
 /**
  * StoreMessage sub-class for Microsoft message format, abstraction for pst and msg messages.
  */
@@ -215,7 +217,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 				result = null;
 		}
 		if (result == null)
-			logMessageWarning("mailextract.microsoft: No subject in header");
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract.microsoft: No subject in header");
 
 		subject = result;
 	}

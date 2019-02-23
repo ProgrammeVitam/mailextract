@@ -881,7 +881,7 @@ public abstract class StoreMessage extends StoreElement {
             // message identification
             if (a.attachmentType == StoreMessageAttachment.STORE_ATTACHMENT) {
                 // recursive extraction of a message in attachment...
-                logMessageWarning("mailextract: Attached message extraction");
+                getLogger().progressLog(MESSAGE_DETAILS,"mailextract: Attached message extraction");
                 extractStoreAttachment(messageNode, attachedMessagedateRange, a, writeFlag);
                 attachedFlag = true;
             } else if (writeFlag) {

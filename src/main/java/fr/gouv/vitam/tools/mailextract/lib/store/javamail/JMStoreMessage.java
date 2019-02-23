@@ -40,6 +40,8 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
 
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
+
 /**
  * StoreMessage sub-class for mail boxes extracted through JavaMail library.
  * <p>
@@ -180,7 +182,7 @@ public class JMStoreMessage extends StoreMessage {
 		try {
 			result = message.getSubject();
 		} catch (MessagingException e) {
-			logMessageWarning("mailextract.javamail: Can't get message subject");
+			getLogger().progressLog(MESSAGE_DETAILS,"mailextract.javamail: Can't get message subject");
 		}
 		subject = result;
 	}
