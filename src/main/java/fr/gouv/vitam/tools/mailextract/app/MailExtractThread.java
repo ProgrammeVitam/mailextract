@@ -59,9 +59,12 @@ public class MailExtractThread extends Thread {
 	/** The debug flag. */
 	private boolean debugFlag;
 
-	/** The logger. */
+	/** The thread logger. */
+	private MailExtractLogger mel;
+
+	/** The mailextract library logger. */
 	private MailExtractProgressLogger logger;
-	
+
 	/** The output stream for extract list, if any. */
 	private PrintStream psExtractList;
 
@@ -98,7 +101,7 @@ public class MailExtractThread extends Thread {
 			StoreExtractorOptions storeExtractorOptions, String logLevel, boolean debugFlag) {
 		this.mainWindow=mainWindow;
 		try {
-			MailExtractLogger mel=new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
+			mel=new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
 			logger = new MailExtractProgressLogger(mel.getProgressLogger(), MailExtractLogger.getLevel(logLevel), (count, log) -> {
 				String newLog = mainWindow.consoleTextArea.getText() + "\n" + log;
 				mainWindow.consoleTextArea.setText(newLog);
@@ -167,9 +170,10 @@ public class MailExtractThread extends Thread {
 				logger.progressLogWithoutInterruption(GLOBAL,e.getMessage());
 				logger.logException(e);
 			}
-			if (logger != null) {
+			if (logger != null)
 				logger.close();
-			}
+			if (mel!=null)
+				mel.close();
 		}
 	}
 
