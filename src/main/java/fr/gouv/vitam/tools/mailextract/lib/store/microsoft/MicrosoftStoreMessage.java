@@ -377,7 +377,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 				try {
 					// prefer smtp address
 					String emailAddress = getNativeRecipientsSmtpAddress(i);
-					if (emailAddress.isEmpty())
+					if ((emailAddress==null) || (emailAddress.isEmpty()))
 						emailAddress = getNativeRecipientsEmailAddress(i);
 					normAddress = getNativeRecipientsDisplayName(i) + " <" + emailAddress + ">";
 					switch (getNativeRecipientsType(i)) {

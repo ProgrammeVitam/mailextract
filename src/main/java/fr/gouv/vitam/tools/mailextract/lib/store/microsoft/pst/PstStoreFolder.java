@@ -120,8 +120,6 @@ public class PstStoreFolder extends StoreFolder {
 			do {
 				try {
 					mes++;
-//					if (mes == 1024)
-//						System.out.println("Here");
 					po = pstFolder.getNextChild();
 					error = false;
 				} catch (IOException e) {

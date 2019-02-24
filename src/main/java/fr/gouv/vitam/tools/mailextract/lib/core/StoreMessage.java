@@ -31,6 +31,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
@@ -1044,9 +1046,13 @@ public abstract class StoreMessage extends StoreElement {
                                     attachmentFilename);
                             DataHandler dh = new DataHandler(rds);
                             attachPart.setDataHandler(dh);
-                        } else {
+                        } else if (a.mimeType.startsWith("multipart")) {
+                            // wrong attachment type corrected to neutral application/octet-stream
                             attachPart.setContent(a.getRawAttachmentContent(),
-                                    a.mimeType + "; name=\"" + attachmentFilename + "\"");
+                                    "application/octet-stream; name=\"" + attachmentFilename + "\"");
+                        } else {
+                                attachPart.setContent(a.getRawAttachmentContent(),
+                                        a.mimeType + "; name=\"" + attachmentFilename + "\"");
                         }
                     }
                     // set Content-Disposition
@@ -1101,10 +1107,10 @@ public abstract class StoreMessage extends StoreElement {
                 }
 
                 // determine in which part to add related
-                if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
-                    relatedPart = RTF_BODY;
-                else if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
+                if ((bodyContent[HTML_BODY] != null) && !bodyContent[HTML_BODY].isEmpty())
                     relatedPart = HTML_BODY;
+                else if ((bodyContent[RTF_BODY] != null) && !bodyContent[RTF_BODY].isEmpty())
+                    relatedPart = RTF_BODY;
 
                 // build message part
                 MimeMultipart msgMp = newChild(rootMp, "alternative");
@@ -1169,6 +1175,11 @@ public abstract class StoreMessage extends StoreElement {
         }
     }
 
+    private static boolean isPureAscii(String v) {
+        return StandardCharsets.US_ASCII.newEncoder().canEncode(v);
+    }
+
+
     private String encodedFilename(String filename, String mimetype, String ifnone) {
         String tmp;
         if ((filename != null) && !filename.trim().isEmpty())
@@ -1177,6 +1188,10 @@ public abstract class StoreMessage extends StoreElement {
             tmp = ifnone;
         if ("message/rfc822".equals(mimetype) && (!tmp.endsWith(".eml")))
             tmp+=".eml";
+
+        // prevent a bug when quotes are in ascii filename (encodeWord is then not encoding)
+        if (isPureAscii(tmp) && tmp.contains("\""))
+            tmp=tmp.replaceAll("\"","'");
 
         try {
             return MimeUtility.encodeWord(tmp, "utf-8", "B");
