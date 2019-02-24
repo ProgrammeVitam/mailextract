@@ -256,12 +256,12 @@ public abstract class StoreMessage extends StoreElement {
      *
      * <p>
      * For convenience each class which may have some log actions has it's own
-     * getLogger method always returning the store extractor logger.
+     * getProgressLogger method always returning the store extractor logger.
      *
      * @return logger
      */
-    public MailExtractProgressLogger getLogger() {
-        return storeFolder.getLogger();
+    public MailExtractProgressLogger getProgressLogger() {
+        return storeFolder.getProgressLogger();
     }
 
     /**
@@ -288,9 +288,9 @@ public abstract class StoreMessage extends StoreElement {
             msg += " for [no subject] message";
 
         if (storeFolder.getStoreExtractor().options.warningMsgProblem)
-            getLogger().progressLog(WARNING,msg);
+            getProgressLogger().progressLog(WARNING,msg);
         else
-            getLogger().progressLog(MESSAGE_DETAILS,msg);
+            getProgressLogger().progressLog(MESSAGE_DETAILS,msg);
     }
 
     /*
@@ -658,12 +658,12 @@ public abstract class StoreMessage extends StoreElement {
 
         getStoreExtractor().incMessageCount();
         if (getStoreExtractor().isRoot()) {
-            getLogger().progressLogIfStep(MESSAGE_GROUP,getStoreExtractor().getMessageCount(),"mailextract: "+getStoreExtractor().getMessageCount()+" extracted messages");
-            getLogger().progressLog(MESSAGE,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
+            getProgressLogger().progressLogIfStep(MESSAGE_GROUP,getStoreExtractor().getMessageCount(),"mailextract: "+getStoreExtractor().getMessageCount()+" extracted messages");
+            getProgressLogger().progressLog(MESSAGE,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
         }
         else
-            getLogger().progressLog(MESSAGE_DETAILS,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
-        getLogger().progressLog(MESSAGE_DETAILS,"with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
+            getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
+        getProgressLogger().progressLog(MESSAGE_DETAILS,"with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
 
         // write in csv list
         if (storeFolder.getStoreExtractor().options.extractList)
@@ -791,7 +791,8 @@ public abstract class StoreMessage extends StoreElement {
             try {
                 textExtract = TikaExtractor.getInstance().extractTextFromBinary(attachment.getRawAttachmentContent());
             } catch (ExtractionException ee) {
-                this.getLogger().progressLog(MESSAGE_DETAILS,"mailextract: Can't extract text content from attachment " + attachment.name);
+                this.getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Can't extract text content from attachment " + attachment.name);
+                this.getProgressLogger().logException(ee);
             }
         // put in file
         if (getStoreExtractor().options.extractFileTextFile && (!((textExtract == null) || textExtract.trim().isEmpty()))) {
@@ -835,7 +836,7 @@ public abstract class StoreMessage extends StoreElement {
                 extractor = (StoreExtractor) storeExtractorClass
                         .getConstructor(StoreMessageAttachment.class, ArchiveUnit.class, StoreExtractorOptions.class,
                                 StoreExtractor.class, MailExtractProgressLogger.class, PrintStream.class)
-                        .newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getLogger(),
+                        .newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getProgressLogger(),
                                 getStoreExtractor().getPSExtractList());
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException
                     | SecurityException e) {
@@ -881,7 +882,7 @@ public abstract class StoreMessage extends StoreElement {
             // message identification
             if (a.attachmentType == StoreMessageAttachment.STORE_ATTACHMENT) {
                 // recursive extraction of a message in attachment...
-                getLogger().progressLog(MESSAGE_DETAILS,"mailextract: Attached message extraction");
+                getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Attached message extraction");
                 extractStoreAttachment(messageNode, attachedMessagedateRange, a, writeFlag);
                 attachedFlag = true;
             } else if (writeFlag) {

@@ -61,9 +61,9 @@ public class JMStoreFolder extends StoreFolder {
 		super(storeExtractor);
 		this.folder = folder;
 		if (folder instanceof ThunderbirdFolder)
-			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
+			((ThunderbirdFolder) folder).setLogger(storeExtractor.getProgressLogger());
 		else if (folder instanceof MboxFolder)
-			((MboxFolder) folder).setLogger(storeExtractor.getLogger());
+			((MboxFolder) folder).setLogger(storeExtractor.getProgressLogger());
 		if (father != null)
 			finalizeStoreFolder(father);
 	}

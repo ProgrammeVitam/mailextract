@@ -58,6 +58,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	private String container = "";
 	private String folder = "";
 	private StoreExtractorOptions storeExtractorOptions;
+	private boolean debugFlag;
 	private boolean local = true;;
 	private String logLevel = "";
 
@@ -176,6 +177,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (storeExtractorOptions.extractFileTextMetadata)
 			mainWindow.extractfiletextmetadataCheckBox.setSelected(true);
 
+		mainWindow.debugCheckBox.setSelected(debugFlag);
+
 		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 
 		mainWindow.charsetComboBox.setSelectedItem(storeExtractorOptions.defaultCharsetName);
@@ -293,7 +296,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			mainWindow.consoleTextArea.setText("");
 		} else
 			new MailExtractThread(mainWindow,actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
-					destName, storeExtractorOptions, logLevel).start();
+					destName, storeExtractorOptions, logLevel,debugFlag).start();
 	}
 
 	/** The loglevel strings. */
@@ -369,6 +372,8 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 
 		if (mainWindow.extractfiletextmetadataCheckBox.isSelected())
 			storeExtractorOptions.extractFileTextMetadata = true;
+
+		debugFlag=mainWindow.debugCheckBox.isSelected();
 
 		try {
 			storeExtractorOptions.namesLength = Integer.parseInt(mainWindow.namesLengthField.getText());

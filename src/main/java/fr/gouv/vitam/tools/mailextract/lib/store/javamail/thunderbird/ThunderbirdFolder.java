@@ -244,6 +244,7 @@ public class ThunderbirdFolder extends Folder {
 				return false;
 		} catch (IOException e) {
 			logger.progressLogWithoutInterruption(WARNING,"ThunderMBox: Maybe mailbox file " + test.getPath() + " can't be opened and is ignored");
+			logger.logException(e);
 		} finally {
 			try {
 				if (reader != null)

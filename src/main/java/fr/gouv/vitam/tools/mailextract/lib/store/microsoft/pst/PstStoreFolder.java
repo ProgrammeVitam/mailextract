@@ -38,7 +38,6 @@ import com.pff.PSTObject;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
-import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
@@ -100,10 +99,11 @@ public class PstStoreFolder extends StoreFolder {
 
 	private void logMessageWarning(String msg) throws InterruptedException {
 		if (getStoreExtractor().getOptions().warningMsgProblem)
-			getLogger().progressLog(WARNING,msg);
+			getProgressLogger().progressLog(WARNING, msg);
 		else
-			getLogger().progressLog(MESSAGE_DETAILS,msg);
+			getProgressLogger().progressLog(MESSAGE_DETAILS, msg);
 	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -113,36 +113,36 @@ public class PstStoreFolder extends StoreFolder {
 	@Override
 	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		PSTMessage message;
-		try {
-			PSTObject po = pstFolder.getNextChild();
-			int mes=0;
-			message = (PSTMessage) po;
-			while (message != null) {
-				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
-				lPStoreMessage.analyzeMessage();
-				dateRange.extendRange(lPStoreMessage.getSentDate());
-				lPStoreMessage.extractMessage(writeFlag);
-				lPStoreMessage.countMessage();
-				boolean error;
-                do {
-                    try {
-                        mes++;
-                        if (mes==1023)
-                            System.out.println("Here");
-                        po = pstFolder.getNextChild();
-                        error = false;
-                    } catch (Exception e) {
-                        error = true;
-                        logMessageWarning("mailextract.pst: Wrongly formatted message in pst file skipped");
-                    }
-                }
-                while (error && (po != null));
-				message = (PSTMessage) po;
+		PSTObject po = null;
+		int mes = 0;
+		while (true) {
+			boolean error;
+			do {
+				try {
+					mes++;
+//					if (mes == 1024)
+//						System.out.println("Here");
+					po = pstFolder.getNextChild();
+					error = false;
+				} catch (IOException e) {
+					throw new ExtractionException("MailExtract: Can't use pst file");
+				} catch (PSTException e) {
+					throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
+				} catch (Exception e) {
+					logMessageWarning("mailextract.pst: Wrongly formatted message "+mes+" in folder "+this.getName());
+					getProgressLogger().logException(e);
+					error = true;
+				}
 			}
-		} catch (IOException e) {
-			throw new ExtractionException("MailExtract: Can't use pst file");
-		} catch (PSTException e) {
-			throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
+			while (error);
+			if (po == null)
+				break;
+			message = (PSTMessage) po;
+			PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
+			lPStoreMessage.analyzeMessage();
+			dateRange.extendRange(lPStoreMessage.getSentDate());
+			lPStoreMessage.extractMessage(writeFlag);
+			lPStoreMessage.countMessage();
 		}
 	}
 

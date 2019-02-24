@@ -159,9 +159,11 @@ public class MailExtractMainWindow extends JFrame {
 
 	/** The console text area. */
 	JTextArea consoleTextArea;
-	private JScrollPane scrollPane;
 
-	/**
+    /** The warning check box. */
+    JCheckBox debugCheckBox;
+
+    /**
 	 * The proposed log level.
 	 */
 	String[] loglevelGraphicStrings = {"OFF", "INFO GLOBALE", "AVERTISSEMENT", "DOSSIERS", "LOT DE MESSAGES",
@@ -282,7 +284,7 @@ public class MailExtractMainWindow extends JFrame {
 		consoleTextArea.setFont(new Font("Courier 10 Pitch", Font.BOLD, 12));
 		consoleTextArea.setLineWrap(true);
 
-		scrollPane = new JScrollPane(consoleTextArea);
+        JScrollPane scrollPane= new JScrollPane(consoleTextArea);
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
@@ -696,7 +698,15 @@ public class MailExtractMainWindow extends JFrame {
 		containerButton.setActionCommand("container");
 		containerButton.addActionListener(app);
 
-		// RadioButtons
+        debugCheckBox =  new JCheckBox("Debug");
+        GridBagConstraints gbc_debugCheckBox = new GridBagConstraints();
+        gbc_debugCheckBox.anchor = GridBagConstraints.WEST;
+        gbc_debugCheckBox.insets = new Insets(0, 0, 5, 5);
+        gbc_debugCheckBox.gridx = 3;
+        gbc_debugCheckBox.gridy = 14;
+        getContentPane().add(debugCheckBox, gbc_debugCheckBox);
+
+        // RadioButtons
 		ButtonGroup groupLocalProtocol = new ButtonGroup();
 		groupLocalProtocol.add(localRadioButton);
 		groupLocalProtocol.add(protocoleRadioButton);

@@ -27,7 +27,6 @@
 
 package fr.gouv.vitam.tools.mailextract.lib.core;
 
-import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.DateRange;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
@@ -116,20 +115,20 @@ public abstract class StoreFolder {
 	 * 
 	 * <p>
 	 * For convenience each class which may have some log actions has it's own
-	 * getLogger method always returning the store extractor logger.
+	 * getProgressLogger method always returning the store extractor logger.
 	 *
 	 * @return logger
 	 */
-	public MailExtractProgressLogger getLogger() {
-		return storeExtractor.getLogger();
+	public MailExtractProgressLogger getProgressLogger() {
+		return storeExtractor.getProgressLogger();
 	}
 
 	// log at the folder level considering storeExtractor depth
 	private void logFolder(String msg) throws InterruptedException {
 		if (storeExtractor.isRoot())
-			storeExtractor.getLogger().progressLog(FOLDER,msg);
+			storeExtractor.getProgressLogger().progressLog(FOLDER,msg);
 		else
-			storeExtractor.getLogger().progressLog(MESSAGE_DETAILS,msg);
+			storeExtractor.getProgressLogger().progressLog(MESSAGE_DETAILS,msg);
 	}
 
 	/**

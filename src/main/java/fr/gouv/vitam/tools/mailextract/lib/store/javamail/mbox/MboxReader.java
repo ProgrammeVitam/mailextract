@@ -105,11 +105,11 @@ public class MboxReader {
 	 * 
 	 * <p>
 	 * For convenience each class which may have some log actions has it's own
-	 * getLogger method always returning the store extractor logger.
+	 * getProgressLogger method always returning the store extractor logger.
 	 *
 	 * @return logger
 	 */
-	public MailExtractProgressLogger getLogger() {
+	public MailExtractProgressLogger getProgressLogger() {
 		return logger;
 	}
 
@@ -212,7 +212,7 @@ public class MboxReader {
 				return true;
 			else if (line.startsWith("From - "))
 				return true;
-			getLogger().progressLogWithoutInterruption(MESSAGE_DETAILS,"mailextract.mbox|thunderbird: Misleading '" + line + "' line in file " + filePath
+			getProgressLogger().progressLogWithoutInterruption(MESSAGE_DETAILS,"mailextract.mbox|thunderbird: Misleading '" + line + "' line in file " + filePath
 					+ " at line " + Integer.toString(lineNum) + " is not considered as a message delimiter");
 			return false;
 		}

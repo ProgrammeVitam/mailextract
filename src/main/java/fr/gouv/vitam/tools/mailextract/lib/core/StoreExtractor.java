@@ -380,14 +380,16 @@ public abstract class StoreExtractor {
 
 		// if root extractor log extraction context
 		if (rootStoreExtractor == null) {
-			getLogger().progressLog(GLOBAL,
+			getProgressLogger().progressLog(GLOBAL,
 					"Target store with scheme=" + scheme + (host == null || host.isEmpty() ? "" : "  server=" + host)
 							+ (port == -1 ? "" : ":" + Integer.toString(port))
 							+ (user == null || user.isEmpty() ? "" : " user=" + user)
 							+ (password == null || password.isEmpty() ? "" : " password=" + password)
 							+ (path == null || path.isEmpty() ? "" : " path=" + path)
 							+ (storeFolder == null || storeFolder.isEmpty() ? "" : " store folder=" + storeFolder));
-			getLogger().progressLog(GLOBAL,"to " + destRootPath + " in " + destName + " directory");
+			getProgressLogger().progressLog(GLOBAL,"to " + destRootPath + " in " + destName + " directory");
+			if (getProgressLogger().getDebugFlag())
+				getProgressLogger().progressLog(GLOBAL,"DEBUG MODE");
 
 			boolean first = true;
 			String optionsLog = "";
@@ -413,14 +415,14 @@ public abstract class StoreExtractor {
 			first = false;
 			if (!first)
 				optionsLog += ", ";
-			optionsLog += "with log level " + getLogger().getLevelName();
+			optionsLog += "with log level " + getProgressLogger().getLevelName();
 
-			getLogger().progressLog(GLOBAL,optionsLog);
+			getProgressLogger().progressLog(GLOBAL,optionsLog);
 		}
 		// if internal extractor give attachment context
 		else {
-			getLogger().progressLog(MESSAGE,"Target attached store scheme=" + scheme);
-			getLogger().progressLog(MESSAGE,"to " + destRootPath + " in " + destName + " directory");
+			getProgressLogger().progressLog(MESSAGE,"Target attached store scheme=" + scheme);
+			getProgressLogger().progressLog(MESSAGE,"to " + destRootPath + " in " + destName + " directory");
 		}
 
 	}
@@ -431,11 +433,11 @@ public abstract class StoreExtractor {
 	 * 
 	 * <p>
 	 * For convenience each class which may have some log actions has it's own
-	 * getLogger method always returning this store extractor logger.
+	 * getProgressLogger method always returning this store extractor logger.
 	 *
 	 * @return logger
 	 */
-	public MailExtractProgressLogger getLogger() {
+	public MailExtractProgressLogger getProgressLogger() {
 		return logger;
 	}
 
@@ -460,10 +462,12 @@ public abstract class StoreExtractor {
 	 * @return a uniq ID
 	 */
 	public int getUniqID() {
+		int id;
 		if (rootStoreExtractor == null)
-			return uniqID++;
+			id= uniqID++;
 		else
-			return rootStoreExtractor.getUniqID();
+			id= rootStoreExtractor.getUniqID();
+		return id;
 	}
 
 	/**
@@ -720,7 +724,7 @@ public abstract class StoreExtractor {
 		Instant start = Instant.now();
 
 		writeTargetLog();
-		getLogger().progressLog(GLOBAL,"Extraction processed");
+		getProgressLogger().progressLog(GLOBAL,"Extraction processed");
 
 		rootAnalysisMBFolder.extractFolderAsRoot(true);
 
@@ -747,7 +751,7 @@ public abstract class StoreExtractor {
 
 		Instant end = Instant.now();
 		String size = Double.toString(Math.round(((double) getTotalRawSize()) * 100.0 / (1024.0 * 1024.0)) / 100.0);
-		getLogger().progressLog(GLOBAL,"Terminated in " + Duration.between(start, end).toString() + " writing "
+		getProgressLogger().progressLog(GLOBAL,"Terminated in " + Duration.between(start, end).toString() + " writing "
 				+ Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
 				+ " messages, for a total size of " + size + " MBytes and "
 				+ Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
@@ -781,7 +785,7 @@ public abstract class StoreExtractor {
 		Instant start = Instant.now();
 
 		writeTargetLog();
-		getLogger().progressLog(GLOBAL,"Listing processed");
+		getProgressLogger().progressLog(GLOBAL,"Listing processed");
 
 		rootAnalysisMBFolder.listFolder(stats);
 
@@ -797,7 +801,7 @@ public abstract class StoreExtractor {
 					getTotalAttachedMessagesCount());
 		}
 
-		getLogger().progressLog(GLOBAL,tmp);
+		getProgressLogger().progressLog(GLOBAL,tmp);
 		System.out.println(tmp);
 	}
 

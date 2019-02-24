@@ -178,7 +178,7 @@ public class MailExtractLogger {
         }
     }
 
-    public Logger getLogger() {
+    public Logger getProgressLogger() {
         return logger;
     }
 

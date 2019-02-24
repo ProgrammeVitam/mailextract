@@ -31,6 +31,8 @@ import org.slf4j.Logger;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.text.DecimalFormat;
 
 /**
@@ -103,6 +105,11 @@ public class MailExtractProgressLogger {
     private int progressLogLevel;
 
     /**
+     * The debugFlag flag
+     */
+    private boolean debugFlag;
+
+    /**
      * Instantiates a new SEDA lib progress logger.
      *
      * @param logger           the logger
@@ -113,6 +120,7 @@ public class MailExtractProgressLogger {
         this.logger = logger;
         this.step = Integer.MAX_VALUE;
         this.progressLogLevel = progressLogLevel;
+        this.debugFlag =false;
     }
 
     /**
@@ -128,6 +136,25 @@ public class MailExtractProgressLogger {
         this.logger = logger;
         this.step = step;
         this.progressLogLevel = progressLogLevel;
+        this.debugFlag =false;
+    }
+
+    /**
+     * Set debug flag.
+     *
+     * @param debugFlag the debug flag
+     */
+    public void setDebugFlag(boolean debugFlag){
+        this.debugFlag=debugFlag;
+    }
+
+    /**
+     * Gets debug flag.
+     *
+     * @return the debug flag
+     */
+    public boolean getDebugFlag() {
+        return debugFlag;
     }
 
     /**
@@ -165,6 +192,16 @@ public class MailExtractProgressLogger {
             log(level, log);
             Thread.sleep(1);
         }
+    }
+
+    /**
+     * Log an exception.
+     *
+     * @param e     the exception
+     */
+    public void logException(Exception e) {
+        if (debugFlag)
+            log(GLOBAL, getPrintStackTrace(e));
     }
 
     /**
@@ -214,17 +251,41 @@ public class MailExtractProgressLogger {
         return GLOBAL_MARKER;
     }
 
+    /**
+     * Gets level name.
+     *
+     * @return the level name
+     */
     public String getLevelName() {
        return getMarker(progressLogLevel).getName();
      }
 
-    public void log(int level, String message) {
+    /**
+     * Log.
+     *
+     * @param level   the level
+     * @param message the message
+     */
+    private void log(int level, String message) {
         if (level <= progressLogLevel) {
             if (logger != null)
                 logger.info(getMarker(level), message);
         }
     }
 
+    /**
+     * Close.
+     */
     public void close(){
+    }
+
+    // make a String from the stack trace
+    private final static String getPrintStackTrace(Exception e) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintWriter p = new PrintWriter(baos);
+
+        e.printStackTrace(p);
+        p.close();
+        return baos.toString();
     }
 }

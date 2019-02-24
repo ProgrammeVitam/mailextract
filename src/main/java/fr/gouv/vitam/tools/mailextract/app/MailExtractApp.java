@@ -29,20 +29,10 @@ package fr.gouv.vitam.tools.mailextract.app;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -431,7 +421,7 @@ public class MailExtractApp {
 			MailExtractLogger mel=null;
 			try {
 				mel = new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
-				logger = new MailExtractProgressLogger(mel.getLogger(),  MailExtractLogger.getLevel(logLevel));
+				logger = new MailExtractProgressLogger(mel.getProgressLogger(),  MailExtractLogger.getLevel(logLevel));
 				if (options.has("extractlist"))
 					psExtractList = new PrintStream(
 							new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
@@ -453,6 +443,7 @@ public class MailExtractApp {
 				storeExtractor.endStoreExtractor();
 			} catch (ExtractionException ee) {
 				logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+				logger.logException(ee);
 				System.exit(1);
 			} catch (Exception e) {
 				logFatalError(e, storeExtractor, mel);
@@ -467,7 +458,7 @@ public class MailExtractApp {
 //		try {
 //			Properties props = System.getProperties();
 //			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-//			logger = Logger.getLogger(MailExtractApp.class.getName());
+//			logger = Logger.getProgressLogger(MailExtractApp.class.getName());
 //			logger.setLevel(logLevel);
 //
 //			Formatter simpleFormatter;

@@ -182,7 +182,8 @@ public class JMStoreMessage extends StoreMessage {
 		try {
 			result = message.getSubject();
 		} catch (MessagingException e) {
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract.javamail: Can't get message subject");
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract.javamail: Can't get message subject");
+			getProgressLogger().logException(e);
 		}
 		subject = result;
 	}

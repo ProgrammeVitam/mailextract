@@ -29,18 +29,9 @@ package fr.gouv.vitam.tools.mailextract.app;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
@@ -65,46 +56,15 @@ public class MailExtractThread extends Thread {
 	/** The store extractor. */
 	private StoreExtractor storeExtractor;
 
+	/** The debug flag. */
+	private boolean debugFlag;
+
 	/** The logger. */
 	private MailExtractProgressLogger logger;
 	
 	/** The output stream for extract list, if any. */
 	private PrintStream psExtractList;
 
-//	// generate a specific logger at the loglevel defined in constructor and
-//	// sending to stdout console instead of stderr console
-//	private Logger generateLogger(String fileName, Level logLevel) throws Exception {
-//		Logger logger;
-//		try {
-//			Properties props = System.getProperties();
-//			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-//			logger = Logger.getLogger(Long.toString(this.getId()));
-//			logger.setLevel(logLevel);
-//
-//			Formatter simpleFormatter;
-//			simpleFormatter = new SimpleFormatter();
-//
-//			if (logLevel != Level.OFF) {
-//				Files.createDirectories(Paths.get(fileName).getParent());
-//				Handler fileHandler = new FileHandler(fileName);
-//				fileHandler.setFormatter(simpleFormatter);
-//				fileHandler.setLevel(logLevel);
-//				logger.addHandler(fileHandler);
-//			}
-//
-//			Handler consoleHandler = new StdoutConsoleHandler();
-//			consoleHandler.setFormatter(simpleFormatter);
-//			consoleHandler.setLevel(logLevel);
-//			logger.addHandler(consoleHandler);
-//
-//			// don't use ConsoleHandler at global level
-//			logger.setUseParentHandlers(false);
-//		} catch (IOException e) {
-//			throw new Exception("mailextract: Can't create logger");
-//		}
-//		return logger;
-//	}
-//
 	/**
 	 * Instantiates a new mail extract thread.
 	 *
@@ -135,15 +95,16 @@ public class MailExtractThread extends Thread {
 	 */
 	public MailExtractThread(MailExtractMainWindow mainWindow,int actionNumber, String protocol, String host, int port, String user, String password,
 			String container, String folder, String destRootPath, String destName,
-			StoreExtractorOptions storeExtractorOptions, String logLevel) {
+			StoreExtractorOptions storeExtractorOptions, String logLevel, boolean debugFlag) {
 		this.mainWindow=mainWindow;
 		try {
 			MailExtractLogger mel=new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
-			logger = new MailExtractProgressLogger(mel.getLogger(), MailExtractLogger.getLevel(logLevel), (count, log) -> {
+			logger = new MailExtractProgressLogger(mel.getProgressLogger(), MailExtractLogger.getLevel(logLevel), (count, log) -> {
 				String newLog = mainWindow.consoleTextArea.getText() + "\n" + log;
 				mainWindow.consoleTextArea.setText(newLog);
 				mainWindow.consoleTextArea.setCaretPosition(newLog.length());
 			}, 100);
+			logger.setDebugFlag(debugFlag);
 			if (storeExtractorOptions.extractList)
 				psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
 			else 
@@ -160,6 +121,7 @@ public class MailExtractThread extends Thread {
 			this.actionNumber = actionNumber;
 		} catch (ExtractionException ee) {
 			logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+			logger.logException(ee);
 		}
 		catch (Exception e) {
 			this.actionNumber = 0;
@@ -191,8 +153,10 @@ public class MailExtractThread extends Thread {
 			}
 		} catch (ExtractionException ee) {
 			logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+			logger.logException(ee);
 		} 		catch (InterruptedException ie) {
 			logger.progressLogWithoutInterruption(GLOBAL,ie.getMessage());
+			logger.logException(ie);
 		} catch (Exception e) {
 			System.out.println(getPrintStackTrace(e));
 		} finally {
@@ -201,6 +165,7 @@ public class MailExtractThread extends Thread {
 					storeExtractor.endStoreExtractor();
 			} catch (ExtractionException e) {
 				logger.progressLogWithoutInterruption(GLOBAL,e.getMessage());
+				logger.logException(e);
 			}
 			if (logger != null) {
 				logger.close();

@@ -129,12 +129,12 @@ public class ArchiveUnit {
 	 * 
 	 * <p>
 	 * For convenience each class which may have some log actions has it's own
-	 * getLogger method always returning the store extractor logger.
+	 * getProgressLogger method always returning the store extractor logger.
 	 *
 	 * @return logger
 	 */
-	public MailExtractProgressLogger getLogger() {
-		return storeExtractor.getLogger();
+	public MailExtractProgressLogger getProgressLogger() {
+		return storeExtractor.getProgressLogger();
 	}
 
 	/**
@@ -200,7 +200,7 @@ public class ArchiveUnit {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, value));
 		else if (mandatory)
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -227,7 +227,7 @@ public class ArchiveUnit {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
 		else if (mandatory) {
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
 					+ "' in folder '" + rootPath + "'");
 		}
 	}
@@ -272,7 +272,7 @@ public class ArchiveUnit {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, s));
 			}
 		} else if (mandatory)
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -309,7 +309,7 @@ public class ArchiveUnit {
 			mlMetaData.addMetadataXMLNode(mvMetaData);
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 		} else if (mandatory)
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -380,7 +380,7 @@ public class ArchiveUnit {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 			}
 		} else if (mandatory)
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -538,11 +538,6 @@ public class ArchiveUnit {
 		if (result.length() > len)
 			result = result.substring(0, len);
 		int uniqID=storeExtractor.getUniqID();
-		if (uniqID==16047)
-			System.out.println("ID Here");
-		if ("TR : JM/SP/mb 44722 - CULTURE / ASSOCIATION PROMOUVOIR (SAW 3D)".equals(filename))
-			System.out.println("Name Here");
-
 		result = type + "#" + Integer.toString(uniqID) + "-" + result;
 
 		return result;

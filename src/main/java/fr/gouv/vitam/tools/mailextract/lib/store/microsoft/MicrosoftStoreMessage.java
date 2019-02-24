@@ -217,7 +217,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 				result = null;
 		}
 		if (result == null)
-			getLogger().progressLog(MESSAGE_DETAILS,"mailextract.microsoft: No subject in header");
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract.microsoft: No subject in header");
 
 		subject = result;
 	}
@@ -393,6 +393,7 @@ public abstract class MicrosoftStoreMessage extends StoreMessage {
 					}
 				} catch (Exception e) {
 					logMessageWarning("mailextract.microsoft: Can't get recipient number " + Integer.toString(i));
+					getProgressLogger().logException(e);
 				}
 			}
 		}
