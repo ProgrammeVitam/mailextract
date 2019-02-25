@@ -40,6 +40,8 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RFC822Headers;
 
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
+
 /**
  * StoreMessage sub-class for mail boxes extracted through JavaMail library.
  * <p>
@@ -77,7 +79,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#getMessageSize()
 	 */
 	@Override
-	public long getMessageSize() {
+	public long getMessageSize() throws InterruptedException {
 		// geMessageSize of JavaMail is quite approximative...
 		long result;
 
@@ -140,7 +142,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#prepareHeaders()
 	 */
-	protected void prepareAnalyze() {
+	protected void prepareAnalyze() throws InterruptedException {
 		List<String> result = null;
 		String line, value;
 		Header header;
@@ -174,13 +176,14 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeSubject()
 	 */
-	protected void analyzeSubject() {
+	protected void analyzeSubject() throws InterruptedException {
 		String result = null;
 
 		try {
 			result = message.getSubject();
 		} catch (MessagingException e) {
-			logMessageWarning("mailextract.javamail: Can't get message subject");
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract.javamail: Can't get message subject");
+			getProgressLogger().logException(e);
 		}
 		subject = result;
 	}
@@ -191,7 +194,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeMessageID()
 	 */
-	protected void analyzeMessageID() {
+	protected void analyzeMessageID() throws InterruptedException {
 		String result = null;
 
 		try {
@@ -207,7 +210,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeFrom()
 	 */
-	protected void analyzeFrom() {
+	protected void analyzeFrom() throws InterruptedException {
 		String result = null;
 		List<String> aList = getAddressHeader("From");
 
@@ -222,7 +225,7 @@ public class JMStoreMessage extends StoreMessage {
 	}
 
 	// get addresses in header with parsing control relaxed
-	private List<String> getAddressHeader(String name) {
+	private List<String> getAddressHeader(String name) throws InterruptedException {
 		List<String> result = null;
 		String addressHeaderString = null;
 
@@ -266,7 +269,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeRecipients()
 	 */
-	protected void analyzeRecipients() {
+	protected void analyzeRecipients() throws InterruptedException {
 		recipientTo = getAddressHeader("To");
 		recipientCc = getAddressHeader("Cc");
 		recipientBcc = getAddressHeader("Bcc");
@@ -278,7 +281,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReplyTo()
 	 */
-	protected void analyzeReplyTo() {
+	protected void analyzeReplyTo() throws InterruptedException {
 		replyTo = getAddressHeader("Reply-To");
 	}
 
@@ -288,7 +291,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReturnPath()
 	 */
-	protected void analyzeReturnPath() {
+	protected void analyzeReturnPath() throws InterruptedException {
 		String result = null;
 		List<String> aList = getAddressHeader("Return-Path");
 
@@ -333,7 +336,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * 
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeDates()
 	 */
-	protected void analyzeDates() {
+	protected void analyzeDates() throws InterruptedException {
 		try {
 			sentDate = message.getSentDate();
 			receivedDate = getReceivedDate();
@@ -349,7 +352,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeInReplyToId(
 	 * )
 	 */
-	protected void analyzeInReplyToId() {
+	protected void analyzeInReplyToId() throws InterruptedException {
 		String result = null;
 		try {
 			String[] irtList = message.getHeader("In-Reply-To");
@@ -395,7 +398,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeReferences()
 	 */
-	protected void analyzeReferences() {
+	protected void analyzeReferences() throws InterruptedException {
 		List<String> result = null;
 		try {
 			String refHeader = message.getHeader("References", " ");
@@ -484,7 +487,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeBodies()
 	 */
-	protected void analyzeBodies() {
+	protected void analyzeBodies() throws InterruptedException {
 		try {
 			getPartBodyContents(message);
 		} catch (Exception e) {
@@ -494,7 +497,7 @@ public class JMStoreMessage extends StoreMessage {
 
 	// recursively search in MimeParts all attachments
 	private void getAttachments(List<StoreMessageAttachment> lStoreMessageAttachment, BodyPart p)
-			throws MessagingException, IOException {
+			throws MessagingException, IOException, InterruptedException {
 
 		if ((p.isMimeType("text/plain") || p.isMimeType("text/html") || p.isMimeType("text/rtf"))
 				&& ((p.getDisposition() == null) || Part.INLINE.equalsIgnoreCase(p.getDisposition())))
@@ -527,6 +530,12 @@ public class JMStoreMessage extends StoreMessage {
 			baos.write(buf, 0, bytesRead);
 		}
 		return baos.toByteArray();
+	}
+
+	// replace illegal characters in a filename with "_"
+	// illegal characters : \ / * ? | < >
+	private static String sanitizeFilename(String name) {
+		return name.replaceAll("[:\\\\/*?|<>]", "_");
 	}
 
 	// add one attachment
@@ -573,7 +582,7 @@ public class JMStoreMessage extends StoreMessage {
 					aType = StoreMessageAttachment.STORE_ATTACHMENT;
 				aMimeType = contenttype.getBaseType();
 				if (aName == null)
-					aName = contenttype.getParameter("name");
+                    aName = contenttype.getParameter("name");
 			} catch (Exception e) {
 				aMimeType = headers[0];
 				if (aMimeType.indexOf(';') != -1)
@@ -594,11 +603,17 @@ public class JMStoreMessage extends StoreMessage {
 		if ((headers != null) && (headers.length != 0))
 			aContentID = headers[0];
 
-		// define a filename if not defined in headers
+		// define a filename if not defined in headers, encode and sanitize it
 		if (aName == null)
 			aName = "noname";
+		else
+		    try {
+            aName=MimeUtility.decodeText(aName);
+            }
+            catch (Exception e){}
+		aName=sanitizeFilename(aName);
 
-		if (aType == StoreMessageAttachment.STORE_ATTACHMENT)
+        if (aType == StoreMessageAttachment.STORE_ATTACHMENT)
 			lStoreMessageAttachment.add(new StoreMessageAttachment(getPartRawContent(bodyPart), "eml",
 					MimeUtility.decodeText(aName), aCreationDate, aModificationDate, aMimeType, aContentID, aType));
 		else
@@ -613,7 +628,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#analyzeAttachments(
 	 * )
 	 */
-	protected void analyzeAttachments() {
+	protected void analyzeAttachments() throws InterruptedException {
 		List<StoreMessageAttachment> result = new ArrayList<StoreMessageAttachment>();
 
 		try {
@@ -663,7 +678,7 @@ public class JMStoreMessage extends StoreMessage {
 	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage#
 	 * getNativeMimeContent()
 	 */
-	protected byte[] getNativeMimeContent() {
+	protected byte[] getNativeMimeContent() throws InterruptedException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		try {
 			message.writeTo(baos);

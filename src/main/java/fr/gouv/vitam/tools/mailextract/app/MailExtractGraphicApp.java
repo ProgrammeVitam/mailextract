@@ -58,6 +58,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 	private String container = "";
 	private String folder = "";
 	private StoreExtractorOptions storeExtractorOptions;
+	private boolean debugFlag;
 	private boolean local = true;;
 	private String logLevel = "";
 
@@ -117,7 +118,6 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		try {
 			mainWindow = new MailExtractMainWindow(this);
 			insertOptions();
-			redirectSystemStreams();
 			mainWindow.setVisible(true);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -177,7 +177,11 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (storeExtractorOptions.extractFileTextMetadata)
 			mainWindow.extractfiletextmetadataCheckBox.setSelected(true);
 
+		mainWindow.debugCheckBox.setSelected(debugFlag);
+
 		mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
+
+		mainWindow.charsetComboBox.setSelectedItem(storeExtractorOptions.defaultCharsetName);
 
 		// convert from normalized log level name to the choice list log level
 		for (int i = 0; i < 7; i++) {
@@ -291,12 +295,12 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (actionNumber == EMPTY_LOG) {
 			mainWindow.consoleTextArea.setText("");
 		} else
-			new MailExtractThread(actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
-					destName, storeExtractorOptions, logLevel).start();
+			new MailExtractThread(mainWindow,actionNumber, protocol, host, port, user, password, container, folder, destRootPath,
+					destName, storeExtractorOptions, logLevel,debugFlag).start();
 	}
 
 	/** The loglevel strings. */
-	String[] loglevelStrings = { "OFF", "SEVERE", "WARNING", "INFO", "FINE", "FINER", "FINEST" };
+	String[] loglevelStrings = { "OFF", "GLOBAL", "WARNING", "FOLDER", "MESSAGE_GROUP", "MESSAGE", "MESSAGE_DETAILS" };
 
 	// get the global parameters from the graphic fields
 	private void parseParams() {
@@ -369,11 +373,15 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (mainWindow.extractfiletextmetadataCheckBox.isSelected())
 			storeExtractorOptions.extractFileTextMetadata = true;
 
+		debugFlag=mainWindow.debugCheckBox.isSelected();
+
 		try {
 			storeExtractorOptions.namesLength = Integer.parseInt(mainWindow.namesLengthField.getText());
 		} catch (NumberFormatException e) {
 			mainWindow.namesLengthField.setText(Integer.toString(storeExtractorOptions.namesLength));
 		}
+
+		storeExtractorOptions.defaultCharsetName = (String) mainWindow.charsetComboBox.getSelectedItem();
 
 		// convert from log level name in the choice list to normalized log
 		// level
@@ -384,38 +392,5 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 				break;
 			}
 		}
-	}
-
-	// used to update console text area
-	private void updateTextArea(final String text) {
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				mainWindow.consoleTextArea.append(text);
-			}
-		});
-	}
-
-	// used to redirect out console stream to text area (no err redirection to
-	// avoid tika and other tools errors...)
-	private void redirectSystemStreams() {
-		OutputStream out = new OutputStream() {
-			@Override
-			public void write(int b) throws IOException {
-				updateTextArea(String.valueOf((char) b));
-			}
-
-			@Override
-			public void write(byte[] b, int off, int len) throws IOException {
-				updateTextArea(new String(b, off, len));
-			}
-
-			@Override
-			public void write(byte[] b) throws IOException {
-				write(b, 0, b.length);
-			}
-		};
-
-		System.setOut(new PrintStream(out, true));
-		// System.setErr(new PrintStream(out, true));
 	}
 }

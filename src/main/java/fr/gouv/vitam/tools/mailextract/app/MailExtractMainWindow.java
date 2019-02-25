@@ -142,6 +142,9 @@ public class MailExtractMainWindow extends JFrame {
 	/** The extractlist check box. */
 	JCheckBox extractlistCheckBox;
 
+	/** The loglevel combo box. */
+	JComboBox charsetComboBox;
+
 	/** The text extraction flags. */
 	JCheckBox extractmessagetextfileCheckBox;
 	
@@ -156,11 +159,25 @@ public class MailExtractMainWindow extends JFrame {
 
 	/** The console text area. */
 	JTextArea consoleTextArea;
-	private JScrollPane scrollPane;
 
-	/** The proposed log level. */
-	String[] loglevelGraphicStrings = { "OFF", "ERREUR FATALE", "AVERTISSEMENT", "INFO PROCESS", "INFO DOSSIERS",
-			"INFO MESSAGES", "DETAIL MESSAGES" };
+    /** The warning check box. */
+    JCheckBox debugCheckBox;
+
+    /**
+	 * The proposed log level.
+	 */
+	String[] loglevelGraphicStrings = {"OFF", "INFO GLOBALE", "AVERTISSEMENT", "DOSSIERS", "LOT DE MESSAGES",
+			"MESSAGES", "DETAIL MESSAGES"};
+
+	/**
+	 * The proposed charsets.
+	 */
+	String[] charsetGraphicStrings = {"windows-1252", "ISO-8859-1", "UTF-8", "CESU-8", "IBM00858", "IBM437", "IBM775",
+			"IBM850", "IBM852", "IBM855", "IBM857", "IBM862", "IBM866", "ISO-8859-2", "ISO-8859-4", "ISO-8859-5",
+			"ISO-8859-7", "ISO-8859-9", "ISO-8859-13", "ISO-8859-15", "KOI8-R", "KOI8-U", "US-ASCII", "UTF-16",
+			"UTF-16BE", "UTF-16LE", "UTF-32", "UTF-32BE", "UTF-32LE", "x-UTF-32BE-BOM", "x-UTF-32LE-BOM",
+			"windows-1250", "windows-1251", "windows-1253", "windows-1254", "windows-1257"};
+
 	private JPanel panel;
 
 	/**
@@ -194,8 +211,8 @@ public class MailExtractMainWindow extends JFrame {
 		}
 		this.setTitle("MailExtract");
 
-		getContentPane().setPreferredSize(new Dimension(800, 600));
-		setBounds(0, 0, 800, 600);
+		getContentPane().setPreferredSize(new Dimension(800, 800));
+		setBounds(0, 0, 800, 800);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWeights = new double[] { 1.0, 1, 1, 1};
@@ -211,7 +228,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_extractTextPanel.insets = new Insets(0, 10, 10, 10);
 		gbc_extractTextPanel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_extractTextPanel.gridx = 0;
-		gbc_extractTextPanel.gridy = 8;
+		gbc_extractTextPanel.gridy = 9;
 		getContentPane().add(extractTextPanel, gbc_extractTextPanel);
 		GridBagLayout gbl_extractTextPanel = new GridBagLayout();
 		gbl_extractTextPanel.rowWeights = new double[] { 1.0, 1.0};
@@ -260,14 +277,14 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_panel.fill = GridBagConstraints.BOTH;
 		gbc_panel.gridx = 0;
 		gbc_panel.gridwidth = 4;
-		gbc_panel.gridy = 10;
+		gbc_panel.gridy = 11;
 		getContentPane().add(panel, gbc_panel);
 
 		consoleTextArea = new JTextArea();
 		consoleTextArea.setFont(new Font("Courier 10 Pitch", Font.BOLD, 12));
 		consoleTextArea.setLineWrap(true);
 
-		scrollPane = new JScrollPane(consoleTextArea);
+        JScrollPane scrollPane= new JScrollPane(consoleTextArea);
 		scrollPane.setViewportBorder(new BevelBorder(BevelBorder.LOWERED, null, null, null, null));
 		scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
@@ -277,7 +294,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_scrollPane.insets = new Insets(5, 5, 0, 0);
 		gbc_scrollPane.fill = GridBagConstraints.BOTH;
 		gbc_scrollPane.gridx = 0;
-		gbc_scrollPane.gridy = 12;
+		gbc_scrollPane.gridy = 13;
 		getContentPane().add(scrollPane, gbc_scrollPane);
 
 		JButton extractButton = new JButton("Extraire messages");
@@ -285,7 +302,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_extractButton.gridwidth = 1;
 		gbc_extractButton.insets = new Insets(0, 0, 10, 10);
 		gbc_extractButton.gridx = 0;
-		gbc_extractButton.gridy = 11;
+		gbc_extractButton.gridy = 12;
 		getContentPane().add(extractButton, gbc_extractButton);
 		extractButton.setActionCommand("extract");
 		extractButton.addActionListener(app);
@@ -295,7 +312,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_listButton.anchor = GridBagConstraints.EAST;
 		gbc_listButton.insets = new Insets(0, 0, 10, 10);
 		gbc_listButton.gridx = 1;
-		gbc_listButton.gridy = 11;
+		gbc_listButton.gridy = 12;
 		getContentPane().add(listButton, gbc_listButton);
 		listButton.setActionCommand("list");
 		listButton.addActionListener(app);
@@ -304,7 +321,7 @@ public class MailExtractMainWindow extends JFrame {
 		GridBagConstraints gbc_statButton = new GridBagConstraints();
 		gbc_statButton.insets = new Insets(0, 0, 10, 10);
 		gbc_statButton.gridx = 2;
-		gbc_statButton.gridy = 11;
+		gbc_statButton.gridy = 12;
 		getContentPane().add(statButton, gbc_statButton);
 		statButton.setActionCommand("stat");
 		statButton.addActionListener(app);
@@ -313,7 +330,7 @@ public class MailExtractMainWindow extends JFrame {
 		GridBagConstraints gbc_emptyButton = new GridBagConstraints();
 		gbc_emptyButton.insets = new Insets(0, 0, 10, 10);
 		gbc_emptyButton.gridx = 3;
-		gbc_emptyButton.gridy = 11;
+		gbc_emptyButton.gridy = 12;
 		getContentPane().add(emptyButton, gbc_emptyButton);
 		emptyButton.setActionCommand("empty");
 		emptyButton.addActionListener(app);
@@ -323,7 +340,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_warningCheckBox.anchor = GridBagConstraints.WEST;
 		gbc_warningCheckBox.insets = new Insets(0, 0, 5, 5);
 		gbc_warningCheckBox.gridx = 2;
-		gbc_warningCheckBox.gridy = 9;
+		gbc_warningCheckBox.gridy = 10;
 		getContentPane().add(warningCheckBox, gbc_warningCheckBox);
 
 		loglevelComboBox = new JComboBox(loglevelGraphicStrings);
@@ -331,7 +348,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_loglevelComboBox.insets = new Insets(0, 0, 5, 5);
 		gbc_loglevelComboBox.fill = GridBagConstraints.HORIZONTAL;
 		gbc_loglevelComboBox.gridx = 1;
-		gbc_loglevelComboBox.gridy = 9;
+		gbc_loglevelComboBox.gridy = 10;
 		getContentPane().add(loglevelComboBox, gbc_loglevelComboBox);
 
 		JLabel loglevelLabel = new JLabel("Niveau de log");
@@ -339,14 +356,14 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_loglevelLabel.anchor = GridBagConstraints.EAST;
 		gbc_loglevelLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_loglevelLabel.gridx = 0;
-		gbc_loglevelLabel.gridy = 9;
+		gbc_loglevelLabel.gridy = 10;
 		getContentPane().add(loglevelLabel, gbc_loglevelLabel);
 
 		keeponlydeepCheckBox = new JCheckBox("Garder dossier 1er niv");
 		GridBagConstraints gbc_keeponlydeepRadioButton = new GridBagConstraints();
 		gbc_keeponlydeepRadioButton.insets = new Insets(0, 0, 5, 5);
 		gbc_keeponlydeepRadioButton.gridx = 1;
-		gbc_keeponlydeepRadioButton.gridy = 5;
+		gbc_keeponlydeepRadioButton.gridy = 6;
 		getContentPane().add(keeponlydeepCheckBox, gbc_keeponlydeepRadioButton);
 
 		JLabel namesLengthLabel = new JLabel("Longueur gardée noms");
@@ -354,7 +371,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_namesLengthLabel.anchor = GridBagConstraints.EAST;
 		gbc_namesLengthLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_namesLengthLabel.gridx = 2;
-		gbc_namesLengthLabel.gridy = 5;
+		gbc_namesLengthLabel.gridy = 6;
 		getContentPane().add(namesLengthLabel, gbc_namesLengthLabel);
 
 		namesLengthField = new JTextField();
@@ -363,7 +380,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_namesLengthField.insets = new Insets(0, 0, 5, 10);
 		gbc_namesLengthField.fill = GridBagConstraints.HORIZONTAL;
 		gbc_namesLengthField.gridx = 3;
-		gbc_namesLengthField.gridy = 5;
+		gbc_namesLengthField.gridy = 6;
 		getContentPane().add(namesLengthField, gbc_namesLengthField);
 		namesLengthField.setColumns(128);
 
@@ -372,14 +389,14 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_extractlistCheckBox.anchor = GridBagConstraints.WEST;
 		gbc_extractlistCheckBox.insets = new Insets(0, 0, 5, 5);
 		gbc_extractlistCheckBox.gridx = 2;
-		gbc_extractlistCheckBox.gridy = 7;
+		gbc_extractlistCheckBox.gridy = 8;
 		getContentPane().add(extractlistCheckBox, gbc_extractlistCheckBox);
 
 		JButton savedirButton = new JButton("Répertoire...");
 		GridBagConstraints gbc_savedirButton = new GridBagConstraints();
 		gbc_savedirButton.insets = new Insets(0, 0, 5, 0);
 		gbc_savedirButton.gridx = 3;
-		gbc_savedirButton.gridy = 6;
+		gbc_savedirButton.gridy = 7;
 		getContentPane().add(savedirButton, gbc_savedirButton);
 		savedirButton.setActionCommand("savedir");
 		savedirButton.addActionListener(app);
@@ -390,7 +407,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_savedirField.insets = new Insets(0, 0, 5, 5);
 		gbc_savedirField.fill = GridBagConstraints.HORIZONTAL;
 		gbc_savedirField.gridx = 1;
-		gbc_savedirField.gridy = 6;
+		gbc_savedirField.gridy = 7;
 		gbc_savedirField.weightx = 0.5;
 		getContentPane().add(savedirField, gbc_savedirField);
 
@@ -398,7 +415,7 @@ public class MailExtractMainWindow extends JFrame {
 		GridBagConstraints gbc_dropemptyfoldersCheckBox = new GridBagConstraints();
 		gbc_dropemptyfoldersCheckBox.insets = new Insets(0, 0, 5, 5);
 		gbc_dropemptyfoldersCheckBox.gridx = 0;
-		gbc_dropemptyfoldersCheckBox.gridy = 5;
+		gbc_dropemptyfoldersCheckBox.gridy = 6;
 		getContentPane().add(dropemptyfoldersCheckBox, gbc_dropemptyfoldersCheckBox);
 
 		JLabel savedirLabel = new JLabel("Répertoire d'extraction");
@@ -406,7 +423,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_savedirLabel.anchor = GridBagConstraints.EAST;
 		gbc_savedirLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_savedirLabel.gridx = 0;
-		gbc_savedirLabel.gridy = 6;
+		gbc_savedirLabel.gridy = 7;
 		getContentPane().add(savedirLabel, gbc_savedirLabel);
 
 		folderField = new JTextField();
@@ -427,6 +444,22 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_folderLabel.gridx = 0;
 		gbc_folderLabel.gridy = 4;
 		getContentPane().add(folderLabel, gbc_folderLabel);
+
+		charsetComboBox = new JComboBox(charsetGraphicStrings);
+		GridBagConstraints gbc_charsetComboBox = new GridBagConstraints();
+		gbc_charsetComboBox.insets = new Insets(0, 0, 5, 5);
+		gbc_charsetComboBox.fill = GridBagConstraints.HORIZONTAL;
+		gbc_charsetComboBox.gridx = 1;
+		gbc_charsetComboBox.gridy = 5;
+		getContentPane().add(charsetComboBox, gbc_charsetComboBox);
+
+		JLabel charsetLabel = new JLabel("Encodage");
+		GridBagConstraints gbc_charsetLabel = new GridBagConstraints();
+		gbc_charsetLabel.anchor = GridBagConstraints.EAST;
+		gbc_charsetLabel.insets = new Insets(0, 0, 5, 5);
+		gbc_charsetLabel.gridx = 0;
+		gbc_charsetLabel.gridy = 5;
+		getContentPane().add(charsetLabel, gbc_charsetLabel);
 
 		localRadioButton = new JRadioButton("Extraction locale");
 		localRadioButton.setSelected(true);
@@ -591,7 +624,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_nameLabel.anchor = GridBagConstraints.EAST;
 		gbc_nameLabel.insets = new Insets(0, 0, 5, 5);
 		gbc_nameLabel.gridx = 0;
-		gbc_nameLabel.gridy = 7;
+		gbc_nameLabel.gridy = 8;
 		getContentPane().add(nameLabel, gbc_nameLabel);
 
 		nameField = new JTextField();
@@ -602,7 +635,7 @@ public class MailExtractMainWindow extends JFrame {
 		gbc_nameField.weightx = 0.5;
 		gbc_nameField.fill = GridBagConstraints.HORIZONTAL;
 		gbc_nameField.gridx = 1;
-		gbc_nameField.gridy = 7;
+		gbc_nameField.gridy = 8;
 		getContentPane().add(nameField, gbc_nameField);
 		nameField.setColumns(128);
 		
@@ -665,7 +698,15 @@ public class MailExtractMainWindow extends JFrame {
 		containerButton.setActionCommand("container");
 		containerButton.addActionListener(app);
 
-		// RadioButtons
+        debugCheckBox =  new JCheckBox("Debug");
+        GridBagConstraints gbc_debugCheckBox = new GridBagConstraints();
+        gbc_debugCheckBox.anchor = GridBagConstraints.WEST;
+        gbc_debugCheckBox.insets = new Insets(0, 0, 5, 5);
+        gbc_debugCheckBox.gridx = 3;
+        gbc_debugCheckBox.gridy = 14;
+        getContentPane().add(debugCheckBox, gbc_debugCheckBox);
+
+        // RadioButtons
 		ButtonGroup groupLocalProtocol = new ButtonGroup();
 		groupLocalProtocol.add(localRadioButton);
 		groupLocalProtocol.add(protocoleRadioButton);

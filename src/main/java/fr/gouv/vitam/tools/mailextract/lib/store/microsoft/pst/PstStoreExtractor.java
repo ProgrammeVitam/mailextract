@@ -38,7 +38,6 @@ import java.net.URLEncoder;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Vector;
-import java.util.logging.Logger;
 
 import com.pff.PSTFile;
 import com.pff.PSTFolder;
@@ -49,6 +48,7 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 
 /**
  * StoreExtractor sub-class for mail boxes extracted through libpst library.
@@ -91,7 +91,7 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -99,7 +99,7 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
 		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,psExtractList);
 		
 		try {
@@ -108,6 +108,8 @@ public class PstStoreExtractor extends StoreExtractor {
 			throw new ExtractionException(
 					"mailExtract.pst: can't open " + path + ", doesn't exist or is not a pst file");
 		}
+
+		pstFile.setGlobalCodepage(options.defaultCharsetName);
 
 		ArchiveUnit rootNode = new ArchiveUnit(this, destRootPath, destName);
 		PstStoreFolder lPRootMailBoxFolder;
@@ -193,7 +195,7 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -201,7 +203,7 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
 		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		
 		this.attachment = attachment;

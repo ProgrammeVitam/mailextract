@@ -61,9 +61,9 @@ public class JMStoreFolder extends StoreFolder {
 		super(storeExtractor);
 		this.folder = folder;
 		if (folder instanceof ThunderbirdFolder)
-			((ThunderbirdFolder) folder).setLogger(storeExtractor.getLogger());
+			((ThunderbirdFolder) folder).setLogger(storeExtractor.getProgressLogger());
 		else if (folder instanceof MboxFolder)
-			((MboxFolder) folder).setLogger(storeExtractor.getLogger());
+			((MboxFolder) folder).setLogger(storeExtractor.getProgressLogger());
 		if (father != null)
 			finalizeStoreFolder(father);
 	}
@@ -94,7 +94,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages(boolean)
 	 */
 	@Override
-	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		int msgtotal;
 		Message message;
 
@@ -128,7 +128,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * int, boolean)
 	 */
 	@Override
-	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException {
+	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException, InterruptedException {
 		JMStoreFolder mBSubFolder;
 
 		try {
@@ -202,7 +202,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * (boolean)
 	 */
 	@Override
-	protected void doListFolderElements(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		int msgtotal;
 		Message message;
 
@@ -235,7 +235,7 @@ public class JMStoreFolder extends StoreFolder {
 	 * boolean)
 	 */
 	@Override
-	protected void doListSubFolders(boolean stats) throws ExtractionException {
+	protected void doListSubFolders(boolean stats) throws ExtractionException, InterruptedException {
 		JMStoreFolder mBSubFolder;
 
 		try {

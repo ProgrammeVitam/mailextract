@@ -2,7 +2,7 @@
  * Copyright French Prime minister Office/SGMAP/DINSIC/Vitam Program (2015-2019)
  *
  * contact.vitam@culture.gouv.fr
- * 
+ *
  * This software is a computer program whose purpose is to implement a digital archiving back-office system managing
  * high volumetry securely and efficiently.
  *
@@ -32,13 +32,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
 
 /**
  * Class for SEDA Archive Unit managing metadata, objects, if any, and on disk
@@ -126,12 +129,12 @@ public class ArchiveUnit {
 	 * 
 	 * <p>
 	 * For convenience each class which may have some log actions has it's own
-	 * getLogger method always returning the store extractor logger.
+	 * getProgressLogger method always returning the store extractor logger.
 	 *
 	 * @return logger
 	 */
-	public Logger getLogger() {
-		return storeExtractor.getLogger();
+	public MailExtractProgressLogger getProgressLogger() {
+		return storeExtractor.getProgressLogger();
 	}
 
 	/**
@@ -193,11 +196,11 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addMetadata(String key, String value, boolean mandatory) {
+	public void addMetadata(String key, String value, boolean mandatory) throws InterruptedException {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, value));
 		else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -220,11 +223,11 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) {
+	public void addMetadata(String key, String attributename, String attributevalue, String value, boolean mandatory) throws InterruptedException {
 		if (value != null && !value.isEmpty())
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, attributename, attributevalue, value));
 		else if (mandatory) {
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' is not defined in unit '" + name
 					+ "' in folder '" + rootPath + "'");
 		}
 	}
@@ -263,13 +266,13 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addSameMetadataList(String key, List<String> valuesList, boolean mandatory) {
+	public void addSameMetadataList(String key, List<String> valuesList, boolean mandatory) throws InterruptedException {
 		if ((valuesList != null) && (!valuesList.isEmpty())) {
 			for (String s : valuesList) {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, s));
 			}
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -292,7 +295,7 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addPersonMetadata(String key, String value, boolean mandatory) {
+	public void addPersonMetadata(String key, String value, boolean mandatory) throws InterruptedException {
 		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
@@ -306,7 +309,7 @@ public class ArchiveUnit {
 			mlMetaData.addMetadataXMLNode(mvMetaData);
 			contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -361,7 +364,7 @@ public class ArchiveUnit {
 	 * @param mandatory
 	 *            Mandatory flag
 	 */
-	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) {
+	public void addPersonMetadataList(String key, List<String> valuesList, boolean mandatory) throws InterruptedException {
 		MetadataPerson p;
 		MetadataXMLNode mvMetaData;
 		MetadataXMLList mlMetaData;
@@ -377,7 +380,7 @@ public class ArchiveUnit {
 				contentmetadatalist.addMetadataXMLNode(new MetadataXMLNode(key, mlMetaData));
 			}
 		} else if (mandatory)
-			getLogger().finest("mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
+			getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: mandatory metadata '" + key + "' empty in unit '" + name + "' in folder '"
 					+ rootPath + "'");
 	}
 
@@ -473,9 +476,9 @@ public class ArchiveUnit {
 
 		// write unit metadata file
 		if (storeExtractor.getOptions().model==StoreExtractorOptions.MODEL_V1)
-			writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes());
+			writeFile(dirPath, "ArchiveUnitContent.xml", contentmetadata.writeXML().getBytes(StandardCharsets.UTF_8));
 		else 
-			writeFile(dirPath, "__ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes());
+			writeFile(dirPath, "__ArchiveUnitMetadata.xml", contentmetadata.writeXML().getBytes(StandardCharsets.UTF_8));
 
 
 		// write objects files
@@ -534,7 +537,8 @@ public class ArchiveUnit {
 
 		if (result.length() > len)
 			result = result.substring(0, len);
-		result = type + "#" + Integer.toString(storeExtractor.getUniqID()) + "-" + result;
+		int uniqID=storeExtractor.getUniqID();
+		result = type + "#" + Integer.toString(uniqID) + "-" + result;
 
 		return result;
 	}

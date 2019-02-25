@@ -41,6 +41,9 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE_DETAILS;
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.WARNING;
+
 /**
  * StoreFolder sub-class for mail boxes extracted through libpst library.
  */
@@ -94,6 +97,13 @@ public class PstStoreFolder extends StoreFolder {
 		return result;
 	}
 
+	private void logMessageWarning(String msg) throws InterruptedException {
+		if (getStoreExtractor().getOptions().warningMsgProblem)
+			getProgressLogger().progressLog(WARNING, msg);
+		else
+			getProgressLogger().progressLog(MESSAGE_DETAILS, msg);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -101,25 +111,36 @@ public class PstStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages()
 	 */
 	@Override
-	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		PSTMessage message;
-
-		try {
-			PSTObject po = pstFolder.getNextChild();
-			message = (PSTMessage) po;
-			while (message != null) {
-				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
-				lPStoreMessage.analyzeMessage();
-				dateRange.extendRange(lPStoreMessage.getSentDate());
-				lPStoreMessage.extractMessage(writeFlag);
-				lPStoreMessage.countMessage();
-				po = pstFolder.getNextChild();
-				message = (PSTMessage) po;
+		PSTObject po = null;
+		int mes = 0;
+		while (true) {
+			boolean error;
+			do {
+				try {
+					mes++;
+					po = pstFolder.getNextChild();
+					error = false;
+				} catch (IOException e) {
+					throw new ExtractionException("MailExtract: Can't use pst file");
+				} catch (PSTException e) {
+					throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
+				} catch (Exception e) {
+					logMessageWarning("mailextract.pst: Wrongly formatted message "+mes+" in folder "+this.getName());
+					getProgressLogger().logException(e);
+					error = true;
+				}
 			}
-		} catch (IOException e) {
-			throw new ExtractionException("MailExtract: Can't use pst file");
-		} catch (PSTException e) {
-			throw new ExtractionException("MailExtract: Can't get messages from folder " + getFullName());
+			while (error);
+			if (po == null)
+				break;
+			message = (PSTMessage) po;
+			PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
+			lPStoreMessage.analyzeMessage();
+			dateRange.extendRange(lPStoreMessage.getSentDate());
+			lPStoreMessage.extractMessage(writeFlag);
+			lPStoreMessage.countMessage();
 		}
 	}
 
@@ -131,7 +152,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * int)
 	 */
 	@Override
-	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException {
+	protected void doExtractSubFolders(int level, boolean writeFlag) throws ExtractionException, InterruptedException {
 		PstStoreFolder lPMailBoxSubFolder;
 
 		try {
@@ -177,7 +198,7 @@ public class PstStoreFolder extends StoreFolder {
 	@Override
 	public boolean hasElements() throws ExtractionException {
 		try {
-			return pstFolder.getEmailCount() > 0;
+			return (pstFolder.getEmailCount() > 0) || (pstFolder.getContentCount() > 0);
 		} catch (IOException e) {
 			throw new ExtractionException("mailextract.libpst: Can't use pst file");
 		} catch (PSTException e) {
@@ -202,7 +223,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * fr.gouv.vitam.tools.mailextract.core.MailBoxFolder#doListFolderMessages()
 	 */
 	@Override
-	protected void doListFolderElements(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		PSTMessage message;
 
 		try {
@@ -226,7 +247,7 @@ public class PstStoreFolder extends StoreFolder {
 	 * boolean)
 	 */
 	@Override
-	protected void doListSubFolders(boolean stats) throws ExtractionException {
+	protected void doListSubFolders(boolean stats) throws ExtractionException, InterruptedException {
 		PstStoreFolder lPMailBoxSubFolder;
 
 		try {

@@ -47,6 +47,9 @@ public class StoreExtractorOptions {
 	/** The names length. */
 	public int namesLength;
 
+	/** The default charset name. */
+	public String defaultCharsetName;
+
 	/** The extract list flag. */
 	public boolean extractList;
 
@@ -78,6 +81,7 @@ public class StoreExtractorOptions {
 		extractMessageTextMetadata = false;
 		extractFileTextFile = false;
 		extractFileTextMetadata = false;
+		defaultCharsetName="windows-1252";
 		model = 2;
 	}
 
@@ -88,6 +92,7 @@ public class StoreExtractorOptions {
 	 * @param dropEmptyFolders           the drop empty folders
 	 * @param warningMsgProblem          the warning msg problem
 	 * @param namesLength                the names length
+	 * @param defaultCharsetName         the default charset name
 	 * @param extractList                the extract list
 	 * @param extractMessageTextFile     the extract message text file
 	 * @param extractMessageTextMetadata the extract message text metadata
@@ -96,12 +101,13 @@ public class StoreExtractorOptions {
 	 * @param model 					 the model
 	 */
 	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
+			int namesLength, String defaultCharsetName, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
 			boolean extractFileTextFile, boolean extractFileTextMetadata, int model) {
 		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
 		this.dropEmptyFolders = dropEmptyFolders;
 		this.warningMsgProblem = warningMsgProblem;
 		this.namesLength = namesLength;
+		this.defaultCharsetName=defaultCharsetName;
 		this.extractList = extractList;
 		this.extractMessageTextFile = extractMessageTextFile;
 		this.extractMessageTextMetadata = extractMessageTextMetadata;

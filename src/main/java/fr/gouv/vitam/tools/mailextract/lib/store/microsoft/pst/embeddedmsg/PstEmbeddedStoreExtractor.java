@@ -28,7 +28,6 @@
 package fr.gouv.vitam.tools.mailextract.lib.store.microsoft.pst.embeddedmsg;
 
 import java.io.PrintStream;
-import java.util.logging.Logger;
 
 import com.pff.PSTMessage;
 
@@ -37,6 +36,7 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 
 /**
  * StoreExtractor sub-class for embedded messages extracted through libpst
@@ -70,7 +70,7 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -78,7 +78,7 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public PstEmbeddedStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode,
-			StoreExtractorOptions options, StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList)
+									 StoreExtractorOptions options, StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList)
 			throws ExtractionException {
 		super("pst.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 

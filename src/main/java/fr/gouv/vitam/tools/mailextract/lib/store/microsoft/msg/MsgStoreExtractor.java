@@ -32,8 +32,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
-import java.util.logging.Logger;
 
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 import org.apache.poi.hsmf.MAPIMessage;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
@@ -81,7 +81,7 @@ public class MsgStoreExtractor extends StoreExtractor {
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException, InterruptedException {
 		super(urlString, folder, destPathString, options, rootStoreExtractor, logger,psExtractList);
 		MAPIMessage message;
 		long size = 0;
@@ -116,7 +116,7 @@ public class MsgStoreExtractor extends StoreExtractor {
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger,PrintStream psExtractList) throws ExtractionException {
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger,PrintStream psExtractList) throws ExtractionException, InterruptedException {
 		super("msg.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		MAPIMessage message;
 

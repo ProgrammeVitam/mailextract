@@ -179,7 +179,7 @@ public class RFC822Headers extends InternetHeaders {
 	 *            the name
 	 * @return the address header
 	 */
-	public List<String> getAddressHeader(String name) {
+	public List<String> getAddressHeader(String name) throws InterruptedException {
 		List<String> result = null;
 		String addressHeaderString = null;
 

@@ -29,19 +29,10 @@ package fr.gouv.vitam.tools.mailextract.app;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.nio.file.Files;
+import java.nio.charset.Charset;
 import java.nio.file.Paths;
-import java.util.Properties;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
-import java.util.logging.Formatter;
-import java.util.logging.Handler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -49,8 +40,11 @@ import javax.swing.UnsupportedLookAndFeelException;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractorOptions;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+
+import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.GLOBAL;
 
 /**
  * MailExtractApp class for launching the command or the graphic application.
@@ -213,6 +207,7 @@ public class MailExtractApp {
 		parser.accepts("password", "password").withRequiredArg();
 		parser.accepts("server", "mail server [HostName|IP](:port)").withRequiredArg();
 		parser.accepts("container", "local container directory or file to extract").withRequiredArg();
+		parser.accepts("setchar", "default charset").withRequiredArg();
 		parser.accepts("folder", "specific mail folder").withRequiredArg();
 		parser.accepts("rootdir", "root (default current directory) for output to root/username directory")
 				.withRequiredArg();
@@ -259,10 +254,10 @@ public class MailExtractApp {
 		int model = 2;
 		StoreExtractorOptions storeExtractorOptions;
 		boolean local = false;
-		String logLevel;
+		String logLevel,defaultCharset;
 
 		// outputs
-		Logger logger = null;
+		MailExtractProgressLogger logger = null;
 		PrintStream psExtractList;
 
 		// prepare parsing with jopt
@@ -293,11 +288,11 @@ public class MailExtractApp {
 		else if (options.has("l") || options.has("z") || (!options.has("l") && !options.has("z") && !options.has("x")))
 			logLevel = "OFF";
 		else
-			logLevel = "INFO";
+			logLevel = "GLOBAL";
 		try {
-			Level.parse(logLevel);
-		} catch (IllegalArgumentException iae) {
-			System.err.println("unknown log level");
+			MailExtractLogger.getLevel(logLevel);
+		} catch (MailExtractException iae) {
+			System.err.println("Unknown log level");
 			System.exit(1);
 		}
 		if (options.has("nameslength")) {
@@ -329,9 +324,15 @@ public class MailExtractApp {
 		else
 			protocol = "";
 
+		// identify default charset
+		if (options.has("setchar"))
+			defaultCharset = (String) options.valueOf("setchar");
+		else
+			defaultCharset = Charset.defaultCharset().name();
+
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength, options.has("extractlist"), options.has("extractmessagetextfile"),
+				options.has("warning"), namesLength, defaultCharset, options.has("extractlist"), options.has("extractmessagetextfile"),
 				options.has("extractmessagetextmetadata"), options.has("extractfiletextfile"),
 				options.has("extractfiletextmetadata"),model);
 
@@ -417,8 +418,10 @@ public class MailExtractApp {
 			}
 
 			// do the job, creating a store extractor and running the extraction
+			MailExtractLogger mel=null;
 			try {
-				logger = generateLogger(destRootPath + File.separator + destName + ".log", Level.parse(logLevel));
+				mel = new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
+				logger = new MailExtractProgressLogger(mel.getProgressLogger(),  MailExtractLogger.getLevel(logLevel));
 				if (options.has("extractlist"))
 					psExtractList = new PrintStream(
 							new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
@@ -439,64 +442,65 @@ public class MailExtractApp {
 				}
 				storeExtractor.endStoreExtractor();
 			} catch (ExtractionException ee) {
-				logger.severe(ee.getMessage());
+				logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());
+				logger.logException(ee);
 				System.exit(1);
 			} catch (Exception e) {
-				logFatalError(e, storeExtractor, logger);
+				logFatalError(e, storeExtractor, mel);
 				System.exit(1);
 			}
 		}
 	}
 
-	// generate a specific logger at the loglevel defined in constructor
-	private final static Logger generateLogger(String fileName, Level logLevel) throws Exception {
-		Logger logger;
-		try {
-			Properties props = System.getProperties();
-			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
-			logger = Logger.getLogger(MailExtractApp.class.getName());
-			logger.setLevel(logLevel);
-
-			Formatter simpleFormatter;
-			simpleFormatter = new SimpleFormatter();
-
-			if (logLevel != Level.OFF) {
-				Files.createDirectories(Paths.get(fileName).getParent());
-				Handler fileHandler = new FileHandler(fileName);
-				fileHandler.setFormatter(simpleFormatter);
-				fileHandler.setLevel(logLevel);
-				logger.addHandler(fileHandler);
-			}
-
-			Handler consoleHandler = new ConsoleHandler();
-			consoleHandler.setFormatter(simpleFormatter);
-			consoleHandler.setLevel(logLevel);
-			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
-				consoleHandler.setEncoding("Cp850");
-			logger.addHandler(consoleHandler);
-
-			// don't use ConsoleHandler at global level
-			logger.setUseParentHandlers(false);
-		} catch (IOException e) {
-			throw new Exception("mailextract: Can't create logger");
-		}
-		return logger;
-	}
+//	// generate a specific logger at the loglevel defined in constructor
+//	private final static Logger generateLogger(String fileName, Level logLevel) throws Exception {
+//		Logger logger;
+//		try {
+//			Properties props = System.getProperties();
+//			props.setProperty("java.util.logging.SimpleFormatter.format", "[%1$tc] %4$s: %5$s%n");
+//			logger = Logger.getProgressLogger(MailExtractApp.class.getName());
+//			logger.setLevel(logLevel);
+//
+//			Formatter simpleFormatter;
+//			simpleFormatter = new SimpleFormatter();
+//
+//			if (logLevel != Level.OFF) {
+//				Files.createDirectories(Paths.get(fileName).getParent());
+//				Handler fileHandler = new FileHandler(fileName);
+//				fileHandler.setFormatter(simpleFormatter);
+//				fileHandler.setLevel(logLevel);
+//				logger.addHandler(fileHandler);
+//			}
+//
+//			Handler consoleHandler = new ConsoleHandler();
+//			consoleHandler.setFormatter(simpleFormatter);
+//			consoleHandler.setLevel(logLevel);
+//			if (System.getProperty("os.name").toLowerCase().startsWith("windows"))
+//				consoleHandler.setEncoding("Cp850");
+//			logger.addHandler(consoleHandler);
+//
+//			// don't use ConsoleHandler at global level
+//			logger.setUseParentHandlers(false);
+//		} catch (IOException e) {
+//			throw new Exception("mailextract: Can't create logger");
+//		}
+//		return logger;
+//	}
 
 	// try if possible to log in the store extractor logger all the information
 	// about the fatal error
-	private final static void logFatalError(Exception e, StoreExtractor storeExtractor, Logger logger) {
+	private final static void logFatalError(Exception e, StoreExtractor storeExtractor, MailExtractLogger logger) {
 		if (logger == null)
-			logger = Logger.getGlobal();
-		logger.severe("Terminated with unrecoverable error");
+			logger = MailExtractLogger.getGlobalLogger();
+		logger.log(GLOBAL,"Terminated with unrecoverable error");
 		if (!e.getMessage().isEmpty())
-			logger.severe(e.getMessage());
-		logger.severe(getPrintStackTrace(e));
+			logger.log(GLOBAL,e.getMessage());
+		logger.log(GLOBAL,getPrintStackTrace(e));
 		if (storeExtractor == null
 				|| storeExtractor.getFolderTotalCount() + storeExtractor.getTotalElementsCount() == 0)
-			logger.severe("No writing done");
+			logger.log(GLOBAL,"No writing done");
 		else
-			logger.severe("Partial writing done " + Integer.toString(storeExtractor.getFolderTotalCount())
+			logger.log(GLOBAL,"Partial writing done " + Integer.toString(storeExtractor.getFolderTotalCount())
 					+ " folders and " + Integer.toString(storeExtractor.getTotalElementsCount()) + " messages");
 
 	}

@@ -35,12 +35,12 @@ import fr.gouv.vitam.tools.mailextract.lib.core.StoreMessageAttachment;
 import fr.gouv.vitam.tools.mailextract.lib.nodes.ArchiveUnit;
 import fr.gouv.vitam.tools.mailextract.lib.store.javamail.JMStoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
+import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Properties;
-import java.util.logging.Logger;
 
 /**
  * StoreExtractor sub-class for mail boxes extracted through JavaMail library.
@@ -87,7 +87,7 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -95,7 +95,7 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger, PrintStream psExtractList) throws ExtractionException {
+							StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
 		super(urlString, folder, destPathString, options, rootStoreExtractor, logger, psExtractList);
 
 		String url = "";
@@ -166,7 +166,7 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            the creating store extractor in nested extraction, or null if
 	 *            root one
 	 * @param logger
-	 *            Logger used (from {@link java.util.logging.Logger})
+	 *            logger used
 	 * @param psExtractList
 	 *            the ps extract list
 	 * @throws ExtractionException
@@ -174,7 +174,7 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, Logger logger,PrintStream psExtractList) throws ExtractionException {
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger,PrintStream psExtractList) throws ExtractionException {
 		super(attachment.getScheme(), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
 		String url;
 

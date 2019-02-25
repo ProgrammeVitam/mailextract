@@ -52,7 +52,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * @param size
 	 *            the size
 	 */
-	public MsgStoreFolder(MsgStoreExtractor storeExtractor, MAPIMessage message, long size) {
+	public MsgStoreFolder(MsgStoreExtractor storeExtractor, MAPIMessage message, long size) throws InterruptedException {
 		super(storeExtractor);
 
 		this.msgStoreMessage = new MsgStoreMessage(this, message, size);
@@ -72,7 +72,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * @return the LP store folder
 	 */
 	public static MsgStoreFolder createRootFolder(MsgStoreExtractor storeExtractor, MAPIMessage message, long size,
-			ArchiveUnit rootArchiveUnit) {
+			ArchiveUnit rootArchiveUnit) throws InterruptedException {
 		MsgStoreFolder result = new MsgStoreFolder(storeExtractor, message, size);
 		result.folderArchiveUnit = rootArchiveUnit;
 
@@ -104,7 +104,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * doExtractFolderMessages(boolean)
 	 */
 	@Override
-	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException {
+	protected void doExtractFolderElements(boolean writeFlag) throws ExtractionException, InterruptedException {
 		msgStoreMessage.analyzeMessage();
 		dateRange.extendRange(msgStoreMessage.getSentDate());
 		msgStoreMessage.extractMessage(writeFlag);
@@ -159,7 +159,7 @@ public class MsgStoreFolder extends StoreFolder {
 	 * (boolean)
 	 */
 	@Override
-	protected void doListFolderElements(boolean stats) throws ExtractionException {
+	protected void doListFolderElements(boolean stats) throws ExtractionException, InterruptedException {
 		msgStoreMessage.analyzeMessage();
 		dateRange.extendRange(msgStoreMessage.getSentDate());
 		msgStoreMessage.extractMessage(false);
