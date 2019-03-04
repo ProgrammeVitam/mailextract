@@ -76,13 +76,12 @@ public class MsgStoreExtractor extends StoreExtractor {
 	 *            the root store extractor
 	 * @param logger
 	 *            the logger
-	 * @param psExtractList 
 	 * @throws ExtractionException
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException, InterruptedException {
-		super(urlString, folder, destPathString, options, rootStoreExtractor, logger,psExtractList);
+							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException, InterruptedException {
+		super(urlString, folder, destPathString, options, rootStoreExtractor, logger);
 		MAPIMessage message;
 		long size = 0;
 
@@ -116,8 +115,8 @@ public class MsgStoreExtractor extends StoreExtractor {
 	 *             the extraction exception
 	 */
 	public MsgStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger,PrintStream psExtractList) throws ExtractionException, InterruptedException {
-		super("msg.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException, InterruptedException {
+		super("msg.embeddedmsg://localhost/", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
 		MAPIMessage message;
 
 		this.attachment = attachment;
@@ -143,6 +142,14 @@ public class MsgStoreExtractor extends StoreExtractor {
 	public StoreMessageAttachment getAttachment() {
 		return attachment;
 	}
+
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#canExtractObjectsLists()
+	 */
+	@Override
+	public boolean canExtractObjectsLists(){
+		return false;
+	};
 
 	/** The Constant MSG_MN. */
 	static final byte[] MSG_MN = new byte[] { (byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0, (byte) 0xA1, (byte) 0xB1,

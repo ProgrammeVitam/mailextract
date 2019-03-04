@@ -258,7 +258,6 @@ public class MailExtractApp {
 
 		// outputs
 		MailExtractProgressLogger logger = null;
-		PrintStream psExtractList;
 
 		// prepare parsing with jopt
 		OptionParser parser = createOptionParser();
@@ -422,11 +421,6 @@ public class MailExtractApp {
 			try {
 				mel = new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
 				logger = new MailExtractProgressLogger(mel.getProgressLogger(),  MailExtractLogger.getLevel(logLevel));
-				if (options.has("extractlist"))
-					psExtractList = new PrintStream(
-							new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
-				else
-					psExtractList = null;
 
 				if (user == null || user.isEmpty())
 					destName = "unknown_extract";
@@ -434,7 +428,7 @@ public class MailExtractApp {
 					destName = user;
 				String urlString = StoreExtractor.composeStoreURL(protocol, server, user, password, container);
 				storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
+						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
 				if (options.has("l") || options.has("z")) {
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {

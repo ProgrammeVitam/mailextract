@@ -31,7 +31,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeFormatter;
@@ -57,6 +56,7 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
 
+import static fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor.EXTRACTED_MAILS_LIST;
 import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.*;
 
 /**
@@ -102,7 +102,9 @@ import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogge
  */
 public abstract class StoreMessage extends StoreElement {
 
-    /** Store folder. containing this message. **/
+    /**
+     * Store folder. containing this message.
+     **/
     protected StoreFolder storeFolder;
 
     // /** Message nature (MESSAGE, CALENDAR). */
@@ -120,61 +122,99 @@ public abstract class StoreMessage extends StoreElement {
      */
     protected byte[] mimeContent;
 
-    /** Mime fake if any, or null for mime source. */
+    /**
+     * Mime fake if any, or null for mime source.
+     */
     protected MimeMessage mimeFake;
 
-    /** Different versions of the message body. */
+    /**
+     * Different versions of the message body.
+     */
     protected String[] bodyContent = new String[3];
 
-    /** The Constant TEXT_BODY. */
+    /**
+     * The Constant TEXT_BODY.
+     */
     static public final int TEXT_BODY = 0;
 
-    /** The Constant HTML_BODY. */
+    /**
+     * The Constant HTML_BODY.
+     */
     static public final int HTML_BODY = 1;
 
-    /** The Constant RTF_BODY. */
+    /**
+     * The Constant RTF_BODY.
+     */
     static public final int RTF_BODY = 2;
 
-    /** The Constant OUT_OF_BODY. */
+    /**
+     * The Constant OUT_OF_BODY.
+     */
     static public final int OUT_OF_BODY = 3;
 
-    /** Complete mail header from original smtp format, if any. */
+    /**
+     * Complete mail header from original smtp format, if any.
+     */
     protected List<String> mailHeader;
 
-    /** Attachments list. */
+    /**
+     * Attachments list.
+     */
     protected List<StoreMessageAttachment> attachments;
 
-    /** Appointment information. */
+    /**
+     * Appointment information.
+     */
     protected StoreMessageAppointment appointment;
 
-    /** Subject. */
+    /**
+     * Subject.
+     */
     protected String subject;
 
-    /** "From" address. */
+    /**
+     * "From" address.
+     */
     protected String from;
 
-    /** List of "To" recipients addresses. */
+    /**
+     * List of "To" recipients addresses.
+     */
     protected List<String> recipientTo;
 
-    /** List of "Cc"recipients addresses. */
+    /**
+     * List of "Cc"recipients addresses.
+     */
     protected List<String> recipientCc;
 
-    /** List of "Bcc" recipients addresses. */
+    /**
+     * List of "Bcc" recipients addresses.
+     */
     protected List<String> recipientBcc;
 
-    /** List of "Reply-To" addresses. */
+    /**
+     * List of "Reply-To" addresses.
+     */
     protected List<String> replyTo;
 
-    /** "Return-Path" address. */
+    /**
+     * "Return-Path" address.
+     */
     protected String returnPath;
 
-    /** Sent date. **/
+    /**
+     * Sent date.
+     **/
     protected Date sentDate;
 
-    /** Received date. **/
+    /**
+     * Received date.
+     **/
     protected Date receivedDate;
 
-    /** Message unique ID given by the sending server. */
+    /**
+     * Message unique ID given by the sending server.
+     */
     protected String messageID;
 
     /**
@@ -189,17 +229,20 @@ public abstract class StoreMessage extends StoreElement {
      */
     protected List<String> references;
 
-    /** List of "Sender" addresses. */
+    /**
+     * List of "Sender" addresses.
+     */
     protected List<String> sender;
 
-    /** Message ArchiveUnit. */
+    /**
+     * Message ArchiveUnit.
+     */
     public ArchiveUnit messageNode;
 
     /**
      * Instantiates a new mail box message.
      *
-     * @param storeFolder
-     *            Mail box folder containing this message
+     * @param storeFolder Mail box folder containing this message
      */
     protected StoreMessage(StoreFolder storeFolder) {
         this.storeFolder = storeFolder;
@@ -280,8 +323,7 @@ public abstract class StoreMessage extends StoreElement {
      * <p>
      * To log a problem on a specific message.
      *
-     * @param msg
-     *            Message to log
+     * @param msg Message to log
      */
     public void logMessageWarning(String msg) throws InterruptedException {
         if (subject != null)
@@ -290,9 +332,9 @@ public abstract class StoreMessage extends StoreElement {
             msg += " for [no subject] message";
 
         if (storeFolder.getStoreExtractor().options.warningMsgProblem)
-            getProgressLogger().progressLog(WARNING,msg);
+            getProgressLogger().progressLog(WARNING, msg);
         else
-            getProgressLogger().progressLog(MESSAGE_DETAILS,msg);
+            getProgressLogger().progressLog(MESSAGE_DETAILS, msg);
     }
 
     /*
@@ -434,13 +476,12 @@ public abstract class StoreMessage extends StoreElement {
      * This is the main method for sub classes, where all metadata and
      * information has to be extracted in standard representation out of the
      * inner representation of the message.
-     *
+     * <p>
      * If needed a fake raw SMTP content (.eml) is generated with all the body
      * formats available but without the attachments, which are extracted too.
      *
-     * @throws ExtractionException
-     *             Any unrecoverable extraction exception (access trouble, major
-     *             format problems...)
+     * @throws ExtractionException Any unrecoverable extraction exception (access trouble, major
+     *                             format problems...)
      */
     public void analyzeMessage() throws ExtractionException, InterruptedException {
         // header metadata extraction
@@ -549,12 +590,9 @@ public abstract class StoreMessage extends StoreElement {
      * defined (see also {@link StoreFolder#extractFolder StoreFolder.extractFolder} and
      * {@link StoreExtractor#extractAllFolders StoreFolder.extractAllFolders}).
      *
-     * @param writeFlag
-     *            write or not flag (no write used for stats)
-     *
-     * @throws ExtractionException
-     *             Any unrecoverable extraction exception (access trouble, major
-     *             format problems...)
+     * @param writeFlag write or not flag (no write used for stats)
+     * @throws ExtractionException Any unrecoverable extraction exception (access trouble, major
+     *                             format problems...)
      */
     public final void extractMessage(boolean writeFlag) throws ExtractionException, InterruptedException {
         // String description = "[Vide]";
@@ -660,62 +698,66 @@ public abstract class StoreMessage extends StoreElement {
 
         getStoreExtractor().incMessageCount();
         if (getStoreExtractor().isRoot()) {
-            getProgressLogger().progressLogIfStep(MESSAGE_GROUP,getStoreExtractor().getMessageCount(),"mailextract: "+getStoreExtractor().getMessageCount()+" extracted messages");
-            getProgressLogger().progressLog(MESSAGE,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
-        }
-        else
-            getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Extracted message " + (subject == null ? "no subject" : subject));
-        getProgressLogger().progressLog(MESSAGE_DETAILS,"with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
+            getProgressLogger().progressLogIfStep(MESSAGE_GROUP, getStoreExtractor().getMessageCount(), "mailextract: " + getStoreExtractor().getMessageCount() + " extracted messages");
+            getProgressLogger().progressLog(MESSAGE, "mailextract: Extracted message " + (subject == null ? "no subject" : subject));
+        } else
+            getProgressLogger().progressLog(MESSAGE_DETAILS, "mailextract: Extracted message " + (subject == null ? "no subject" : subject));
+        getProgressLogger().progressLog(MESSAGE_DETAILS, "with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
 
-        // write in csv list
-        if (storeFolder.getStoreExtractor().options.extractList)
-            writeExtractList();
+        // write in csv list if asked for
+        writeMailsList();
     }
 
-    private void writeExtractList() throws InterruptedException {
+    private void writeMailsList() throws InterruptedException {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+        PrintStream ps = storeFolder.getStoreExtractor().getGlobalListPS(EXTRACTED_MAILS_LIST);
 
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
-                (sentDate == null ? "" : sdf.format(sentDate)));
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
-                (receivedDate == null ? "" : sdf.format(receivedDate)));
-        if ((from != null) && !from.isEmpty()) {
-            MetadataPerson p = new MetadataPerson(from);
-            storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|\"%s\"|", filterHyphen(p.fullName),
-                    filterHyphen(p.identifier));
-        }
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|",
-                filterHyphen(personStringListToIndentifierString(recipientTo)));
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(subject));
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(messageID));
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(attachmentsNamesList()));
-        if ((replyTo == null) || replyTo.isEmpty())
-            storeFolder.getStoreExtractor().getPSExtractList().format("\"\"|");
-        else {
-            MetadataPerson p = new MetadataPerson(replyTo.get(0));
-            storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(p.identifier));
-        }
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%s\"|", filterHyphen(storeFolder.getFullName()));
-        storeFolder.getStoreExtractor().getPSExtractList().format("\"%d\"|", this.getMessageSize());
-        if (!storeFolder.getStoreExtractor().isRoot())
-            storeFolder.getStoreExtractor().getPSExtractList().format("\"Attached\"");
-        if (appointment != null) {
-            String bdString, edString;
-            if (appointment.beginDate != null)
-                bdString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.beginDate);
-            else
-                bdString = "[Date/HeureInconnues]";
-            if (appointment.endDate != null)
-                edString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.endDate);
-            else
-                edString = "[Date/HeureInconnues]";
-            storeFolder.getStoreExtractor().getPSExtractList().format("|\"%s\"|\"%s\"|\"%s\"",
-                    filterHyphen(appointment.location), bdString, edString);
-        } else {
-            storeFolder.getStoreExtractor().getPSExtractList().format("|||", this.getMessageSize());
-        }
-        storeFolder.getStoreExtractor().getPSExtractList().println("");
-        storeFolder.getStoreExtractor().getPSExtractList().flush();
+        if (storeFolder.getStoreExtractor().options.extractObjectsLists && storeFolder.getStoreExtractor().canExtractObjectsLists())
+            try {
+                ps.format("\"%s\"|",
+                        (sentDate == null ? "" : sdf.format(sentDate)));
+                ps.format("\"%s\"|",
+                        (receivedDate == null ? "" : sdf.format(receivedDate)));
+                if ((from != null) && !from.isEmpty()) {
+                    MetadataPerson p = new MetadataPerson(from);
+                    ps.format("\"%s\"|\"%s\"|", filterHyphen(p.fullName),
+                            filterHyphen(p.identifier));
+                }
+                ps.format("\"%s\"|",
+                        filterHyphen(personStringListToIndentifierString(recipientTo)));
+                ps.format("\"%s\"|", filterHyphen(subject));
+                ps.format("\"%s\"|", filterHyphen(messageID));
+                ps.format("\"%s\"|", filterHyphen(attachmentsNamesList()));
+                if ((replyTo == null) || replyTo.isEmpty())
+                    ps.format("\"\"|");
+                else {
+                    MetadataPerson p = new MetadataPerson(replyTo.get(0));
+                    ps.format("\"%s\"|", filterHyphen(p.identifier));
+                }
+                ps.format("\"%s\"|", filterHyphen(storeFolder.getFullName()));
+                ps.format("\"%d\"|", this.getMessageSize());
+                if (!storeFolder.getStoreExtractor().isRoot())
+                    ps.format("\"Attached\"");
+                if (appointment != null) {
+                    String bdString, edString;
+                    if (appointment.beginDate != null)
+                        bdString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.beginDate);
+                    else
+                        bdString = "[Date/HeureInconnues]";
+                    if (appointment.endDate != null)
+                        edString = DateTimeFormatter.ISO_DATE_TIME.format(appointment.endDate);
+                    else
+                        edString = "[Date/HeureInconnues]";
+                    ps.format("|\"%s\"|\"%s\"|\"%s\"",
+                            filterHyphen(appointment.location), bdString, edString);
+                } else {
+                    ps.format("|||", this.getMessageSize());
+                }
+                ps.println("");
+                ps.flush();
+            } catch (Exception e) {
+                logMessageWarning("mailextract: Can't write in mails csv list");
+            }
     }
 
     private String personStringListToIndentifierString(List<String> sList) {
@@ -756,7 +798,9 @@ public abstract class StoreMessage extends StoreElement {
         return s.replace("\"", " ");
     }
 
-    /** Extract a file or inline message attachment. */
+    /**
+     * Extract a file or inline message attachment.
+     */
     private final void extractFileOrInlineAttachment(ArchiveUnit messageNode, StoreMessageAttachment attachment,
                                                      boolean writeFlag) throws ExtractionException, InterruptedException {
         ArchiveUnit attachmentNode;
@@ -793,7 +837,7 @@ public abstract class StoreMessage extends StoreElement {
             try {
                 textExtract = TikaExtractor.getInstance().extractTextFromBinary(attachment.getRawAttachmentContent());
             } catch (ExtractionException ee) {
-                this.getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Can't extract text content from attachment " + attachment.name);
+                this.getProgressLogger().progressLog(MESSAGE_DETAILS, "mailextract: Can't extract text content from attachment " + attachment.name);
                 this.getProgressLogger().logException(ee);
             }
         // put in file
@@ -810,7 +854,9 @@ public abstract class StoreMessage extends StoreElement {
             attachmentNode.write();
     }
 
-    /** Extract a store attachment */
+    /**
+     * Extract a store attachment
+     */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private final void extractStoreAttachment(ArchiveUnit rootNode, DateRange attachedMessagedateRange,
                                               StoreMessageAttachment a, boolean writeFlag) throws ExtractionException, InterruptedException {
@@ -837,9 +883,8 @@ public abstract class StoreMessage extends StoreElement {
             try {
                 extractor = (StoreExtractor) storeExtractorClass
                         .getConstructor(StoreMessageAttachment.class, ArchiveUnit.class, StoreExtractorOptions.class,
-                                StoreExtractor.class, MailExtractProgressLogger.class, PrintStream.class)
-                        .newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getProgressLogger(),
-                                getStoreExtractor().getPSExtractList());
+                                StoreExtractor.class, MailExtractProgressLogger.class)
+                        .newInstance(a, rootNode, getStoreExtractor().options, getStoreExtractor(), getProgressLogger());
             } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | NoSuchMethodException
                     | SecurityException e) {
                 logMessageWarning("mailextract: Dysfonctional embedded store type=" + a.attachmentStoreScheme
@@ -872,7 +917,9 @@ public abstract class StoreMessage extends StoreElement {
         }
     }
 
-    /** Extract all message attachments. */
+    /**
+     * Extract all message attachments.
+     */
     private final void extractMessageAttachments(ArchiveUnit messageNode, boolean writeFlag)
             throws ExtractionException, InterruptedException {
         DateRange attachedMessagedateRange;
@@ -884,7 +931,7 @@ public abstract class StoreMessage extends StoreElement {
             // message identification
             if (a.attachmentType == StoreMessageAttachment.STORE_ATTACHMENT) {
                 // recursive extraction of a message in attachment...
-                getProgressLogger().progressLog(MESSAGE_DETAILS,"mailextract: Attached message extraction");
+                getProgressLogger().progressLog(MESSAGE_DETAILS, "mailextract: Attached message extraction");
                 extractStoreAttachment(messageNode, attachedMessagedateRange, a, writeFlag);
                 attachedFlag = true;
             } else if (writeFlag) {
@@ -910,9 +957,8 @@ public abstract class StoreMessage extends StoreElement {
      * Add this message in the folder accumulators for number of messages and
      * total raw size of messages.
      *
-     * @throws ExtractionException
-     *             Any unrecoverable extraction exception (access trouble, major
-     *             format problems...)
+     * @throws ExtractionException Any unrecoverable extraction exception (access trouble, major
+     *                             format problems...)
      */
     public void countMessage() throws ExtractionException, InterruptedException {
         // accumulate in folder statistics
@@ -948,13 +994,13 @@ public abstract class StoreMessage extends StoreElement {
             int countline = 0;
             for (String tmp : addressList) {
                 // 80 characters lines
-                tmp = MimeUtility.encodeText(tmp,"UTF-8","Q");
+                tmp = MimeUtility.encodeText(tmp, "UTF-8", "Q");
                 if (countline + tmp.length() > 80) {
                     value += "\n\t";
                     countline = 1;
                 } else
                     countline += tmp.length();
-                value += MimeUtility.encodeText(tmp,"UTF-8","Q") + ",";
+                value += MimeUtility.encodeText(tmp, "UTF-8", "Q") + ",";
             }
             value = value.substring(0, value.length() - 1);
             mime.setHeader(tag, value);
@@ -977,10 +1023,10 @@ public abstract class StoreMessage extends StoreElement {
 
             // Return-Path
             if (returnPath != null)
-                mime.setHeader("Return-Path", MimeUtility.encodeText(returnPath,"UTF-8","Q"));
+                mime.setHeader("Return-Path", MimeUtility.encodeText(returnPath, "UTF-8", "Q"));
             // From
             if (from != null)
-                mime.setHeader("From", MimeUtility.encodeText(from,"UTF-8","Q"));
+                mime.setHeader("From", MimeUtility.encodeText(from, "UTF-8", "Q"));
             // To
             if (recipientTo != null)
                 setAddressList(mime, "To", recipientTo);
@@ -997,13 +1043,13 @@ public abstract class StoreMessage extends StoreElement {
             mime.setSentDate(sentDate);
             // Subject
             if (subject != null)
-                mime.setSubject(MimeUtility.encodeText(subject,"UTF-8","Q"));
+                mime.setSubject(MimeUtility.encodeText(subject, "UTF-8", "Q"));
             // Message-ID
             if (messageID != null)
-                mime.setHeader("Message-ID", MimeUtility.encodeText(messageID,"UTF-8","Q"));
+                mime.setHeader("Message-ID", MimeUtility.encodeText(messageID, "UTF-8", "Q"));
             // In-Reply-To
             if ((inReplyToUID != null) && (!inReplyToUID.isEmpty()))
-                mime.setHeader("In-Reply-To", MimeUtility.encodeText(inReplyToUID,"UTF-8","Q"));
+                mime.setHeader("In-Reply-To", MimeUtility.encodeText(inReplyToUID, "UTF-8", "Q"));
 
         } catch (MessagingException | UnsupportedEncodingException e) {
             throw new ExtractionException("Unable to generate mime header of message " + subject);
@@ -1051,8 +1097,8 @@ public abstract class StoreMessage extends StoreElement {
                             attachPart.setContent(a.getRawAttachmentContent(),
                                     "application/octet-stream; name=\"" + attachmentFilename + "\"");
                         } else {
-                                attachPart.setContent(a.getRawAttachmentContent(),
-                                        a.mimeType + "; name=\"" + attachmentFilename + "\"");
+                            attachPart.setContent(a.getRawAttachmentContent(),
+                                    a.mimeType + "; name=\"" + attachmentFilename + "\"");
                         }
                     }
                     // set Content-Disposition
@@ -1187,11 +1233,11 @@ public abstract class StoreMessage extends StoreElement {
         else
             tmp = ifnone;
         if ("message/rfc822".equals(mimetype) && (!tmp.endsWith(".eml")))
-            tmp+=".eml";
+            tmp += ".eml";
 
         // prevent a bug when quotes are in ascii filename (encodeWord is then not encoding)
         if (isPureAscii(tmp) && tmp.contains("\""))
-            tmp=tmp.replaceAll("\"","'");
+            tmp = tmp.replaceAll("\"", "'");
 
         try {
             return MimeUtility.encodeWord(tmp, "UTF-8", "Q");
@@ -1220,9 +1266,9 @@ public abstract class StoreMessage extends StoreElement {
 
         @Override
         protected synchronized void updateHeaders() throws MessagingException {
-            String[] date=getHeader("Date");
+            String[] date = getHeader("Date");
             super.updateHeaders();
-            if (date==null)
+            if (date == null)
                 removeHeader("Date");
         }
     }

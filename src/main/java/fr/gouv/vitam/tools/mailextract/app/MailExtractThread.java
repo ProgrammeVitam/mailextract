@@ -65,9 +65,6 @@ public class MailExtractThread extends Thread {
 	/** The mailextract library logger. */
 	private MailExtractProgressLogger logger;
 
-	/** The output stream for extract list, if any. */
-	private PrintStream psExtractList;
-
 	/**
 	 * Instantiates a new mail extract thread.
 	 *
@@ -108,10 +105,6 @@ public class MailExtractThread extends Thread {
 				mainWindow.consoleTextArea.setCaretPosition(newLog.length());
 			}, 100);
 			logger.setDebugFlag(debugFlag);
-			if (storeExtractorOptions.extractList)
-				psExtractList=new PrintStream(new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
-			else 
-				psExtractList=null;
 	} catch (Exception e) {
 			System.out.println(e.getMessage());
 		}
@@ -120,7 +113,7 @@ public class MailExtractThread extends Thread {
 		try {
 			String urlString = StoreExtractor.composeStoreURL(protocol, host, user, password, container);
 			this.storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
+					Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
 			this.actionNumber = actionNumber;
 		} catch (ExtractionException ee) {
 			logger.progressLogWithoutInterruption(GLOBAL,ee.getMessage());

@@ -71,16 +71,14 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            logger used
-	 * @param psExtractList
-	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public PstEmbeddedStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode,
-									 StoreExtractorOptions options, StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList)
+									 StoreExtractorOptions options, StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger)
 			throws ExtractionException {
-		super("pst.embeddedmsg", "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
+		super("pst.embeddedmsg://localhost/", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
 
 		this.attachment=attachment;
 		setRootFolder(PstEmbeddedStoreFolder.createRootFolder((PSTMessage)attachment.getStoreContent(),this,rootNode));
@@ -94,4 +92,11 @@ public class PstEmbeddedStoreExtractor extends StoreExtractor {
 		return attachment;
 	}
 
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#canExtractObjectsLists()
+	 */
+	@Override
+	public boolean canExtractObjectsLists(){
+		return false;
+	};
 }

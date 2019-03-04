@@ -92,15 +92,13 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            logger used
-	 * @param psExtractList
-	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(String urlString, String storeFolder, String destPathString, StoreExtractorOptions options,
-							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
-		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger,psExtractList);
+							 StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException {
+		super(urlString, storeFolder, destPathString, options, rootStoreExtractor, logger);
 		
 		try {
 			pstFile = new PSTFile(path);
@@ -196,15 +194,13 @@ public class PstStoreExtractor extends StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            logger used
-	 * @param psExtractList
-	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public PstStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
-		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException {
+		super(generateFileAndUrl(attachment, rootNode), "", rootNode.getFullName(), options, rootStoreExtractor, logger);
 		
 		this.attachment = attachment;
 		this.storeFile = new File(path);
@@ -276,6 +272,7 @@ public class PstStoreExtractor extends StoreExtractor {
 	 */
 	@Override
 	public void endStoreExtractor() throws ExtractionException {
+		super.endStoreExtractor();
 		try {
 			pstFile.close();
 		} catch (IOException e) {
@@ -293,6 +290,14 @@ public class PstStoreExtractor extends StoreExtractor {
 	public StoreMessageAttachment getAttachment() {
 		return attachment;
 	}
+
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#canExtractObjectsLists()
+	 */
+	@Override
+	public boolean canExtractObjectsLists(){
+		return true;
+	};
 
 	/** The Constant PST_MN. */
 	static final byte[] PST_MN = new byte[] { 0x21, 0x42, 0x44, 0x4e };
