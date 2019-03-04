@@ -948,13 +948,13 @@ public abstract class StoreMessage extends StoreElement {
             int countline = 0;
             for (String tmp : addressList) {
                 // 80 characters lines
-                tmp = MimeUtility.encodeText(tmp);
+                tmp = MimeUtility.encodeText(tmp,"UTF-8","Q");
                 if (countline + tmp.length() > 80) {
                     value += "\n\t";
                     countline = 1;
                 } else
                     countline += tmp.length();
-                value += MimeUtility.encodeText(tmp) + ",";
+                value += MimeUtility.encodeText(tmp,"UTF-8","Q") + ",";
             }
             value = value.substring(0, value.length() - 1);
             mime.setHeader(tag, value);
@@ -977,10 +977,10 @@ public abstract class StoreMessage extends StoreElement {
 
             // Return-Path
             if (returnPath != null)
-                mime.setHeader("Return-Path", MimeUtility.encodeText(returnPath));
+                mime.setHeader("Return-Path", MimeUtility.encodeText(returnPath,"UTF-8","Q"));
             // From
             if (from != null)
-                mime.setHeader("From", MimeUtility.encodeText(from));
+                mime.setHeader("From", MimeUtility.encodeText(from,"UTF-8","Q"));
             // To
             if (recipientTo != null)
                 setAddressList(mime, "To", recipientTo);
@@ -997,13 +997,13 @@ public abstract class StoreMessage extends StoreElement {
             mime.setSentDate(sentDate);
             // Subject
             if (subject != null)
-                mime.setSubject(MimeUtility.encodeText(subject));
+                mime.setSubject(MimeUtility.encodeText(subject,"UTF-8","Q"));
             // Message-ID
             if (messageID != null)
-                mime.setHeader("Message-ID", MimeUtility.encodeText(messageID));
+                mime.setHeader("Message-ID", MimeUtility.encodeText(messageID,"UTF-8","Q"));
             // In-Reply-To
             if ((inReplyToUID != null) && (!inReplyToUID.isEmpty()))
-                mime.setHeader("In-Reply-To", MimeUtility.encodeText(inReplyToUID));
+                mime.setHeader("In-Reply-To", MimeUtility.encodeText(inReplyToUID,"UTF-8","Q"));
 
         } catch (MessagingException | UnsupportedEncodingException e) {
             throw new ExtractionException("Unable to generate mime header of message " + subject);
@@ -1194,7 +1194,7 @@ public abstract class StoreMessage extends StoreElement {
             tmp=tmp.replaceAll("\"","'");
 
         try {
-            return MimeUtility.encodeWord(tmp, "utf-8", "B");
+            return MimeUtility.encodeWord(tmp, "UTF-8", "Q");
         } catch (UnsupportedEncodingException e) {
             // forget it
         }
