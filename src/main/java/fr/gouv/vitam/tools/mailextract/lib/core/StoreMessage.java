@@ -827,8 +827,7 @@ public abstract class StoreMessage extends StoreElement {
         attachmentNode = new ArchiveUnit(storeFolder.storeExtractor, messageNode, "Attachment", attachment.name);
         attachmentNode.addMetadata("DescriptionLevel", "Item", true);
         attachmentNode.addMetadata("Title", attachment.name, true);
-        attachmentNode.addMetadata("Description", "Document \"" + attachment.name + "\" joint au message " + messageID,
-                true);
+        attachmentNode.addMetadata("Description", "Document \"" + attachment.name+" joint",true);
 
         // get the max of creation and modification date which define the
         // creation date of the present file
