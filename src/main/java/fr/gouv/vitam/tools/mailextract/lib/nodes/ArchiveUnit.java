@@ -436,13 +436,17 @@ public class ArchiveUnit {
 			if (byteContent != null)
 				output.write(byteContent);
 		} catch (IOException ex) {
-			if (dirPath.length() + filename.length() > 250)
+			if (dirPath.length() + filename.length() > 250) {
+				getProgressLogger().logException(ex);
 				throw new ExtractionException(
 						"mailextract: Illegal destination file (may be too long pathname), writing unit \"" + name
 								+ "\"" + " dir=" + dirPath + " filename=" + filename);
-			else
+			}
+			else {
+				getProgressLogger().logException(ex);
 				throw new ExtractionException("mailextract: Illegal destination file, writing unit \"" + name + "\""
 						+ " dir=" + dirPath + " filename=" + filename);
+			}
 		} finally {
 			if (output != null)
 				try {

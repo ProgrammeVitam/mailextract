@@ -49,6 +49,8 @@ import javax.mail.URLName;
 
 import java.util.Map;
 
+import static fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage.EXTRACTED_MAILS_LIST;
+import static fr.gouv.vitam.tools.mailextract.lib.core.StoreMessage.printMailCSVHeader;
 import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.GLOBAL;
 import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.MESSAGE;
 
@@ -265,10 +267,13 @@ public abstract class StoreExtractor {
 
     // private map of printstreams for global lists extraction
     // (mails list, contacts, appointments...)
-    private Map<String, PrintStream> globalListsPSMap;
+    protected Map<String, PrintStream> globalListsPSMap;
 
-    // the global mails list identifier
-    static public String EXTRACTED_MAILS_LIST = "mailsList";
+    /**
+     * The "mails list initialised" flag.
+     */
+    private boolean mailsListInitialisedFlag;
+
 
     /**
      * Add mimetypes, scheme, isContainer, store extractor known relation.
@@ -328,27 +333,22 @@ public abstract class StoreExtractor {
     }
 
     /**
-     * Init the PrintStream map, empty or with only all mails list PrintStream
-     * , if extractObjectsLists is true.
-     * To override by subclasses for other global extraction (contacts, appointments...) implementation.
+     * Init the PrintStream for mails list, if not already done
      */
-    protected void initGlobalListsPSMap() {
-        globalListsPSMap = new HashMap<String, PrintStream>();
-        if (this.options.extractObjectsLists && canExtractObjectsLists()) {
-            try {
-                String dirname = this.destRootPath
-                        + File.separator + this.destName + File.separator;
-                Files.createDirectories(Paths.get(dirname));
-                PrintStream ps = new PrintStream(dirname + EXTRACTED_MAILS_LIST + ".csv");
-                globalListsPSMap.put(EXTRACTED_MAILS_LIST, ps);
-                ps.println("SentDate|ReceivedDate|FromName|FromAddress|" +
-                        "ToList|Subject|MessageID|" +
-                        "AttachmentList|ReplyTo|Folder|Size|Attached|" +
-                        "AppointmentLocation|AppointmentBeginDate|AppointmentEndDate");
-            } catch (IOException e) {
-                logger.progressLogWithoutInterruption(GLOBAL, "mailextract: can't create mails list csv file");
-                logger.logException(e);
-            }
+    protected void initMailsListIfNeeded() {
+        if (mailsListInitialisedFlag)
+            return;
+        mailsListInitialisedFlag = true;
+        try {
+            String dirname = this.destRootPath
+                    + File.separator + this.destName + File.separator;
+            Files.createDirectories(Paths.get(dirname));
+            PrintStream ps = new PrintStream(dirname + EXTRACTED_MAILS_LIST + ".csv");
+            globalListsPSMap.put(EXTRACTED_MAILS_LIST, ps);
+            printMailCSVHeader(ps);
+        } catch (IOException e) {
+            logger.progressLogWithoutInterruption(GLOBAL, "mailextract: can't create mails list csv file");
+            logger.logException(e);
         }
     }
 
@@ -413,7 +413,8 @@ public abstract class StoreExtractor {
 
         this.description = ":p:" + scheme + ":u:" + user;
 
-        initGlobalListsPSMap();
+        globalListsPSMap = new HashMap<String, PrintStream>();
+        mailsListInitialisedFlag = false;
     }
 
     /**
@@ -770,11 +771,18 @@ public abstract class StoreExtractor {
                 + Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
                 + " messages, for a total size of " + size + " MBytes and "
                 + Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
+        String mes="";
+        if (options.extractObjectsLists && canExtractObjectsLists()) {
+            mes=String.join(", ",globalListsPSMap.keySet());
+            if (!mes.isEmpty())
+                getProgressLogger().progressLog(GLOBAL, "With " + mes + " extraction");
+        }
         System.out.println("Terminated in " + Duration.between(start, end).toString() + " writing "
                 + Integer.toString(getFolderTotalCount()) + " folders and " + Integer.toString(getTotalElementsCount())
                 + " messages, for a total size of " + size + " MBytes and "
                 + Integer.toString(getTotalAttachedMessagesCount()) + " attached message");
-
+        if (!mes.isEmpty())
+            System.out.println("With " + mes + " extraction");
     }
 
     /**

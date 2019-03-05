@@ -31,10 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Vector;
 
-import com.pff.PSTException;
-import com.pff.PSTFolder;
-import com.pff.PSTMessage;
-import com.pff.PSTObject;
+import com.pff.*;
 
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreFolder;
 import fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor;
@@ -136,11 +133,18 @@ public class PstStoreFolder extends StoreFolder {
 			if (po == null)
 				break;
 			message = (PSTMessage) po;
-			PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
-			lPStoreMessage.analyzeMessage();
-			dateRange.extendRange(lPStoreMessage.getSentDate());
-			lPStoreMessage.extractMessage(writeFlag);
-			lPStoreMessage.countMessage();
+			if (message instanceof PSTContact){
+				PstStoreContact lPStoreContact= new PstStoreContact(this,(PSTContact)message);
+				lPStoreContact.writeToContactsList(writeFlag);
+			}
+			else {
+
+				PstStoreMessage lPStoreMessage = new PstStoreMessage(this, message);
+				lPStoreMessage.analyzeMessage();
+				dateRange.extendRange(lPStoreMessage.getSentDate());
+				lPStoreMessage.extractMessage(writeFlag);
+				lPStoreMessage.countMessage();
+			}
 		}
 	}
 

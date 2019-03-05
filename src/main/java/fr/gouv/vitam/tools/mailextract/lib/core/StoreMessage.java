@@ -56,7 +56,6 @@ import fr.gouv.vitam.tools.mailextract.lib.utils.ExtractionException;
 import fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger;
 import fr.gouv.vitam.tools.mailextract.lib.utils.RawDataSource;
 
-import static fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor.EXTRACTED_MAILS_LIST;
 import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogger.*;
 
 /**
@@ -705,14 +704,29 @@ public abstract class StoreMessage extends StoreElement {
         getProgressLogger().progressLog(MESSAGE_DETAILS, "with SentDate=" + (sentDate == null ? "Unknown sent date" : sentDate.toString()));
 
         // write in csv list if asked for
-        writeMailsList();
+        writeToMailsList(writeFlag);
     }
 
-    private void writeMailsList() throws InterruptedException {
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
-        PrintStream ps = storeFolder.getStoreExtractor().getGlobalListPS(EXTRACTED_MAILS_LIST);
+    // the global mails list identifier
+    static public String EXTRACTED_MAILS_LIST = "mailsList";
 
-        if (storeFolder.getStoreExtractor().options.extractObjectsLists && storeFolder.getStoreExtractor().canExtractObjectsLists())
+    /**
+     * Print the header for mails list csv file
+     *
+     * @param ps the dedicated print stream
+     */
+    static protected void printMailCSVHeader(PrintStream ps) {
+        ps.println("SentDate|ReceivedDate|FromName|FromAddress|" +
+                "ToList|Subject|MessageID|" +
+                "AttachmentList|ReplyTo|Folder|Size|Attached|" +
+                "AppointmentLocation|AppointmentBeginDate|AppointmentEndDate");
+    }
+
+    private void writeToMailsList(boolean writeFlag) throws InterruptedException {
+        if (writeFlag && getStoreExtractor().options.extractObjectsLists && getStoreExtractor().canExtractObjectsLists()) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+            getStoreExtractor().initMailsListIfNeeded();
+            PrintStream ps = storeFolder.getStoreExtractor().getGlobalListPS(EXTRACTED_MAILS_LIST);
             try {
                 ps.format("\"%s\"|",
                         (sentDate == null ? "" : sdf.format(sentDate)));
@@ -722,7 +736,8 @@ public abstract class StoreMessage extends StoreElement {
                     MetadataPerson p = new MetadataPerson(from);
                     ps.format("\"%s\"|\"%s\"|", filterHyphen(p.fullName),
                             filterHyphen(p.identifier));
-                }
+                } else
+                    ps.print("\"\"|\"\"|");
                 ps.format("\"%s\"|",
                         filterHyphen(personStringListToIndentifierString(recipientTo)));
                 ps.format("\"%s\"|", filterHyphen(subject));
@@ -756,8 +771,10 @@ public abstract class StoreMessage extends StoreElement {
                 ps.println("");
                 ps.flush();
             } catch (Exception e) {
+                getProgressLogger().logException(e);
                 logMessageWarning("mailextract: Can't write in mails csv list");
             }
+        }
     }
 
     private String personStringListToIndentifierString(List<String> sList) {
