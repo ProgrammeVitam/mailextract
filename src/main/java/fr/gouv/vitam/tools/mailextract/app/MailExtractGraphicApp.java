@@ -162,7 +162,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 		if (storeExtractorOptions.warningMsgProblem)
 			mainWindow.warningCheckBox.setSelected(true);
 
-		if (storeExtractorOptions.extractList)
+		if (storeExtractorOptions.extractObjectsLists)
 			mainWindow.extractlistCheckBox.setSelected(true);
 
 		if (storeExtractorOptions.extractMessageTextFile)
@@ -359,7 +359,7 @@ public class MailExtractGraphicApp implements ActionListener, Runnable {
 			storeExtractorOptions.warningMsgProblem = true;
 
 		if (mainWindow.extractlistCheckBox.isSelected())
-			storeExtractorOptions.extractList = true;
+			storeExtractorOptions.extractObjectsLists = true;
 
 		if (mainWindow.extractmessagetextfileCheckBox.isSelected())
 			storeExtractorOptions.extractMessageTextFile = true;

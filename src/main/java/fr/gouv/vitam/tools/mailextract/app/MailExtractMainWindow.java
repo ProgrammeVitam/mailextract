@@ -384,7 +384,7 @@ public class MailExtractMainWindow extends JFrame {
 		getContentPane().add(namesLengthField, gbc_namesLengthField);
 		namesLengthField.setColumns(128);
 
-		extractlistCheckBox = new JCheckBox("Génère liste csv d'extraction");
+		extractlistCheckBox = new JCheckBox("Génère les listes csv d'extraction");
 		GridBagConstraints gbc_extractlistCheckBox = new GridBagConstraints();
 		gbc_extractlistCheckBox.anchor = GridBagConstraints.WEST;
 		gbc_extractlistCheckBox.insets = new Insets(0, 0, 5, 5);

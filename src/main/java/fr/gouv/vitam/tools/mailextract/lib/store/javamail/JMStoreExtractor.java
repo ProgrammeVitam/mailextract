@@ -88,15 +88,13 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            logger used
-	 * @param psExtractList
-	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(String urlString, String folder, String destPathString, StoreExtractorOptions options,
-							StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger, PrintStream psExtractList) throws ExtractionException {
-		super(urlString, folder, destPathString, options, rootStoreExtractor, logger, psExtractList);
+							StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException {
+		super(urlString, folder, destPathString, options, rootStoreExtractor, logger);
 
 		String url = "";
 
@@ -167,15 +165,13 @@ public class JMStoreExtractor extends StoreExtractor {
 	 *            root one
 	 * @param logger
 	 *            logger used
-	 * @param psExtractList
-	 *            the ps extract list
 	 * @throws ExtractionException
 	 *             Any unrecoverable extraction exception (access trouble, major
 	 *             format problems...)
 	 */
 	public JMStoreExtractor(StoreMessageAttachment attachment, ArchiveUnit rootNode, StoreExtractorOptions options,
-			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger,PrintStream psExtractList) throws ExtractionException {
-		super(attachment.getScheme(), "", rootNode.getFullName(), options, rootStoreExtractor, logger, psExtractList);
+			StoreExtractor rootStoreExtractor, MailExtractProgressLogger logger) throws ExtractionException {
+		super(attachment.getScheme()+"://localhost/", "", rootNode.getFullName(), options, rootStoreExtractor, logger);
 		String url;
 
 		url = attachment.getScheme()+":";
@@ -256,4 +252,15 @@ public class JMStoreExtractor extends StoreExtractor {
 		return attachment;
 	}
 
+
+	/* (non-Javadoc)
+	 * @see fr.gouv.vitam.tools.mailextract.lib.core.StoreExtractor#canExtractObjectsLists()
+	 */
+	@Override
+	public boolean canExtractObjectsLists(){
+		if (this.scheme.equals("eml"))
+			return false;
+		else
+			return true;
+	};
 }

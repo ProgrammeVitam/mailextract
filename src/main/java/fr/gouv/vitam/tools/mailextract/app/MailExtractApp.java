@@ -131,8 +131,12 @@ import static fr.gouv.vitam.tools.mailextract.lib.utils.MailExtractProgressLogge
  * <td>generate directories and files names with x characters max</td>
  * </tr>
  * <tr>
- * <td>--extractlist</td>
- * <td>generate a csv list of all extracts</td>
+ * <td>--setchar</td>
+ * <td>default charset</td>
+ * </tr>
+ * <tr>
+ * <td>--extractlists</td>
+ * <td>generate csv list of objects if any (mails, contacts...)</td>
  * </tr>
  * <tr>
  * <td>--extractmessagetextfile</td>
@@ -207,7 +211,6 @@ public class MailExtractApp {
 		parser.accepts("password", "password").withRequiredArg();
 		parser.accepts("server", "mail server [HostName|IP](:port)").withRequiredArg();
 		parser.accepts("container", "local container directory or file to extract").withRequiredArg();
-		parser.accepts("setchar", "default charset").withRequiredArg();
 		parser.accepts("folder", "specific mail folder").withRequiredArg();
 		parser.accepts("rootdir", "root (default current directory) for output to root/username directory")
 				.withRequiredArg();
@@ -215,8 +218,9 @@ public class MailExtractApp {
 		parser.accepts("keeponlydeep", "keep only empty folders not at root level");
 		parser.accepts("verbatim", "event level to log (OFF|SEVERE|WARNING|INFO|FINE|FINER|FINEST)").withRequiredArg();
 		parser.accepts("nameslength", "length limit for directories and files generated names").withRequiredArg();
-		parser.accepts("extractlist",
-				"generate a csv list of all extracts with a selection of metadata, inluding appointments");
+        parser.accepts("setchar", "default charset").withRequiredArg();
+		parser.accepts("extractlists",
+				"generate csv list of objects if any (mails, contacts...)");
 		parser.accepts("extractmessagetextfile", "extract a text file version of messages");
 		parser.accepts("extractmessagetextmetadata", "put message text in metadata");
 		parser.accepts("extractfiletextfile", "extract a text file version of attachment files");
@@ -258,7 +262,6 @@ public class MailExtractApp {
 
 		// outputs
 		MailExtractProgressLogger logger = null;
-		PrintStream psExtractList;
 
 		// prepare parsing with jopt
 		OptionParser parser = createOptionParser();
@@ -332,7 +335,7 @@ public class MailExtractApp {
 
 		// get store extractor options
 		storeExtractorOptions = new StoreExtractorOptions(options.has("keeponlydeep"), options.has("dropemptyfolders"),
-				options.has("warning"), namesLength, defaultCharset, options.has("extractlist"), options.has("extractmessagetextfile"),
+				options.has("warning"), namesLength, defaultCharset, options.has("extractlists"), options.has("extractmessagetextfile"),
 				options.has("extractmessagetextmetadata"), options.has("extractfiletextfile"),
 				options.has("extractfiletextmetadata"),model);
 
@@ -422,11 +425,6 @@ public class MailExtractApp {
 			try {
 				mel = new MailExtractLogger(destRootPath + File.separator + destName + ".log", MailExtractLogger.getLevel(logLevel));
 				logger = new MailExtractProgressLogger(mel.getProgressLogger(),  MailExtractLogger.getLevel(logLevel));
-				if (options.has("extractlist"))
-					psExtractList = new PrintStream(
-							new FileOutputStream(destRootPath + File.separator + destName + ".csv"));
-				else
-					psExtractList = null;
 
 				if (user == null || user.isEmpty())
 					destName = "unknown_extract";
@@ -434,7 +432,7 @@ public class MailExtractApp {
 					destName = user;
 				String urlString = StoreExtractor.composeStoreURL(protocol, server, user, password, container);
 				storeExtractor = StoreExtractor.createStoreExtractor(urlString, folder,
-						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger, psExtractList);
+						Paths.get(destRootPath, destName).toString(), storeExtractorOptions, logger);
 				if (options.has("l") || options.has("z")) {
 					storeExtractor.listAllFolders(options.has("z"));
 				} else {

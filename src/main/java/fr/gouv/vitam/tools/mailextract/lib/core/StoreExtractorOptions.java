@@ -50,10 +50,10 @@ public class StoreExtractorOptions {
 	/** The default charset name. */
 	public String defaultCharsetName;
 
-	/** The extract list flag. */
-	public boolean extractList;
+    /** The extract objects (mails, contacts, appointments...) lists flag. */
+    public boolean extractObjectsLists;
 
-	/** The extract message text version file flag. */
+   /** The extract message text version file flag. */
 	public boolean extractMessageTextFile;
 
 	/** The extract message text metadata flag. */
@@ -73,10 +73,10 @@ public class StoreExtractorOptions {
 	 */
 	public StoreExtractorOptions() {
 		keepOnlyDeepEmptyFolders = false;
-		dropEmptyFolders = false;
+		dropEmptyFolders = true;
 		warningMsgProblem = false;
 		namesLength = 12;
-		extractList = false;
+        extractObjectsLists = false;
 		extractMessageTextFile = false;
 		extractMessageTextMetadata = false;
 		extractFileTextFile = false;
@@ -93,22 +93,23 @@ public class StoreExtractorOptions {
 	 * @param warningMsgProblem          the warning msg problem
 	 * @param namesLength                the names length
 	 * @param defaultCharsetName         the default charset name
-	 * @param extractList                the extract list
-	 * @param extractMessageTextFile     the extract message text file
-	 * @param extractMessageTextMetadata the extract message text metadata
-	 * @param extractFileTextFile        the extract file text file
-	 * @param extractFileTextMetadata    the extract file text metadata
-	 * @param model 					 the model
+	 * @param extractObjectsLists        the extract objects list flag
+	 * @param extractMessageTextFile     the extract message text file flag
+	 * @param extractMessageTextMetadata the extract message text metadata flag
+	 * @param extractFileTextFile        the extract file text file flag
+	 * @param extractFileTextMetadata    the extract file text metadata flag
+	 * @param model 					 the model version (1 or 2)
 	 */
 	public StoreExtractorOptions(boolean keepOnlyDeepEmptyFolders, boolean dropEmptyFolders, boolean warningMsgProblem,
-			int namesLength, String defaultCharsetName, boolean extractList, boolean extractMessageTextFile, boolean extractMessageTextMetadata,
+			int namesLength, String defaultCharsetName, boolean extractObjectsLists, boolean extractMessageTextFile,
+                                 boolean extractMessageTextMetadata,
 			boolean extractFileTextFile, boolean extractFileTextMetadata, int model) {
 		this.keepOnlyDeepEmptyFolders = keepOnlyDeepEmptyFolders;
 		this.dropEmptyFolders = dropEmptyFolders;
 		this.warningMsgProblem = warningMsgProblem;
 		this.namesLength = namesLength;
 		this.defaultCharsetName=defaultCharsetName;
-		this.extractList = extractList;
+		this.extractObjectsLists = extractObjectsLists;
 		this.extractMessageTextFile = extractMessageTextFile;
 		this.extractMessageTextMetadata = extractMessageTextMetadata;
 		this.extractFileTextFile = extractFileTextFile;
